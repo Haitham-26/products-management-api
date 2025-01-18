@@ -1,9 +1,11 @@
-import Product from "../models/product/Product.model";
+import Product from "../models/Product.model";
 import express from "express";
+import { CreateProductDto } from "../types/product/CreateProductDto";
+import { UpdateProductDto } from "../types/product/UpdateProductDto";
 
 //Create a product
 const createProduct = async (req: express.Request, res: express.Response) => {
-  const { name, price, description, quantity } = req.body;
+  const { name, price, description, quantity } = req.body as CreateProductDto;
 
   try {
     await Product.create({
@@ -72,7 +74,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
       return;
     }
 
-    await Product.findByIdAndUpdate(id, req.body);
+    await Product.findByIdAndUpdate(id, req.body as UpdateProductDto);
 
     res.status(200).send("Product updated successfully");
   } catch (e) {

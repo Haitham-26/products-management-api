@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import productRouter from "./src/services/product.service";
+import userRouter from "./src/services/user.service";
 
 require("dotenv").config();
 
@@ -12,6 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/products", productRouter);
+app.use("/user", userRouter);
 
 mongoose
   .connect(process.env.DB)
