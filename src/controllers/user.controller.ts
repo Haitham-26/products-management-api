@@ -13,9 +13,9 @@ const signUp = async (req: express.Request, res: express.Response) => {
       return;
     }
 
-    await User.create(req.body);
+    const user = await User.create(req.body);
 
-    res.status(200).send("User created successfully");
+    res.status(200).send(user);
   } catch (e) {
     console.log(e);
     res.status(500).send(e);
@@ -33,7 +33,7 @@ const login = async (req: express.Request, res: express.Response) => {
       res.status(404).send("Email or password incorrect");
     }
 
-    res.status(200).send(true);
+    res.status(200).send(user);
   } catch (e) {
     console.log(e);
     res.status(500).send(e);

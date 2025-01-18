@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/products", productRouter);
-app.use("/user", userRouter);
+app.use("/users", userRouter);
 
 mongoose
   .connect(process.env.DB)
