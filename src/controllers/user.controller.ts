@@ -1,10 +1,11 @@
 import express from "express";
 import User from "../models/User.model";
+import bcrypt from "bcrypt";
 
 //Sign Up
 const signUp = async (req: express.Request, res: express.Response) => {
   try {
-    const { email } = req.body as SignUpDto;
+    const { email, password } = req.body as SignUpDto;
 
     const isEmailExist = await User.findOne({ email });
 
@@ -13,7 +14,14 @@ const signUp = async (req: express.Request, res: express.Response) => {
       return;
     }
 
-    const user = await User.create(req.body);
+    if (password.length < 6) {
+      res.status(400).send("Password must be at least 6 characters long");
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({ ...req.body, password: hashedPassword });
 
     res.status(200).send(user);
   } catch (e) {
@@ -27,7 +35,9 @@ const login = async (req: express.Request, res: express.Response) => {
   try {
     const { email, password } = req.body as LoginDto;
 
-    const user = await User.findOne({ email, password });
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.findOne({ email, password: hashedPassword });
 
     if (!user) {
       res.status(404).send("Email or password incorrect");
