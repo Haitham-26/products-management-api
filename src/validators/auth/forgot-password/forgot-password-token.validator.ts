@@ -1,0 +1,61 @@
+import express from "express";
+import { ThrowZodError } from "../../../utils/ThrowZodError";
+import z from "zod";
+import UserModel from "../../../models/User.model";
+import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
+
+const forgotPasswordTokenSchema = z
+  .object({
+    token: z
+      .string()
+      .trim()
+      .min(6, "The verification code must be 6 characters long")
+      .max(6, "The verification code must be 6 characters long"),
+  })
+  .loose();
+
+export const ForgotPasswordTokenValidator = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    const body = forgotPasswordTokenSchema.parse(req.body);
+    req.body = body;
+
+    const user = await UserModel.findOne({ email: req.body.email });
+
+    if (
+      !user?.forgotPasswordCode ||
+      !user.forgotPasswordCode?.code ||
+      !user.forgotPasswordCode?.createdAt
+    ) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message:
+          "حدث خطأ أثناء التحقق من الرمز، يرجى إعادة بدء عملية إعادة تعيين كلمة السر من البداية.",
+      });
+      return;
+    }
+
+    if (
+      new Date(user.forgotPasswordCode.createdAt).getTime() + 5 * 60 * 1000 <
+      Date.now()
+    ) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "صلاحية الرمز منتهية، يرجى طلب رمز جديد.",
+      });
+      return;
+    }
+
+    if (user.forgotPasswordCode.code !== req.body.token) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "رمز التحقق غير صحيح",
+      });
+      return;
+    }
+
+    next();
+  } catch (e) {
+    ThrowZodError(res, e);
+  }
+};
