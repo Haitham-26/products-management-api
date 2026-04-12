@@ -11,7 +11,7 @@ import { UpdateCategoryValidator } from "../validators/category/update-category.
 
 const categoryRouter = express.Router();
 
-categoryRouter.post("/", AuthMiddleware, getCategories);
+categoryRouter.get("/", AuthMiddleware, getCategories);
 categoryRouter.delete("/:id/delete", AuthMiddleware, deleteCategory);
 categoryRouter.post(
   "/create",

@@ -5,6 +5,7 @@ import isString from "lodash/isString";
 import CategoryModel, { Category } from "../models/Category.model";
 import ProductModel from "../models/Product.model";
 import { Types } from "mongoose";
+import isNil from "lodash/isNil";
 
 const createCategory = async (req: express.Request, res: express.Response) => {
   try {
@@ -28,8 +29,37 @@ const getCategories = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const categoriesWithChildrenCount = await CategoryModel.aggregate([
-      { $match: { userId: new Types.ObjectId(userId) } },
+    const { keyword, meta, minChildrenCount, maxChildrenCount } = req.query;
+
+    const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
+
+    const currentPage = Math.max(1, Number(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
+    const skip = (currentPage - 1) * pageSize;
+
+    const query: any = {
+      userId: new Types.ObjectId(userId as string),
+    };
+
+    if (isString(keyword)) {
+      query.$or = [
+        { name: { $regex: keyword, $options: "i" } },
+        { description: { $regex: keyword, $options: "i" } },
+      ];
+    }
+
+    const childrenMatch: any = {};
+
+    if (!isNil(minChildrenCount)) {
+      childrenMatch.$gte = Number(minChildrenCount);
+    }
+
+    if (!isNil(maxChildrenCount)) {
+      childrenMatch.$lte = Number(maxChildrenCount);
+    }
+
+    const result = await CategoryModel.aggregate([
+      { $match: query },
       {
         $lookup: {
           from: "products",
@@ -39,17 +69,47 @@ const getCategories = async (req: express.Request, res: express.Response) => {
         },
       },
       {
-        $project: {
-          name: 1,
-          description: 1,
-          createdAt: 1,
+        $addFields: {
           childrenCount: { $size: "$productMatches" },
         },
       },
-      { $sort: { createdAt: -1 } },
+      ...(Object.keys(childrenMatch).length
+        ? [{ $match: { childrenCount: childrenMatch } }]
+        : []),
+      {
+        $facet: {
+          data: [
+            {
+              $project: {
+                name: 1,
+                description: 1,
+                createdAt: 1,
+                childrenCount: 1,
+              },
+            },
+            { $sort: { createdAt: -1 } },
+            { $skip: skip },
+            { $limit: pageSize },
+          ],
+          total: [{ $count: "count" }],
+        },
+      },
     ]);
 
-    res.status(StatusCode.OK).json(categoriesWithChildrenCount);
+    const data = result[0].data;
+    const total = result[0].total[0]?.count || 0;
+
+    res.status(StatusCode.OK).json({
+      data,
+      meta: {
+        total,
+        page: currentPage,
+        limit: pageSize,
+        totalPages: Math.ceil(total / pageSize),
+        hasNextPage: currentPage < Math.ceil(total / pageSize),
+        hasPrevPage: currentPage > 1,
+      },
+    });
   } catch (e) {
     console.log(e);
     res.status(500).send();
