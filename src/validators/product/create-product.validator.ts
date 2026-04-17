@@ -41,7 +41,7 @@ export const CreateProductValidator = async (
     req.body = body;
 
     if (req.body?.categoryId) {
-      if (Types.ObjectId.isValid(body.categoryId)) {
+      if (Types.ObjectId.isValid(body.categoryId as string)) {
         const category = await CategoryModel.findById(req.body.categoryId);
 
         if (!category) {
@@ -61,8 +61,10 @@ export const CreateProductValidator = async (
     }
 
     if (req.body?.tags) {
-      const tagIds = [...new Set(req.body.tags)];
-      const invalidTagId = tagIds.find((id: string) => !Types.ObjectId.isValid(id));
+      const tagIds = [...new Set(req.body.tags)] as string[];
+      const invalidTagId = tagIds.find(
+        (id: string) => !Types.ObjectId.isValid(id),
+      );
 
       if (invalidTagId) {
         res
@@ -74,9 +76,7 @@ export const CreateProductValidator = async (
       const tags = await TagModel.find({ _id: { $in: tagIds } }).select("_id");
 
       if (tags.length !== tagIds.length) {
-        res
-          .status(StatusCode.NOT_FOUND)
-          .send({ message: "Tag not found" });
+        res.status(StatusCode.NOT_FOUND).send({ message: "Tag not found" });
         return;
       }
 

@@ -3,9 +3,10 @@ import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
 import CategoryModel, { Category } from "../models/Category.model";
-import ProductModel from "../models/Product.model";
 import { Types } from "mongoose";
 import isNil from "lodash/isNil";
+import { withTransaction } from "../utils/withTransaction";
+import ProductModel from "../models/Product.model";
 
 const createCategory = async (req: express.Request, res: express.Response) => {
   try {
@@ -48,56 +49,30 @@ const getCategories = async (req: express.Request, res: express.Response) => {
       ];
     }
 
-    const childrenMatch: any = {};
+    if (!isNil(minChildrenCount) || !isNil(maxChildrenCount)) {
+      query.childrenCount = {};
 
-    if (!isNil(minChildrenCount)) {
-      childrenMatch.$gte = Number(minChildrenCount);
+      if (minChildrenCount) {
+        query.childrenCount.$gte = Number(minChildrenCount);
+      }
+
+      if (maxChildrenCount) {
+        query.childrenCount.$lte = Number(maxChildrenCount);
+      }
     }
 
-    if (!isNil(maxChildrenCount)) {
-      childrenMatch.$lte = Number(maxChildrenCount);
-    }
-
-    const result = await CategoryModel.aggregate([
-      { $match: query },
-      {
-        $lookup: {
-          from: "products",
-          localField: "_id",
-          foreignField: "categoryId",
-          as: "productMatches",
-        },
-      },
-      {
-        $addFields: {
-          childrenCount: { $size: "$productMatches" },
-        },
-      },
-      ...(Object.keys(childrenMatch).length
-        ? [{ $match: { childrenCount: childrenMatch } }]
-        : []),
-      {
-        $facet: {
-          data: [
-            {
-              $project: {
-                name: 1,
-                description: 1,
-                createdAt: 1,
-                childrenCount: 1,
-              },
-            },
-            { $sort: { createdAt: -1 } },
-            { $skip: skip },
-            { $limit: pageSize },
-          ],
-          total: [{ $count: "count" }],
-        },
-      },
+    const [data, total] = await Promise.all([
+      CategoryModel.find(query, {
+        name: 1,
+        description: 1,
+        createdAt: 1,
+        childrenCount: 1,
+      })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize),
+      CategoryModel.countDocuments(query),
     ]);
-
-    const data = result[0].data;
-    const total = result[0].total[0]?.count || 0;
 
     res.status(StatusCode.OK).json({
       data,
@@ -120,7 +95,21 @@ const deleteCategory = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params;
 
-    await CategoryModel.findByIdAndDelete({ _id: id });
+    await withTransaction(async (session) => {
+      const category = await CategoryModel.findById(id).session(session);
+
+      if (!category) {
+        return;
+      }
+
+      await ProductModel.updateMany(
+        { categoryId: new Types.ObjectId(id) },
+        { $set: { categoryId: null } },
+        { session },
+      );
+
+      await CategoryModel.deleteOne({ _id: id }, { session });
+    });
 
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -132,7 +121,7 @@ const updateCategory = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params;
 
-    const { name, description, price } = req.body;
+    const { name, description } = req.body;
 
     const updateDto: Partial<Category> = {};
 

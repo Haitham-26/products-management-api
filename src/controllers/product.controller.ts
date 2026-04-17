@@ -6,6 +6,9 @@ import isString from "lodash/isString";
 import isNaN from "lodash/isNaN";
 import { Types } from "mongoose";
 import isNil from "lodash/isNil";
+import CategoryModel from "../models/Category.model";
+import { withTransaction } from "../utils/withTransaction";
+import { isUndefined } from "lodash";
 
 const createProduct = async (req: express.Request, res: express.Response) => {
   try {
@@ -14,24 +17,40 @@ const createProduct = async (req: express.Request, res: express.Response) => {
     const { name, description, price, quantity, discount, categoryId, tags } =
       req.body;
 
-    await ProductModel.create({
-      name,
-      description,
-      price,
-      quantity,
-      discount,
-      userId,
-      categoryId: categoryId
-        ? new Types.ObjectId(categoryId as string)
-        : undefined,
-      tags: tags
-        ?.filter((tagId: string) => Types.ObjectId.isValid(tagId))
-        ?.map((tagId: string) => new Types.ObjectId(tagId)),
+    await withTransaction(async (session) => {
+      await ProductModel.create(
+        [
+          {
+            name,
+            description,
+            price,
+            quantity,
+            discount,
+            userId,
+            categoryId: categoryId
+              ? new Types.ObjectId(categoryId as string)
+              : undefined,
+            tags: tags
+              ?.filter((tagId: string) => Types.ObjectId.isValid(tagId))
+              ?.map((tagId: string) => new Types.ObjectId(tagId)),
+          },
+        ],
+        { session },
+      );
+
+      if (categoryId) {
+        await CategoryModel.updateOne(
+          { _id: new Types.ObjectId(categoryId as string) },
+          { $inc: { childrenCount: 1 } },
+          { session },
+        );
+      }
     });
 
     res.status(StatusCode.OK).send();
   } catch (e) {
     console.log(e);
+    res.status(500).send();
   }
 };
 
@@ -138,7 +157,14 @@ const deleteProduct = async (req: express.Request, res: express.Response) => {
 
     const { id } = req.params;
 
-    await ProductModel.findByIdAndDelete({ _id: id });
+    await withTransaction(async (session) => {
+      await ProductModel.findByIdAndDelete({ _id: id }, { session });
+      await CategoryModel.updateOne(
+        { userId: new Types.ObjectId(userId as string) },
+        { $inc: { childrenCount: -1 } },
+        { session },
+      );
+    });
 
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -152,6 +178,8 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
 
     const { name, description, price, quantity, discount, categoryId, tags } =
       req.body;
+
+    const { product } = RequestContext<{ product: Product }>(req);
 
     const updateDto: Partial<Product> = {};
 
@@ -182,8 +210,39 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
       updateDto.tags = tagsIds;
     }
 
-    await ProductModel.findByIdAndUpdate(id, {
-      $set: updateDto,
+    await withTransaction(async (session) => {
+      const oldCategoryId = product?.categoryId || null;
+      const newCategoryId = !isUndefined(categoryId)
+        ? categoryId
+          ? new Types.ObjectId(categoryId as string)
+          : null
+        : oldCategoryId;
+
+      await ProductModel.findByIdAndUpdate(
+        id,
+        { $set: updateDto },
+        { session },
+      );
+
+      if (oldCategoryId === newCategoryId) {
+        return;
+      }
+
+      if (oldCategoryId) {
+        await CategoryModel.updateOne(
+          { _id: oldCategoryId },
+          { $inc: { childrenCount: -1 } },
+          { session },
+        );
+      }
+
+      if (newCategoryId) {
+        await CategoryModel.updateOne(
+          { _id: newCategoryId },
+          { $inc: { childrenCount: 1 } },
+          { session },
+        );
+      }
     });
 
     res.status(StatusCode.OK).send();

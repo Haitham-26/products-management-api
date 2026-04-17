@@ -5,6 +5,7 @@ export interface Category extends mongoose.Document {
   userId: Types.ObjectId;
   name: string;
   description?: string;
+  childrenCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +19,10 @@ const CategorySchema = new mongoose.Schema(
     description: {
       type: String,
       required: false,
+    },
+    childrenCount: {
+      type: Number,
+      default: 0,
     },
     userId: {
       type: Types.ObjectId,
