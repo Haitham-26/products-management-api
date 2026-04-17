@@ -11,7 +11,7 @@ import { CreateTagValidator } from "../validators/tag/create-tag.validator";
 
 const tagRouter = express.Router();
 
-tagRouter.post("/", AuthMiddleware, getTags);
+tagRouter.get("/", AuthMiddleware, getTags);
 tagRouter.delete("/:id/delete", AuthMiddleware, deleteTag);
 tagRouter.post("/create", AuthMiddleware, CreateTagValidator, createTag);
 tagRouter.patch("/:id/update", AuthMiddleware, UpdateTagValidator, updateTag);
