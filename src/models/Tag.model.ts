@@ -5,6 +5,7 @@ export interface Tag extends mongoose.Document {
   userId: Types.ObjectId;
   name: string;
   description?: string;
+  usageCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +19,10 @@ const TagSchema = new mongoose.Schema(
     description: {
       type: String,
       required: false,
+    },
+    usageCount: {
+      type: Number,
+      default: 0,
     },
     userId: {
       type: Types.ObjectId,

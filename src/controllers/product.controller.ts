@@ -9,6 +9,7 @@ import isNil from "lodash/isNil";
 import CategoryModel from "../models/Category.model";
 import { withTransaction } from "../utils/withTransaction";
 import { isUndefined } from "lodash";
+import TagModel from "../models/Tag.model";
 
 const createProduct = async (req: express.Request, res: express.Response) => {
   try {
@@ -42,6 +43,18 @@ const createProduct = async (req: express.Request, res: express.Response) => {
         await CategoryModel.updateOne(
           { _id: new Types.ObjectId(categoryId as string) },
           { $inc: { childrenCount: 1 } },
+          { session },
+        );
+      }
+
+      if (tags?.length) {
+        await TagModel.updateMany(
+          {
+            _id: {
+              $in: tags.map((tagId: string) => new Types.ObjectId(tagId)),
+            },
+          },
+          { $inc: { usageCount: 1 } },
           { session },
         );
       }
@@ -153,17 +166,28 @@ const getProducts = async (req: express.Request, res: express.Response) => {
 
 const deleteProduct = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
-
     const { id } = req.params;
 
     await withTransaction(async (session) => {
-      await ProductModel.findByIdAndDelete({ _id: id }, { session });
-      await CategoryModel.updateOne(
-        { userId: new Types.ObjectId(userId as string) },
-        { $inc: { childrenCount: -1 } },
-        { session },
-      );
+      const product = await ProductModel.findByIdAndDelete(id, {
+        session,
+      }).populate("tags", "_id");
+
+      if (product?.categoryId) {
+        await CategoryModel.updateOne(
+          { _id: product.categoryId },
+          { $inc: { childrenCount: -1 } },
+          { session },
+        );
+      }
+
+      if (product?.tags?.length) {
+        await TagModel.updateMany(
+          { _id: { $in: product.tags.map((tag) => tag._id) } },
+          { $inc: { usageCount: -1 } },
+          { session },
+        );
+      }
     });
 
     res.status(StatusCode.OK).send();
@@ -218,6 +242,16 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
           : null
         : oldCategoryId;
 
+      const oldTags = product?.tags?.map((tag) => tag._id) || [];
+      const newTags = !isUndefined(tags)
+        ? tags.map((tag: string) => new Types.ObjectId(tag as string))
+        : [];
+
+      const removedTags = oldTags.filter((tag) => !newTags.includes(tag));
+      const addedTags = newTags.filter(
+        (tag: Types.ObjectId) => !oldTags.includes(tag),
+      );
+
       await ProductModel.findByIdAndUpdate(
         id,
         { $set: updateDto },
@@ -240,6 +274,22 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
         await CategoryModel.updateOne(
           { _id: newCategoryId },
           { $inc: { childrenCount: 1 } },
+          { session },
+        );
+      }
+
+      if (removedTags.length) {
+        await TagModel.updateMany(
+          { _id: { $in: removedTags } },
+          { $inc: { usageCount: -1 } },
+          { session },
+        );
+      }
+
+      if (addedTags.length) {
+        await TagModel.updateMany(
+          { _id: { $in: addedTags } },
+          { $inc: { usageCount: 1 } },
           { session },
         );
       }
