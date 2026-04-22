@@ -7,6 +7,7 @@ import { globalLimiter } from "./src/middlewares/rateLimiter";
 import productRouter from "./src/services/product.service";
 import categoryRouter from "./src/services/category.service";
 import tagRouter from "./src/services/tag.service";
+import orderRouter from "./src/services/order.service";
 
 require("dotenv").config();
 
@@ -33,6 +34,7 @@ app.use("/user", userRouter);
 app.use("/products", productRouter);
 app.use("/categories", categoryRouter);
 app.use("/tags", tagRouter);
+app.use("/orders", orderRouter);
 
 mongoose
   .connect(process.env.DB!)

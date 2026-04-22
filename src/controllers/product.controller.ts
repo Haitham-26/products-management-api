@@ -11,6 +11,25 @@ import { withTransaction } from "../utils/withTransaction";
 import { isUndefined } from "lodash";
 import TagModel from "../models/Tag.model";
 
+class ProductService {
+  constructor() {}
+
+  static calculatePriceAfterDiscount(
+    price: number,
+    discount?: Product["discount"],
+  ) {
+    if (!discount) {
+      return price;
+    }
+
+    if (discount.type === "percentage") {
+      return price * (1 - discount.value / 100);
+    }
+
+    return price - discount.value;
+  }
+}
+
 const createProduct = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
@@ -27,6 +46,10 @@ const createProduct = async (req: express.Request, res: express.Response) => {
             price,
             quantity,
             discount,
+            priceAfterDiscount: ProductService.calculatePriceAfterDiscount(
+              price,
+              discount,
+            ),
             userId,
             categoryId: categoryId
               ? new Types.ObjectId(categoryId as string)
@@ -223,6 +246,16 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
 
     if (discount) {
       updateDto.discount = discount;
+    }
+
+    if (!isUndefined(price) || !isUndefined(discount)) {
+      const finalPrice = !isNaN(price) ? Number(price) : product.price;
+      const finalDiscount = discount ?? product.discount;
+
+      updateDto.priceAfterDiscount = ProductService.calculatePriceAfterDiscount(
+        finalPrice,
+        finalDiscount,
+      );
     }
 
     if (categoryId) {

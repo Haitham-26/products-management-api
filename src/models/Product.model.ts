@@ -11,6 +11,7 @@ export interface Product extends mongoose.Document {
     type: "percentage" | "fixed";
     value: number;
   };
+  priceAfterDiscount?: number;
   categoryId?: Types.ObjectId;
   tags?: Types.ObjectId[];
   createdAt: string;
@@ -43,6 +44,9 @@ const ProductSchema = new mongoose.Schema(
       value: {
         type: Number,
       },
+    },
+    priceAfterDiscount: {
+      type: Number,
     },
     userId: {
       type: Types.ObjectId,
