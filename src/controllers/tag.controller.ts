@@ -37,6 +37,7 @@ const getTags = async (req: express.Request, res: express.Response) => {
     const skip = (currentPage - 1) * pageSize;
 
     const query: any = {
+      isDeleted: { $ne: true },
       userId: new Types.ObjectId(userId as string),
     };
 
@@ -91,13 +92,26 @@ const getTags = async (req: express.Request, res: express.Response) => {
 
 const deleteTag = async (req: express.Request, res: express.Response) => {
   try {
-    const { id } = req.params;
+    const { tag, userId } = RequestContext<{ tag: Tag; userId: string }>(req);
 
-    await TagModel.findByIdAndDelete({ _id: id });
+    if (tag.usageCount > 0) {
+      await TagModel.updateOne(
+        { _id: tag._id, userId },
+        {
+          $set: {
+            isDeleted: true,
+            deletedAt: new Date(),
+          },
+        },
+      );
+    } else {
+      await TagModel.deleteOne({ _id: tag._id, userId });
+    }
 
-    res.status(StatusCode.OK).send();
+    res.sendStatus(StatusCode.OK);
   } catch (e) {
     console.log(e);
+    res.sendStatus(500);
   }
 };
 

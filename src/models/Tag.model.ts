@@ -6,6 +6,8 @@ export interface Tag extends mongoose.Document {
   name: string;
   description?: string;
   usageCount: number;
+  isDeleted: boolean;
+  deletedAt?: Date | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,6 +25,14 @@ const TagSchema = new mongoose.Schema(
     usageCount: {
       type: Number,
       default: 0,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
     userId: {
       type: Types.ObjectId,
