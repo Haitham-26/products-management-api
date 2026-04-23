@@ -5,10 +5,11 @@ import isString from "lodash/isString";
 import { Types } from "mongoose";
 import isNil from "lodash/isNil";
 import OrderModel, { Order } from "../models/Order.model";
-import { Product } from "../models/Product.model";
+import ProductModel, { Product } from "../models/Product.model";
 import { CreateOrderDto } from "../types/order/dto/CreateOrderDto";
 import { OrderStatus } from "../types/order/types/OrderStatus.enum";
 import { UpdateOrderDto } from "../types/order/dto/UpdateOrderDto";
+import { withTransaction } from "../utils/withTransaction";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -49,7 +50,7 @@ const getOrders = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { keyword, meta, minTotalPrice, maxTotalPrice } = req.query;
+    const { keyword, meta, minTotalPrice, maxTotalPrice, status } = req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
@@ -63,6 +64,10 @@ const getOrders = async (req: express.Request, res: express.Response) => {
 
     if (isString(keyword)) {
       query.note = { $regex: keyword, $options: "i" };
+    }
+
+    if (status && Object.values(OrderStatus).includes(status as OrderStatus)) {
+      query.status = status;
     }
 
     if (!isNil(minTotalPrice) || !isNil(maxTotalPrice)) {
@@ -105,18 +110,6 @@ const getOrders = async (req: express.Request, res: express.Response) => {
   } catch (e) {
     console.error(e);
     res.status(500).send();
-  }
-};
-
-const deleteOrder = async (req: express.Request, res: express.Response) => {
-  try {
-    const { id } = req.params;
-
-    await OrderModel.findByIdAndDelete({ _id: id });
-
-    res.status(StatusCode.OK).send();
-  } catch (e) {
-    console.log(e);
   }
 };
 
@@ -171,4 +164,55 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
     console.log(e);
   }
 };
-export { createOrder, getOrders, deleteOrder, updateOrder };
+
+const manageOrderStatus = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { orderId, status } = req.body;
+
+    const { order } = RequestContext<{ order: Order }>(req);
+
+    const oldStatus = order.status;
+    const newStatus = status;
+
+    const shouldDecrease =
+      oldStatus !== OrderStatus.CONFIRMED &&
+      newStatus === OrderStatus.CONFIRMED;
+
+    const shouldIncrease =
+      oldStatus === OrderStatus.CONFIRMED &&
+      newStatus !== OrderStatus.CONFIRMED;
+
+    await withTransaction(async (session) => {
+      if (shouldDecrease || shouldIncrease) {
+        const bulkOps = order.items.map((item) => ({
+          updateOne: {
+            filter: { _id: item.productId },
+            update: {
+              $inc: {
+                quantity: shouldDecrease ? -item.quantity : item.quantity,
+              },
+            },
+          },
+        }));
+
+        await ProductModel.bulkWrite(bulkOps, { session });
+      }
+
+      await OrderModel.updateOne(
+        { _id: orderId },
+        { $set: { status: newStatus } },
+        { session },
+      );
+    });
+
+    res.sendStatus(200);
+  } catch (e) {
+    console.log(e);
+    res.sendStatus(500);
+  }
+};
+
+export { createOrder, getOrders, updateOrder, manageOrderStatus };
