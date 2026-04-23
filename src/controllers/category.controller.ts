@@ -96,7 +96,9 @@ const deleteCategory = async (req: express.Request, res: express.Response) => {
     const { id } = req.params;
 
     await withTransaction(async (session) => {
-      const category = await CategoryModel.findById(id).session(session);
+      const category = await CategoryModel.findById(
+        new Types.ObjectId(id),
+      ).session(session);
 
       if (!category) {
         return;
@@ -108,7 +110,11 @@ const deleteCategory = async (req: express.Request, res: express.Response) => {
         { session },
       );
 
-      await CategoryModel.deleteOne({ _id: id }, { session });
+      await CategoryModel.updateOne(
+        { _id: new Types.ObjectId(id) },
+        { $set: { isDeleted: true, deletedAt: new Date() } },
+        { session },
+      );
     });
 
     res.status(StatusCode.OK).send();

@@ -111,7 +111,10 @@ const getProducts = async (req: express.Request, res: express.Response) => {
     const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
     const skip = (currentPage - 1) * pageSize;
 
-    const query: any = { userId: new Types.ObjectId(userId as string) };
+    const query: any = {
+      userId: new Types.ObjectId(userId as string),
+      isDeleted: { $ne: true },
+    };
 
     if (categoryId && Types.ObjectId.isValid(categoryId as string)) {
       query.categoryId = new Types.ObjectId(categoryId as string);
@@ -192,9 +195,11 @@ const deleteProduct = async (req: express.Request, res: express.Response) => {
     const { id } = req.params;
 
     await withTransaction(async (session) => {
-      const product = await ProductModel.findByIdAndDelete(id, {
-        session,
-      }).populate("tags", "_id");
+      const product = await ProductModel.findByIdAndUpdate(
+        id,
+        { $set: { isDeleted: true, deletedAt: new Date() } },
+        { new: true, session },
+      ).populate("tags", "_id");
 
       if (product?.categoryId) {
         await CategoryModel.updateOne(

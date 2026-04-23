@@ -6,6 +6,8 @@ export interface Category extends mongoose.Document {
   name: string;
   description?: string;
   childrenCount: number;
+  isDeleted: boolean;
+  deletedAt?: Date | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,6 +29,14 @@ const CategorySchema = new mongoose.Schema(
     userId: {
       type: Types.ObjectId,
       required: [true, "The userId is required."],
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true },

@@ -14,6 +14,8 @@ export interface Product extends mongoose.Document {
   priceAfterDiscount?: number;
   categoryId?: Types.ObjectId;
   tags?: Types.ObjectId[];
+  isDeleted: boolean;
+  deletedAt?: Date | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,6 +64,14 @@ const ProductSchema = new mongoose.Schema(
         ref: "Tag",
       },
     ],
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

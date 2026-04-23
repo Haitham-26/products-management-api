@@ -189,7 +189,7 @@ const manageOrderStatus = async (
       if (shouldDecrease || shouldIncrease) {
         const bulkOps = order.items.map((item) => ({
           updateOne: {
-            filter: { _id: item.productId },
+            filter: { _id: item.productId, isDeleted: { $ne: true } },
             update: {
               $inc: {
                 quantity: shouldDecrease ? -item.quantity : item.quantity,
