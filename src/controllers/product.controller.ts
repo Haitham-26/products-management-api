@@ -165,8 +165,16 @@ const getProducts = async (req: express.Request, res: express.Response) => {
     const [total, products] = await Promise.all([
       ProductModel.countDocuments(query),
       ProductModel.find(query)
-        .populate("category", "name")
-        .populate("tags", "name")
+        .populate({
+          path: "category",
+          select: "name",
+          match: { isDeleted: { $ne: true } },
+        })
+        .populate({
+          path: "tags",
+          select: "name",
+          match: { isDeleted: { $ne: true } },
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(pageSize)
@@ -263,13 +271,14 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
       );
     }
 
-    if (categoryId) {
-      updateDto.categoryId = new Types.ObjectId(categoryId as string);
+    if (!isUndefined(categoryId)) {
+      updateDto.categoryId = categoryId
+        ? new Types.ObjectId(categoryId as string)
+        : undefined;
     }
 
     if (Array.isArray(tags)) {
-      const tagsIds = tags.map((tag) => new Types.ObjectId(tag as string));
-      updateDto.tags = tagsIds;
+      updateDto.tags = tags.map((tag) => new Types.ObjectId(tag));
     }
 
     await withTransaction(async (session) => {
@@ -280,15 +289,23 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
           : null
         : oldCategoryId;
 
-      const oldTags = product?.tags?.map((tag) => tag._id) || [];
-      const newTags = !isUndefined(tags)
-        ? tags.map((tag: string) => new Types.ObjectId(tag as string))
-        : [];
+      const oldTags: Types.ObjectId[] =
+        product?.tags?.map((tag) => tag._id) || [];
 
-      const removedTags = oldTags.filter((tag) => !newTags.includes(tag));
-      const addedTags = newTags.filter(
-        (tag: Types.ObjectId) => !oldTags.includes(tag),
-      );
+      let addedTags: Types.ObjectId[] = [];
+      let removedTags: Types.ObjectId[] = [];
+
+      if (Array.isArray(tags)) {
+        const newTags = tags.map((tag: string) => new Types.ObjectId(tag));
+
+        removedTags = oldTags.filter(
+          (oldTag) => !newTags.some((newTag) => newTag.equals(oldTag)),
+        );
+
+        addedTags = newTags.filter(
+          (newTag) => !oldTags.some((oldTag) => oldTag.equals(newTag)),
+        );
+      }
 
       await ProductModel.findByIdAndUpdate(
         id,
@@ -296,24 +313,25 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
         { session },
       );
 
-      if (oldCategoryId === newCategoryId) {
-        return;
-      }
+      if (
+        !oldCategoryId?.equals(newCategoryId as any) &&
+        !(!oldCategoryId && !newCategoryId)
+      ) {
+        if (oldCategoryId) {
+          await CategoryModel.updateOne(
+            { _id: oldCategoryId },
+            { $inc: { childrenCount: -1 } },
+            { session },
+          );
+        }
 
-      if (oldCategoryId) {
-        await CategoryModel.updateOne(
-          { _id: oldCategoryId },
-          { $inc: { childrenCount: -1 } },
-          { session },
-        );
-      }
-
-      if (newCategoryId) {
-        await CategoryModel.updateOne(
-          { _id: newCategoryId },
-          { $inc: { childrenCount: 1 } },
-          { session },
-        );
+        if (newCategoryId) {
+          await CategoryModel.updateOne(
+            { _id: newCategoryId },
+            { $inc: { childrenCount: 1 } },
+            { session },
+          );
+        }
       }
 
       if (removedTags.length) {
@@ -336,6 +354,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
     res.status(StatusCode.OK).send();
   } catch (e) {
     console.log(e);
+    res.status(500).send();
   }
 };
 
