@@ -37,10 +37,20 @@ export const CreateOrderValidator = async (
     const body = createOrderSchema.parse(req.body);
     req.body = body;
 
-    const productIds = [...new Set(body.items.map((item) => item.productId))];
+    if (!body.items.length) {
+      res
+        .status(StatusCode.BAD_REQUEST)
+        .send({ message: "Order must have at least one product" });
+      return;
+    }
+
+    const productIds = [
+      ...new Set(body.items.map((item) => new Types.ObjectId(item.productId))),
+    ];
 
     const products = await ProductModel.find({
       _id: { $in: productIds },
+      isDeleted: { $ne: true },
       userId,
     });
 
@@ -49,6 +59,20 @@ export const CreateOrderValidator = async (
         message: "Some products not found, they may have been deleted",
       });
       return;
+    }
+
+    for (const product of products) {
+      if (
+        ((product.quantity as number) || 0) <
+          (body.items.find((item) => item.productId === product._id.toString())
+            ?.quantity as number) ||
+        0
+      ) {
+        res.status(StatusCode.BAD_REQUEST).send({
+          message: `Product ${product.name} has insufficient quantity`,
+        });
+        return;
+      }
     }
 
     RequestContext(req, { products });

@@ -115,38 +115,9 @@ const getOrders = async (req: express.Request, res: express.Response) => {
 
 const updateOrder = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId, products } = RequestContext<{
-      userId: string;
-      products: Product[];
-    }>(req);
+    const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { items, note, orderId } = req.body as UpdateOrderDto;
-
-    const updateQuery = {
-      status: OrderStatus.PENDING,
-      note,
-    } as Partial<UpdateOrderDto>;
-
-    if (items?.length) {
-      const orderItems = items.map((item) => ({
-        productId: new Types.ObjectId(item.productId),
-        quantity: item.quantity,
-        priceAtPurchase:
-          products.find((product) =>
-            product._id.equals(new Types.ObjectId(item.productId)),
-          )?.priceAfterDiscount || 0,
-      }));
-
-      const totalPriceAtPurchase = orderItems.reduce(
-        (total, item) => total + item.priceAtPurchase * item.quantity,
-        0,
-      );
-
-      // @ts-expect-error ..
-      updateQuery.items = orderItems;
-      // @ts-expect-error ..
-      updateQuery.totalPriceAtPurchase = totalPriceAtPurchase;
-    }
+    const { note, orderId } = req.body as UpdateOrderDto;
 
     await OrderModel.updateOne(
       {
@@ -155,7 +126,7 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
         status: OrderStatus.PENDING,
       },
       {
-        $set: updateQuery,
+        $set: { note },
       },
     );
 
