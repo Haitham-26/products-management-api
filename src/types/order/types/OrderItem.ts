@@ -1,5 +1,11 @@
+import { Types } from "mongoose";
+import { ProductDiscount } from "../../product/types/ProductDiscount";
+
 export interface OrderItem {
-  productId: string;
+  productId: Types.ObjectId;
+  productName: string;
   quantity: number;
   priceAtPurchase: number;
+  discountAtPurchase?: ProductDiscount;
+  finalPrice: number;
 }

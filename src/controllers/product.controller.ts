@@ -10,23 +10,28 @@ import CategoryModel from "../models/Category.model";
 import { withTransaction } from "../utils/withTransaction";
 import { isUndefined } from "lodash";
 import TagModel from "../models/Tag.model";
+import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
 
-class ProductService {
+export class ProductService {
   constructor() {}
 
   static calculatePriceAfterDiscount(
     price: number,
     discount?: Product["discount"],
   ) {
+    let value = price;
+
     if (!discount) {
-      return price;
+      return value;
     }
 
-    if (discount.type === "percentage") {
-      return price * (1 - discount.value / 100);
+    if (discount.type === ProductDiscountTypes.PERCENTAGE) {
+      value = price * (1 - discount.value / 100);
+    } else {
+      value = price - discount.value;
     }
 
-    return price - discount.value;
+    return Number(value.toFixed(2));
   }
 }
 

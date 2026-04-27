@@ -5,6 +5,7 @@ import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import CategoryModel from "../../models/Category.model";
 import TagModel from "../../models/Tag.model";
+import { ProductDiscountTypes } from "../../types/product/types/ProductDiscountTypes.enum";
 
 const createProductSchema = z
   .object({
@@ -22,7 +23,7 @@ const createProductSchema = z
     quantity: z.number().min(0, "Quantity must be at least 0"),
     discount: z
       .object({
-        type: z.enum(["percentage", "fixed"]),
+        type: z.enum(Object.values(ProductDiscountTypes)),
         value: z.number().min(0, "Value must be at least 0"),
       })
       .optional(),

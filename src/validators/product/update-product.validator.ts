@@ -7,6 +7,7 @@ import { Types } from "mongoose";
 import CategoryModel from "../../models/Category.model";
 import TagModel from "../../models/Tag.model";
 import { RequestContext } from "../../utils/RequestContext";
+import { ProductDiscountTypes } from "../../types/product/types/ProductDiscountTypes.enum";
 
 const updateProductSchema = z
   .object({
@@ -24,7 +25,7 @@ const updateProductSchema = z
     quantity: z.number().min(0, "Quantity must be at least 0").optional(),
     discount: z
       .object({
-        type: z.enum(["percentage", "fixed"]),
+        type: z.enum(Object.values(ProductDiscountTypes)),
         value: z.number().min(0, "Value must be at least 0"),
       })
       .optional(),

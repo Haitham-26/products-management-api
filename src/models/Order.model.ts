@@ -1,6 +1,7 @@
 import mongoose, { model, Types } from "mongoose";
 import { OrderStatus } from "../types/order/types/OrderStatus.enum";
 import { OrderItem } from "../types/order/types/OrderItem";
+import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
 
 export interface Order extends mongoose.Document {
   _id: Types.ObjectId;
@@ -22,6 +23,10 @@ const OrderSchema = new mongoose.Schema(
             type: Types.ObjectId,
             required: [true, "The productId is required."],
           },
+          productName: {
+            type: String,
+            required: [true, "The product name is required."],
+          },
           quantity: {
             type: Number,
             required: [true, "The quantity is required."],
@@ -29,6 +34,19 @@ const OrderSchema = new mongoose.Schema(
           priceAtPurchase: {
             type: Number,
             required: [true, "The price at purchase is required."],
+          },
+          discountAtPurchase: {
+            type: {
+              type: String,
+              enum: Object.values(ProductDiscountTypes),
+            },
+            value: {
+              type: Number,
+            },
+          },
+          finalPrice: {
+            type: Number,
+            required: false,
           },
         },
       ],

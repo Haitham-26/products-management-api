@@ -1,4 +1,6 @@
 import mongoose, { model, Types } from "mongoose";
+import { ProductDiscount } from "../types/product/types/ProductDiscount";
+import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
 
 export interface Product extends mongoose.Document {
   _id: Types.ObjectId;
@@ -7,10 +9,7 @@ export interface Product extends mongoose.Document {
   description?: string;
   price: number;
   quantity: number;
-  discount?: {
-    type: "percentage" | "fixed";
-    value: number;
-  };
+  discount?: ProductDiscount;
   priceAfterDiscount?: number;
   categoryId?: Types.ObjectId;
   tags?: Types.ObjectId[];
@@ -41,7 +40,7 @@ const ProductSchema = new mongoose.Schema(
     discount: {
       type: {
         type: String,
-        enum: ["percentage", "fixed"],
+        enum: Object.values(ProductDiscountTypes),
       },
       value: {
         type: Number,

@@ -10,6 +10,8 @@ import { CreateOrderDto } from "../types/order/dto/CreateOrderDto";
 import { OrderStatus } from "../types/order/types/OrderStatus.enum";
 import { UpdateOrderDto } from "../types/order/dto/UpdateOrderDto";
 import { withTransaction } from "../utils/withTransaction";
+import { OrderItem } from "../types/order/types/OrderItem";
+import { ProductService } from "./product.controller";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -20,21 +22,30 @@ const createOrder = async (req: express.Request, res: express.Response) => {
 
     const { items, note } = req.body as CreateOrderDto;
 
-    const orderItems = items.map((item) => ({
-      productId: new Types.ObjectId(item.productId),
-      quantity: item.quantity,
-      priceAtPurchase:
-        products.find((product) =>
-          product._id.equals(new Types.ObjectId(item.productId)),
-        )?.priceAfterDiscount || 0,
-    }));
+    const orderItems: OrderItem[] = items.map((item) => {
+      const product = products.find((product) =>
+        product._id.equals(new Types.ObjectId(item.productId)),
+      )!;
+
+      return {
+        productId: product._id,
+        productName: product.name,
+        quantity: item.quantity,
+        priceAtPurchase: product.price || 0,
+        discountAtPurchase: product?.discount,
+        finalPrice: ProductService.calculatePriceAfterDiscount(
+          product?.price || 0,
+          product?.discount,
+        ),
+      };
+    });
 
     await OrderModel.create({
       items: orderItems,
       note,
       status: OrderStatus.PENDING,
       totalPriceAtPurchase: orderItems.reduce(
-        (total, item) => total + item.priceAtPurchase * item.quantity,
+        (total, item) => total + item.finalPrice * item.quantity,
         0,
       ),
       userId,
