@@ -4,6 +4,7 @@ import { ProductDiscountTypes } from "../types/product/types/ProductDiscountType
 
 export interface Product extends mongoose.Document {
   _id: Types.ObjectId;
+  identifier: string;
   userId: Types.ObjectId;
   name: string;
   description?: string;
@@ -21,6 +22,10 @@ export interface Product extends mongoose.Document {
 
 const ProductSchema = new mongoose.Schema(
   {
+    identifier: {
+      type: String,
+      required: [true, "The identifier is required."],
+    },
     name: {
       type: String,
       required: [true, "The name is required."],

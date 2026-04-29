@@ -12,6 +12,8 @@ import { UpdateOrderDto } from "../types/order/dto/UpdateOrderDto";
 import { withTransaction } from "../utils/withTransaction";
 import { OrderItem } from "../types/order/types/OrderItem";
 import { ProductService } from "./product.controller";
+import { CounterModel } from "../models/Counter.model";
+import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -54,9 +56,20 @@ const createOrder = async (req: express.Request, res: express.Response) => {
 
       await ProductModel.bulkWrite(bulkOps, { session });
 
+      const identifier = await CounterModel.findByIdAndUpdate(
+        CounterKeys.ORDER,
+        { $inc: { seq: 1 } },
+        {
+          new: true,
+          upsert: true,
+          session,
+        },
+      );
+
       await OrderModel.create(
         [
           {
+            identifier: `${CounterKeys.ORDER}-${String(identifier.seq).padStart(4, "0")}`,
             items: orderItems,
             note,
             status: OrderStatus.PENDING,
@@ -115,6 +128,7 @@ const getOrders = async (req: express.Request, res: express.Response) => {
 
     const [data, total] = await Promise.all([
       OrderModel.find(query, {
+        identifier: 1,
         items: 1,
         note: 1,
         status: 1,
