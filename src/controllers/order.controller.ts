@@ -22,33 +22,53 @@ const createOrder = async (req: express.Request, res: express.Response) => {
 
     const { items, note } = req.body as CreateOrderDto;
 
-    const orderItems: OrderItem[] = items.map((item) => {
-      const product = products.find((product) =>
-        product._id.equals(new Types.ObjectId(item.productId)),
-      )!;
+    await withTransaction(async (session) => {
+      const orderItems: OrderItem[] = items.map((item) => {
+        const product = products.find((product) =>
+          product._id.equals(new Types.ObjectId(item.productId)),
+        )!;
 
-      return {
-        productId: product._id,
-        productName: product.name,
-        quantity: item.quantity,
-        priceAtPurchase: product.price || 0,
-        discountAtPurchase: product?.discount,
-        finalPrice: ProductService.calculatePriceAfterDiscount(
-          product?.price || 0,
-          product?.discount,
-        ),
-      };
-    });
+        return {
+          productId: product._id,
+          productName: product.name,
+          quantity: item.quantity,
+          priceAtPurchase: product.price || 0,
+          discountAtPurchase: product?.discount,
+          finalPrice: ProductService.calculatePriceAfterDiscount(
+            product?.price || 0,
+            product?.discount,
+          ),
+        };
+      });
 
-    await OrderModel.create({
-      items: orderItems,
-      note,
-      status: OrderStatus.PENDING,
-      totalPriceAtPurchase: orderItems.reduce(
-        (total, item) => total + item.finalPrice * item.quantity,
-        0,
-      ),
-      userId,
+      const bulkOps = orderItems.map((item) => ({
+        updateOne: {
+          filter: { _id: item.productId, isDeleted: { $ne: true } },
+          update: {
+            $inc: {
+              quantity: -item.quantity,
+            },
+          },
+        },
+      }));
+
+      await ProductModel.bulkWrite(bulkOps, { session });
+
+      await OrderModel.create(
+        [
+          {
+            items: orderItems,
+            note,
+            status: OrderStatus.PENDING,
+            totalPriceAtPurchase: orderItems.reduce(
+              (total, item) => total + item.finalPrice * item.quantity,
+              0,
+            ),
+            userId,
+          },
+        ],
+        { session },
+      );
     });
 
     res.status(StatusCode.OK).send();
@@ -156,32 +176,47 @@ const manageOrderStatus = async (
 
     const { order } = RequestContext<{ order: Order }>(req);
 
-    const oldStatus = order.status;
+    const currentStatus = order.status;
     const newStatus = status;
 
-    const shouldDecrease =
-      oldStatus !== OrderStatus.CONFIRMED &&
-      newStatus === OrderStatus.CONFIRMED;
+    const getProductNewQuantity = (orderItem: OrderItem) => {
+      if (
+        currentStatus === OrderStatus.PENDING &&
+        newStatus === OrderStatus.CONFIRMED
+      ) {
+        return 0;
+      }
 
-    const shouldIncrease =
-      oldStatus === OrderStatus.CONFIRMED &&
-      newStatus !== OrderStatus.CONFIRMED;
+      if (
+        currentStatus === OrderStatus.PENDING &&
+        newStatus === OrderStatus.CANCELLED
+      ) {
+        return orderItem.quantity;
+      }
+
+      if (
+        currentStatus === OrderStatus.CANCELLED &&
+        newStatus === OrderStatus.PENDING
+      ) {
+        return -orderItem.quantity;
+      }
+
+      return 0;
+    };
 
     await withTransaction(async (session) => {
-      if (shouldDecrease || shouldIncrease) {
-        const bulkOps = order.items.map((item) => ({
-          updateOne: {
-            filter: { _id: item.productId, isDeleted: { $ne: true } },
-            update: {
-              $inc: {
-                quantity: shouldDecrease ? -item.quantity : item.quantity,
-              },
+      const bulkOps = order.items.map((item) => ({
+        updateOne: {
+          filter: { _id: item.productId, isDeleted: { $ne: true } },
+          update: {
+            $inc: {
+              quantity: getProductNewQuantity(item),
             },
           },
-        }));
+        },
+      }));
 
-        await ProductModel.bulkWrite(bulkOps, { session });
-      }
+      await ProductModel.bulkWrite(bulkOps, { session });
 
       await OrderModel.updateOne(
         { _id: orderId },

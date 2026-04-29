@@ -37,10 +37,27 @@ export const ManageOrderStatusValidator = async (
       return;
     }
 
+    if (order.status === OrderStatus.CONFIRMED) {
+      res
+        .status(StatusCode.BAD_REQUEST)
+        .send({ message: "Confirmed order's status cannot be changed" });
+      return;
+    }
+
     if (order.status.toLowerCase() === body.status.toLowerCase()) {
       res
         .status(StatusCode.BAD_REQUEST)
         .send({ message: "The order is already in this status" });
+      return;
+    }
+
+    if (
+      order.status === OrderStatus.CANCELLED &&
+      body.status === OrderStatus.CONFIRMED
+    ) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "Cancelled order's status cannot be changed to confirmed. ",
+      });
       return;
     }
 
