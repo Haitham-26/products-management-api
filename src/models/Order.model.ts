@@ -6,6 +6,8 @@ import { ProductDiscountTypes } from "../types/product/types/ProductDiscountType
 export interface Order extends mongoose.Document {
   _id: Types.ObjectId;
   identifier: string;
+  customerName: string;
+  customerPhone?: string;
   userId: Types.ObjectId;
   items: OrderItem[];
   note?: string;
@@ -20,6 +22,14 @@ const OrderSchema = new mongoose.Schema(
     identifier: {
       type: String,
       required: [true, "The identifier is required."],
+    },
+    customerName: {
+      type: String,
+      required: [true, "The customer name is required."],
+    },
+    customerPhone: {
+      type: String,
+      required: false,
     },
     items: {
       type: [

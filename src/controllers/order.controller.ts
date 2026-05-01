@@ -22,7 +22,8 @@ const createOrder = async (req: express.Request, res: express.Response) => {
       products: Product[];
     }>(req);
 
-    const { items, note } = req.body as CreateOrderDto;
+    const { items, note, customerName, customerPhone } =
+      req.body as CreateOrderDto;
 
     await withTransaction(async (session) => {
       const orderItems: OrderItem[] = items.map((item) => {
@@ -69,6 +70,8 @@ const createOrder = async (req: express.Request, res: express.Response) => {
       await OrderModel.create(
         [
           {
+            customerName,
+            customerPhone,
             identifier: `${CounterKeys.ORDER}-${String(identifier.seq).padStart(4, "0")}`,
             items: orderItems,
             note,
@@ -129,6 +132,8 @@ const getOrders = async (req: express.Request, res: express.Response) => {
     const [data, total] = await Promise.all([
       OrderModel.find(query, {
         identifier: 1,
+        customerName: 1,
+        customerPhone: 1,
         items: 1,
         note: 1,
         status: 1,
@@ -162,16 +167,18 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { note, orderId } = req.body as UpdateOrderDto;
+    const { note, customerName, customerPhone, orderId } =
+      req.body as UpdateOrderDto;
 
     await OrderModel.updateOne(
       {
         _id: orderId,
+
         userId: new Types.ObjectId(userId),
         status: OrderStatus.PENDING,
       },
       {
-        $set: { note },
+        $set: { note, customerName, customerPhone },
       },
     );
 

@@ -6,9 +6,30 @@ import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../utils/RequestContext";
 import OrderModel from "../../models/Order.model";
 import { OrderStatus } from "../../types/order/types/OrderStatus.enum";
+import { parsePhoneNumber } from "awesome-phonenumber";
 
 const updateOrderSchema = z
   .object({
+    customerName: z
+      .string()
+      .trim()
+      .min(1, "Customer name is required")
+      .max(30, "Customer name must be at most 30 characters")
+      .optional(),
+    customerPhone: z
+      .string()
+      .trim()
+      .refine(
+        (val) => {
+          if (!val) {
+            return true;
+          }
+          return parsePhoneNumber(val).valid;
+        },
+        { message: "Invalid phone number" },
+      )
+      .optional()
+      .or(z.literal("")),
     note: z
       .string()
       .trim()

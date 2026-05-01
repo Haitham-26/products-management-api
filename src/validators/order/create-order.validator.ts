@@ -5,9 +5,29 @@ import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import ProductModel from "../../models/Product.model";
 import { RequestContext } from "../../utils/RequestContext";
+import { parsePhoneNumber } from "awesome-phonenumber";
 
 const createOrderSchema = z
   .object({
+    customerName: z
+      .string()
+      .trim()
+      .min(1, "Customer name is required")
+      .max(30, "Customer name must be at most 30 characters"),
+    customerPhone: z
+      .string()
+      .trim()
+      .refine(
+        (val) => {
+          if (!val) {
+            return true;
+          }
+          return parsePhoneNumber(val).valid;
+        },
+        { message: "Invalid phone number" },
+      )
+      .optional()
+      .or(z.literal("")),
     items: z
       .array(
         z.object({
