@@ -2,7 +2,7 @@ import express from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
-import { Types } from "mongoose";
+import { Types, UpdateQuery } from "mongoose";
 import isNil from "lodash/isNil";
 import OrderModel, { Order } from "../models/Order.model";
 import ProductModel, { Product } from "../models/Product.model";
@@ -12,8 +12,10 @@ import { UpdateOrderDto } from "../types/order/dto/UpdateOrderDto";
 import { withTransaction } from "../utils/withTransaction";
 import { OrderItem } from "../types/order/types/OrderItem";
 import { ProductService } from "./product.controller";
-import { CounterModel } from "../models/Counter.model";
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
+import isBoolean from "lodash/isBoolean";
+import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
+import { getNextSequence } from "./counter.controller";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -57,14 +59,10 @@ const createOrder = async (req: express.Request, res: express.Response) => {
 
       await ProductModel.bulkWrite(bulkOps, { session });
 
-      const identifier = await CounterModel.findByIdAndUpdate(
+      const nextSequence = await getNextSequence(
+        req,
         CounterKeys.ORDER,
-        { $inc: { seq: 1 } },
-        {
-          new: true,
-          upsert: true,
-          session,
-        },
+        session,
       );
 
       await OrderModel.create(
@@ -72,7 +70,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
           {
             customerName,
             customerPhone,
-            identifier: `${CounterKeys.ORDER}-${String(identifier.seq).padStart(4, "0")}`,
+            identifier: `${CounterKeys.ORDER}-${String(nextSequence).padStart(4, "0")}`,
             items: orderItems,
             note,
             status: OrderStatus.PENDING,
@@ -97,7 +95,8 @@ const getOrders = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { keyword, meta, minTotalPrice, maxTotalPrice, status } = req.query;
+    const { keyword, meta, minTotalPrice, maxTotalPrice, status, visibility } =
+      req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
@@ -111,6 +110,13 @@ const getOrders = async (req: express.Request, res: express.Response) => {
 
     if (isString(keyword)) {
       query.note = { $regex: keyword, $options: "i" };
+    }
+
+    if (
+      visibility &&
+      Object.values(OrderVisibility).includes(visibility as OrderVisibility)
+    ) {
+      query.isArchived = visibility === OrderVisibility.ARCHIVED;
     }
 
     if (status && Object.values(OrderStatus).includes(status as OrderStatus)) {
@@ -138,6 +144,7 @@ const getOrders = async (req: express.Request, res: express.Response) => {
         note: 1,
         status: 1,
         totalPriceAtPurchase: 1,
+        isArchived: 1,
         createdAt: 1,
       })
         .sort({ createdAt: -1 })
@@ -167,8 +174,18 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { note, customerName, customerPhone, orderId } =
+    const { note, customerName, customerPhone, isArchived, orderId } =
       req.body as UpdateOrderDto;
+
+    const updateQuery: UpdateQuery<Order> = {
+      note,
+      customerName,
+      customerPhone,
+    };
+
+    if (isBoolean(isArchived)) {
+      updateQuery.isArchived = isArchived;
+    }
 
     await OrderModel.updateOne(
       {
@@ -178,7 +195,7 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
         status: OrderStatus.PENDING,
       },
       {
-        $set: { note, customerName, customerPhone },
+        $set: updateQuery,
       },
     );
 

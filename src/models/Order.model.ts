@@ -13,6 +13,7 @@ export interface Order extends mongoose.Document {
   note?: string;
   status: OrderStatus;
   totalPriceAtPurchase: number;
+  isArchived: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -80,6 +81,10 @@ const OrderSchema = new mongoose.Schema(
     totalPriceAtPurchase: {
       type: Number,
       required: [true, "The total price at purchase is required."],
+    },
+    isArchived: {
+      type: Boolean,
+      default: false,
     },
     userId: {
       type: Types.ObjectId,

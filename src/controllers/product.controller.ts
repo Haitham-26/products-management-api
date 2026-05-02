@@ -13,6 +13,7 @@ import TagModel from "../models/Tag.model";
 import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
 import { CounterModel } from "../models/Counter.model";
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
+import { getNextSequence } from "./counter.controller";
 
 export class ProductService {
   constructor() {}
@@ -45,16 +46,16 @@ const createProduct = async (req: express.Request, res: express.Response) => {
       req.body;
 
     await withTransaction(async (session) => {
-      const identifier = await CounterModel.findByIdAndUpdate(
+      const nextSequence = await getNextSequence(
+        req,
         CounterKeys.PRODUCT,
-        { $inc: { seq: 1 } },
-        { new: true, upsert: true, session },
+        session,
       );
 
       await ProductModel.create(
         [
           {
-            identifier: `${CounterKeys.PRODUCT}-${String(identifier.seq).padStart(4, "0")}`,
+            identifier: `${CounterKeys.PRODUCT}-${String(nextSequence).padStart(4, "0")}`,
             name,
             description,
             price,

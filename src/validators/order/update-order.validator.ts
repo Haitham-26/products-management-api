@@ -35,6 +35,7 @@ const updateOrderSchema = z
       .trim()
       .max(256, "Note must be at most 256 characters")
       .optional(),
+    isArchived: z.boolean().optional(),
   })
   .loose();
 
@@ -53,6 +54,19 @@ export const UpdateOrderValidator = async (
 
     if (!order) {
       res.status(StatusCode.NOT_FOUND).send({ message: "Order not found" });
+      return;
+    }
+
+    // This makes sure archived orders fields cannot be updated except for isArchived
+    if (
+      order.isArchived &&
+      Object.keys(req.body).filter(
+        (key) => !["orderId", "isArchived"].includes(key),
+      ).length
+    ) {
+      res
+        .status(StatusCode.BAD_REQUEST)
+        .send({ message: "Archived order cannot be updated." });
       return;
     }
 
