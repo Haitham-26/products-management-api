@@ -10,6 +10,7 @@ export interface Product extends mongoose.Document {
   description?: string;
   price: number;
   quantity: number;
+  minStock?: number;
   discount?: ProductDiscount;
   priceAfterDiscount?: number;
   categoryId?: Types.ObjectId;
@@ -41,6 +42,11 @@ const ProductSchema = new mongoose.Schema(
     quantity: {
       type: Number,
       required: [true, "The quantity is required."],
+    },
+    minStock: {
+      type: Number,
+      required: false,
+      default: 10,
     },
     discount: {
       type: {

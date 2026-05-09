@@ -8,12 +8,13 @@ import { Types } from "mongoose";
 import isNil from "lodash/isNil";
 import CategoryModel from "../models/Category.model";
 import { withTransaction } from "../utils/withTransaction";
-import { isUndefined } from "lodash";
+import isNumber from "lodash/isNumber";
+import isUndefined from "lodash/isUndefined";
 import TagModel from "../models/Tag.model";
 import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
-import { CounterModel } from "../models/Counter.model";
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import { getNextSequence } from "./counter.controller";
+import { ProductStockStatus } from "../types/product/types/ProductStockStatus.enum";
 
 export class ProductService {
   constructor() {}
@@ -42,8 +43,16 @@ const createProduct = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { name, description, price, quantity, discount, categoryId, tags } =
-      req.body;
+    const {
+      name,
+      description,
+      price,
+      quantity,
+      discount,
+      categoryId,
+      tags,
+      minStock,
+    } = req.body;
 
     await withTransaction(async (session) => {
       const nextSequence = await getNextSequence(
@@ -72,6 +81,7 @@ const createProduct = async (req: express.Request, res: express.Response) => {
             tags: tags
               ?.filter((tagId: string) => Types.ObjectId.isValid(tagId))
               ?.map((tagId: string) => new Types.ObjectId(tagId)),
+            minStock: isNumber(minStock) ? Number(minStock) : undefined,
           },
         ],
         { session },
@@ -117,6 +127,7 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       minQuantity,
       maxQuantity,
       discountType,
+      stockStatus,
       meta,
     } = req.query;
 
@@ -170,6 +181,25 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       }
       if (maxQuantity) {
         query.quantity.$lte = Number(maxQuantity);
+      }
+    }
+
+    if (stockStatus) {
+      if (stockStatus === ProductStockStatus.OUT_OF_STOCK) {
+        query.quantity = 0;
+      } else if (stockStatus === ProductStockStatus.LOW_STOCK) {
+        query.$expr = {
+          $and: [
+            { $gt: ["$quantity", 0] },
+            {
+              $lte: ["$quantity", { $ifNull: ["$minStock", 10] }],
+            },
+          ],
+        };
+      } else if (stockStatus === ProductStockStatus.IN_STOCK) {
+        query.$expr = {
+          $gt: ["$quantity", { $ifNull: ["$minStock", 10] }],
+        };
       }
     }
 
@@ -251,8 +281,16 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
   try {
     const { id } = req.params;
 
-    const { name, description, price, quantity, discount, categoryId, tags } =
-      req.body;
+    const {
+      name,
+      description,
+      price,
+      quantity,
+      discount,
+      categoryId,
+      tags,
+      minStock,
+    } = req.body;
 
     const { product } = RequestContext<{ product: Product }>(req);
 
@@ -270,6 +308,9 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
     }
     if (!isNaN(quantity)) {
       updateDto.quantity = Number(quantity);
+    }
+    if (!isUndefined(minStock)) {
+      updateDto.minStock = Number(minStock);
     }
 
     if (discount) {
