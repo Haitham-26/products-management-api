@@ -7,6 +7,8 @@ import sendEmail from "../mailer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import jwt from "jsonwebtoken";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
+import { withTransaction } from "../utils/withTransaction";
+import SettingsModel from "../models/Settings.model";
 
 function getJWTToken(userId: string) {
   const jwtToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
@@ -105,11 +107,26 @@ const signUpToken = async (req: express.Request, res: express.Response) => {
       return;
     }
 
-    await UserModel.findByIdAndUpdate(isEmailExist._id, {
-      emailVerified: true,
-      $unset: {
-        optCode: "",
-      },
+    await withTransaction(async (session) => {
+      await UserModel.findByIdAndUpdate(
+        isEmailExist._id,
+        {
+          emailVerified: true,
+          $unset: {
+            optCode: "",
+          },
+        },
+        { session },
+      );
+
+      await SettingsModel.create(
+        [
+          {
+            userId: isEmailExist._id,
+          },
+        ],
+        { session },
+      );
     });
 
     res.status(StatusCode.OK).send({
@@ -137,7 +154,10 @@ const login = async (req: express.Request, res: express.Response) => {
       return;
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user.password as string,
+    );
 
     if (!isPasswordCorrect) {
       res.status(StatusCode.BAD_REQUEST).send({
@@ -177,16 +197,36 @@ const googleLogin = async (req: express.Request, res: express.Response) => {
     }
 
     if (!user) {
-      user = await UserModel.create({
-        email,
-        name,
-        avatar,
-        emailVerified: true,
-        signUpMethod: SignUpMethods.GOOGLE,
+      await withTransaction(async (session) => {
+        const newUser = await UserModel.create(
+          [
+            {
+              email,
+              name,
+              avatar,
+              emailVerified: true,
+              signUpMethod: SignUpMethods.GOOGLE,
+            },
+          ],
+          { session },
+        );
+
+        user = newUser[0];
+
+        await SettingsModel.create(
+          [
+            {
+              userId: user._id,
+            },
+          ],
+          { session },
+        );
       });
     }
 
-    res.status(StatusCode.OK).send({ user });
+    res
+      .status(StatusCode.OK)
+      .send({ user, token: getJWTToken(user!._id.toString()) });
   } catch (e) {
     res.status(StatusCode.INTERNAL_ERROR).send(e);
   }

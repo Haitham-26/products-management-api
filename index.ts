@@ -8,6 +8,7 @@ import productRouter from "./src/services/product.service";
 import categoryRouter from "./src/services/category.service";
 import tagRouter from "./src/services/tag.service";
 import orderRouter from "./src/services/order.service";
+import settingsRouter from "./src/services/settings.service";
 
 require("dotenv").config();
 
@@ -31,6 +32,7 @@ app.use("/healthcheck", (req, res) => {
 });
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
+app.use("/settings", settingsRouter);
 app.use("/products", productRouter);
 app.use("/categories", categoryRouter);
 app.use("/tags", tagRouter);
