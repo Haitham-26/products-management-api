@@ -4,10 +4,12 @@ import {
   createProduct,
   deleteProduct,
   getProducts,
+  manageProductStock,
   updateProduct,
 } from "../controllers/product.controller";
 import { CreateProductValidator } from "../validators/product/create-product.validator";
 import { UpdateProductValidator } from "../validators/product/update-product.validator";
+import { ManageProductStockValidator } from "../validators/product/manage-product-stock.validator";
 
 const productRouter = express.Router();
 
@@ -24,6 +26,12 @@ productRouter.patch(
   AuthMiddleware,
   UpdateProductValidator,
   updateProduct,
+);
+productRouter.patch(
+  "/:id/manage-stock",
+  AuthMiddleware,
+  ManageProductStockValidator,
+  manageProductStock,
 );
 
 export default productRouter;

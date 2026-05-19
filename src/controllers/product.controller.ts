@@ -414,4 +414,30 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export { createProduct, getProducts, deleteProduct, updateProduct };
+const manageProductStock = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { id } = req.params;
+
+    const { stockChange } = req.body;
+
+    await ProductModel.updateOne(
+      { _id: new Types.ObjectId(id) },
+      { $inc: { quantity: Number(stockChange) } },
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export {
+  createProduct,
+  getProducts,
+  deleteProduct,
+  updateProduct,
+  manageProductStock,
+};
