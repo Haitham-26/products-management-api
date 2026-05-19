@@ -3,6 +3,7 @@ import express from "express";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import ProductModel from "../../models/Product.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
+import { RequestContext } from "../../utils/RequestContext";
 
 const manageProductStockSchema = z
   .object({
@@ -21,12 +22,14 @@ export const ManageProductStockValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
     const { id } = req.params;
 
     const body = manageProductStockSchema.parse(req.body);
     req.body = body;
 
-    const product = await ProductModel.findById(id);
+    const product = await ProductModel.findOne({ _id: id, userId });
 
     if (!product) {
       res.status(StatusCode.NOT_FOUND).send({ message: "Product not found" });

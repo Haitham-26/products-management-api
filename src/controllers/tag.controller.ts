@@ -117,6 +117,8 @@ const deleteTag = async (req: express.Request, res: express.Response) => {
 
 const updateTag = async (req: express.Request, res: express.Response) => {
   try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
     const { id } = req.params;
 
     const { name, description } = req.body;
@@ -131,9 +133,12 @@ const updateTag = async (req: express.Request, res: express.Response) => {
       updateDto.description = description;
     }
 
-    await TagModel.findByIdAndUpdate(id, {
-      $set: updateDto,
-    });
+    await TagModel.findOneAndUpdate(
+      { _id: id, userId },
+      {
+        $set: updateDto,
+      },
+    );
 
     res.status(StatusCode.OK).send();
   } catch (e) {

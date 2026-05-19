@@ -3,6 +3,7 @@ import express from "express";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import CategoryModel from "../../models/Category.model";
+import { RequestContext } from "../../utils/RequestContext";
 
 const updateCategorySchema = z
   .object({
@@ -25,9 +26,11 @@ export const UpdateCategoryValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
     const { id } = req.params;
 
-    const category = await CategoryModel.findById(id);
+    const category = await CategoryModel.findOneAndUpdate({ _id: id, userId });
 
     if (!category) {
       res.status(StatusCode.NOT_FOUND).send({ message: "Category not found" });

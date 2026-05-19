@@ -245,11 +245,13 @@ const getProducts = async (req: express.Request, res: express.Response) => {
 
 const deleteProduct = async (req: express.Request, res: express.Response) => {
   try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
     const { id } = req.params;
 
     await withTransaction(async (session) => {
-      const product = await ProductModel.findByIdAndUpdate(
-        id,
+      const product = await ProductModel.findOneAndUpdate(
+        { _id: id, userId },
         { $set: { isDeleted: true, deletedAt: new Date() } },
         { new: true, session },
       ).populate("tags", "_id");
@@ -279,6 +281,8 @@ const deleteProduct = async (req: express.Request, res: express.Response) => {
 
 const updateProduct = async (req: express.Request, res: express.Response) => {
   try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
     const { id } = req.params;
 
     const {
@@ -363,8 +367,8 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
         );
       }
 
-      await ProductModel.findByIdAndUpdate(
-        id,
+      await ProductModel.findOneAndUpdate(
+        { _id: id, userId },
         { $set: updateDto },
         { session },
       );

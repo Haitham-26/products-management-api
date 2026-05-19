@@ -40,9 +40,11 @@ export const UpdateProductValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
     const { id } = req.params;
 
-    const product = await ProductModel.findById(id);
+    const product = await ProductModel.findOne({ _id: id, userId });
 
     if (!product) {
       res.status(StatusCode.NOT_FOUND).send({ message: "Product not found" });
@@ -54,7 +56,10 @@ export const UpdateProductValidator = async (
 
     if (req.body?.categoryId) {
       if (Types.ObjectId.isValid(body.categoryId as string)) {
-        const category = await CategoryModel.findById(req.body.categoryId);
+        const category = await CategoryModel.findOne({
+          _id: req.body.categoryId,
+          userId,
+        });
 
         if (!category) {
           res
@@ -85,7 +90,9 @@ export const UpdateProductValidator = async (
         return;
       }
 
-      const tags = await TagModel.find({ _id: { $in: tagIds } }).select("_id");
+      const tags = await TagModel.find({ _id: { $in: tagIds }, userId }).select(
+        "_id",
+      );
 
       if (tags.length !== tagIds.length) {
         res.status(StatusCode.NOT_FOUND).send({ message: "Tag not found" });

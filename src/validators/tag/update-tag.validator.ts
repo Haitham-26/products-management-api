@@ -3,6 +3,7 @@ import express from "express";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import TagModel from "../../models/Tag.model";
+import { RequestContext } from "../../utils/RequestContext";
 
 const updateTagSchema = z
   .object({
@@ -25,9 +26,11 @@ export const UpdateTagValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
     const { id } = req.params;
 
-    const tag = await TagModel.findById(id);
+    const tag = await TagModel.findById({ _id: id, userId });
 
     if (!tag) {
       res.status(StatusCode.NOT_FOUND).send({ message: "Tag not found" });
