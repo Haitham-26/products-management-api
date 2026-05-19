@@ -1,4 +1,5 @@
 import mongoose, { model, Types } from "mongoose";
+import { codes as currencyCodes } from "currency-codes";
 
 export interface Settings extends mongoose.Document {
   _id: Types.ObjectId;
@@ -6,6 +7,7 @@ export interface Settings extends mongoose.Document {
   inventory: {
     defaultMinStock: number;
   };
+  currency: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,6 +26,11 @@ const SettingsSchema = new mongoose.Schema(
         default: 10,
         min: [1, "Default minimum stock must be at least 1."],
       },
+    },
+    currency: {
+      type: String,
+      enum: currencyCodes(),
+      default: "USD",
     },
   },
   {

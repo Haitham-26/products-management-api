@@ -11,7 +11,7 @@ import { withTransaction } from "../utils/withTransaction";
 import SettingsModel from "../models/Settings.model";
 
 function getJWTToken(userId: string) {
-  const jwtToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+  const jwtToken = jwt.sign({ userId }, process.env.JWT_SECRET!, {
     expiresIn: "7d",
   });
 
@@ -198,7 +198,7 @@ const googleLogin = async (req: express.Request, res: express.Response) => {
 
     if (!user) {
       await withTransaction(async (session) => {
-        const newUser = await UserModel.create(
+        const [newUser] = await UserModel.create(
           [
             {
               email,
@@ -211,7 +211,7 @@ const googleLogin = async (req: express.Request, res: express.Response) => {
           { session },
         );
 
-        user = newUser[0];
+        user = newUser;
 
         await SettingsModel.create(
           [

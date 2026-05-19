@@ -6,12 +6,13 @@ import { UpdateQuery } from "mongoose";
 
 const updateSettings = async (req: express.Request, res: express.Response) => {
   try {
-    const { inventory } = req.body;
+    const { inventory, currency } = req.body;
 
     const { userId } = RequestContext<{ userId: string }>(req);
 
     const updateQuery: UpdateQuery<Settings> = {
       inventory,
+      currency,
     };
 
     await SettingsModel.updateOne(

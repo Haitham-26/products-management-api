@@ -15,7 +15,7 @@ import { ProductService } from "./product.controller";
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import isBoolean from "lodash/isBoolean";
 import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
-import { getNextSequence } from "./counter.controller";
+import { generateIdentifier } from "./counter.controller";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -59,7 +59,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
 
       await ProductModel.bulkWrite(bulkOps, { session });
 
-      const nextSequence = await getNextSequence(
+      const identifier = await generateIdentifier(
         req,
         CounterKeys.ORDER,
         session,
@@ -70,7 +70,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
           {
             customerName,
             customerPhone,
-            identifier: `${CounterKeys.ORDER}-${String(nextSequence).padStart(4, "0")}`,
+            identifier,
             items: orderItems,
             note,
             status: OrderStatus.PENDING,

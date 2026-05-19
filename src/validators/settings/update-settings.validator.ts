@@ -5,6 +5,7 @@ import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import z from "zod";
+import currencyCodes from "currency-codes";
 
 const updateSettingsSchema = z
   .object({
@@ -14,6 +15,13 @@ const updateSettingsSchema = z
           .number()
           .min(1, "Default minimum stock must be at least 1.")
           .optional(),
+      })
+      .optional(),
+    currency: z
+      .string()
+      .length(3)
+      .refine((v) => currencyCodes.code(v), {
+        message: "Unsupported currency code",
       })
       .optional(),
   })

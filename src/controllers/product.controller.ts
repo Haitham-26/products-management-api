@@ -13,7 +13,7 @@ import isUndefined from "lodash/isUndefined";
 import TagModel from "../models/Tag.model";
 import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
-import { getNextSequence } from "./counter.controller";
+import { generateIdentifier } from "./counter.controller";
 import { ProductStockStatus } from "../types/product/types/ProductStockStatus.enum";
 
 export class ProductService {
@@ -55,7 +55,7 @@ const createProduct = async (req: express.Request, res: express.Response) => {
     } = req.body;
 
     await withTransaction(async (session) => {
-      const nextSequence = await getNextSequence(
+      const identifier = await generateIdentifier(
         req,
         CounterKeys.PRODUCT,
         session,
@@ -64,7 +64,7 @@ const createProduct = async (req: express.Request, res: express.Response) => {
       await ProductModel.create(
         [
           {
-            identifier: `${CounterKeys.PRODUCT}-${String(nextSequence).padStart(4, "0")}`,
+            identifier,
             name,
             description,
             price,

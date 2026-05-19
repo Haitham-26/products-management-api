@@ -4,15 +4,15 @@ import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import { RequestContext } from "../utils/RequestContext";
 import express from "express";
 
-export const getNextSequence = async (
+export const generateIdentifier = async (
   req: express.Request,
   key: CounterKeys,
   session?: mongoose.ClientSession,
-): Promise<number> => {
+): Promise<string> => {
   const { userId } = RequestContext<{ userId: string }>(req);
 
   const counter = await CounterModel.findOneAndUpdate(
-    { _id: key, userId },
+    { key, userId },
     { $inc: { seq: 1 }, $setOnInsert: { userId } },
     {
       new: true,
@@ -21,5 +21,5 @@ export const getNextSequence = async (
     },
   );
 
-  return counter.seq;
+  return `${key}-${String(counter.seq).padStart(4, "0")}`;
 };
