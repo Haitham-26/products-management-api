@@ -83,16 +83,6 @@ export const getDashboardStats = async (
               },
               { $count: "count" },
             ],
-            mostSoldProducts: [
-              { $sort: { quantity: -1 } },
-              { $limit: 5 },
-              {
-                $project: {
-                  name: 1,
-                  quantity: 1,
-                },
-              },
-            ],
           },
         },
       ]),
@@ -132,6 +122,51 @@ export const getDashboardStats = async (
               },
               { $count: "count" },
             ],
+            mostSoldProducts: [
+              {
+                $match: {
+                  userId: userObjectId,
+                  isDeleted: { $ne: true },
+                },
+              },
+
+              {
+                $group: {
+                  _id: "$productId",
+                  totalSold: { $sum: "$quantity" }, // أو 1 حسب النظام
+                },
+              },
+
+              {
+                $sort: { totalSold: -1 },
+              },
+
+              {
+                $limit: 5,
+              },
+
+              {
+                $lookup: {
+                  from: "products",
+                  localField: "_id",
+                  foreignField: "_id",
+                  as: "product",
+                },
+              },
+
+              {
+                $unwind: "$product",
+              },
+
+              {
+                $project: {
+                  _id: 0,
+                  productId: "$_id",
+                  name: "$product.name",
+                  quantity: "$totalSold",
+                },
+              },
+            ],
           },
         },
       ]),
@@ -159,7 +194,7 @@ export const getDashboardStats = async (
         lastWeekCount: ordersResult.lastWeekCount?.[0]?.count || 0,
         lastMonthCount: ordersResult.lastMonthCount?.[0]?.count || 0,
       },
-      mostSoldProducts: productsResult.mostSoldProducts || [],
+      mostSoldProducts: ordersResult.mostSoldProducts || [],
     });
   } catch (e) {
     console.error(e);
