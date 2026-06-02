@@ -34,7 +34,7 @@ export const AuthMiddleware = async (
       return;
     }
 
-    RequestContext(req, { userId });
+    RequestContext(req, { userId, user });
 
     next();
   } catch (e) {

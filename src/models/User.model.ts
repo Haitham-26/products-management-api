@@ -1,5 +1,6 @@
 import mongoose, { model, Types } from "mongoose";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
+import { UserRoles } from "../types/user/types/UserRoles.enum";
 
 export interface User extends mongoose.Document {
   _id: string;
@@ -9,6 +10,8 @@ export interface User extends mongoose.Document {
   signUpMethod: SignUpMethods;
   avatar?: string;
   optCode?: string;
+  roles: UserRoles[];
+  organizationId?: string;
   forgotPasswordCode?: {
     code: string;
     createdAt: string;
@@ -47,6 +50,14 @@ const UserSchema = new mongoose.Schema(
     },
     optCode: {
       type: String,
+    },
+    roles: {
+      type: [String],
+      enum: UserRoles,
+      default: [],
+    },
+    organizationId: {
+      type: Types.ObjectId,
     },
     forgotPasswordCode: {
       code: {

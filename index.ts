@@ -10,6 +10,7 @@ import tagRouter from "./src/services/tag.service";
 import orderRouter from "./src/services/order.service";
 import settingsRouter from "./src/services/settings.service";
 import dashboardRouter from "./src/services/dashboard.service";
+import usersPermissions from "./src/services/users-permissions.service";
 
 require("dotenv").config();
 
@@ -39,6 +40,7 @@ app.use("/categories", categoryRouter);
 app.use("/tags", tagRouter);
 app.use("/orders", orderRouter);
 app.use("/dashboard", dashboardRouter);
+app.use("/users-permissions", usersPermissions);
 
 mongoose
   .connect(process.env.DB!)
