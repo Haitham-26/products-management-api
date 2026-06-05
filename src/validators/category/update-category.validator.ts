@@ -4,6 +4,7 @@ import { ThrowZodError } from "../../utils/ThrowZodError";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import CategoryModel from "../../models/Category.model";
 import { RequestContext } from "../../utils/RequestContext";
+import { Types } from "mongoose";
 
 const updateCategorySchema = z
   .object({
@@ -28,9 +29,12 @@ export const UpdateCategoryValidator = async (
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { id } = req.params;
+    const { categoryId } = req.body;
 
-    const category = await CategoryModel.findOneAndUpdate({ _id: id, userId });
+    const category = await CategoryModel.findOne({
+      _id: new Types.ObjectId(categoryId as string),
+      userId,
+    });
 
     if (!category) {
       res.status(StatusCode.NOT_FOUND).send({ message: "Category not found" });
