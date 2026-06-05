@@ -29,7 +29,7 @@ const updateProductSchema = z
         value: z.number().min(0, "Value must be at least 0"),
       })
       .optional(),
-    categoryId: z.string().optional(),
+    categoryId: z.string().nullable().optional(),
     tags: z.array(z.string()).optional(),
   })
   .loose();

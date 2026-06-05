@@ -13,7 +13,7 @@ export interface Product extends mongoose.Document {
   minStock?: number;
   discount?: ProductDiscount;
   priceAfterDiscount?: number;
-  categoryId?: Types.ObjectId;
+  categoryId?: Types.ObjectId | null;
   tags?: Types.ObjectId[];
   isDeleted: boolean;
   deletedAt?: Date | null;

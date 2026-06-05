@@ -332,9 +332,11 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
     }
 
     if (!isUndefined(categoryId)) {
-      updateDto.categoryId = categoryId
-        ? new Types.ObjectId(categoryId as string)
-        : undefined;
+      if (categoryId) {
+        updateDto.categoryId = new Types.ObjectId(categoryId as string);
+      } else {
+        updateDto.categoryId = null;
+      }
     }
 
     if (Array.isArray(tags)) {
@@ -343,11 +345,18 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
 
     await withTransaction(async (session) => {
       const oldCategoryId = product?.categoryId || null;
-      const newCategoryId = !isUndefined(categoryId)
-        ? categoryId
-          ? new Types.ObjectId(categoryId as string)
-          : null
-        : oldCategoryId;
+
+      let newCategoryId: Types.ObjectId | null = null;
+
+      if (!isUndefined(categoryId)) {
+        if (categoryId) {
+          newCategoryId = new Types.ObjectId(categoryId as string);
+        } else {
+          newCategoryId = null;
+        }
+      } else {
+        newCategoryId = oldCategoryId;
+      }
 
       const oldTags: Types.ObjectId[] =
         product?.tags?.map((tag) => tag._id) || [];
