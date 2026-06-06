@@ -15,6 +15,7 @@ import { ProductDiscountTypes } from "../types/product/types/ProductDiscountType
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import { generateIdentifier } from "./counter.controller";
 import { ProductStockStatus } from "../types/product/types/ProductStockStatus.enum";
+import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 
 export class ProductService {
@@ -222,18 +223,6 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       query["discount.type"] = discountType;
     }
 
-    const getCreatedAtSort = () => {
-      if (
-        creationDate === CreationDateFilters.NEWEST ||
-        !Object.values(CreationDateFilters).includes(
-          creationDate as CreationDateFilters,
-        )
-      ) {
-        return -1;
-      }
-      return 1;
-    };
-
     const [total, products] = await Promise.all([
       ProductModel.countDocuments(query),
       ProductModel.find(query)
@@ -248,7 +237,7 @@ const getProducts = async (req: express.Request, res: express.Response) => {
           match: { isDeleted: { $ne: true } },
         })
         .sort({
-          createdAt: getCreatedAtSort(),
+          createdAt: getCreatedAtSort(creationDate as CreationDateFilters),
         })
         .skip(skip)
         .limit(pageSize)

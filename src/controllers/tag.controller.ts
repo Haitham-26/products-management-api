@@ -5,6 +5,8 @@ import isString from "lodash/isString";
 import TagModel, { Tag } from "../models/Tag.model";
 import { Types } from "mongoose";
 import isNil from "lodash/isNil";
+import { getCreatedAtSort } from "../utils/getCreatedAtSort";
+import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 
 const createTag = async (req: express.Request, res: express.Response) => {
   try {
@@ -28,7 +30,8 @@ const getTags = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { keyword, meta, minUsageCount, maxUsageCount } = req.query;
+    const { keyword, meta, minUsageCount, maxUsageCount, creationDate } =
+      req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
@@ -67,7 +70,9 @@ const getTags = async (req: express.Request, res: express.Response) => {
         createdAt: 1,
         usageCount: 1,
       })
-        .sort({ createdAt: -1 })
+        .sort({
+          createdAt: getCreatedAtSort(creationDate as CreationDateFilters),
+        })
         .skip(skip)
         .limit(pageSize),
       TagModel.countDocuments(query),
