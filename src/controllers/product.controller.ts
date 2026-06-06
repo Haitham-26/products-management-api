@@ -15,6 +15,7 @@ import { ProductDiscountTypes } from "../types/product/types/ProductDiscountType
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import { generateIdentifier } from "./counter.controller";
 import { ProductStockStatus } from "../types/product/types/ProductStockStatus.enum";
+import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 
 export class ProductService {
   constructor() {}
@@ -122,8 +123,11 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       categoryId,
       tagIds,
       keyword,
-      minPrice,
-      maxPrice,
+      creationDate,
+      minBasePrice,
+      maxBasePrice,
+      minFinalPrice,
+      maxFinalPrice,
       minQuantity,
       maxQuantity,
       discountType,
@@ -161,16 +165,27 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       query.$or = [
         { name: { $regex: keyword || "", $options: "i" } },
         { description: { $regex: keyword || "", $options: "i" } },
+        { identifier: { $regex: keyword || "", $options: "i" } },
       ];
     }
 
-    if (!isNil(minPrice) || !isNil(maxPrice)) {
+    if (!isNil(minBasePrice) || !isNil(maxBasePrice)) {
       query.price = {};
-      if (minPrice) {
-        query.price.$gte = Number(minPrice);
+      if (minBasePrice) {
+        query.price.$gte = Number(minBasePrice);
       }
-      if (maxPrice) {
-        query.price.$lte = Number(maxPrice);
+      if (maxBasePrice) {
+        query.price.$lte = Number(maxBasePrice);
+      }
+    }
+
+    if (!isNil(minFinalPrice) || !isNil(maxFinalPrice)) {
+      query.priceAfterDiscount = {};
+      if (minFinalPrice) {
+        query.priceAfterDiscount.$gte = Number(minFinalPrice);
+      }
+      if (maxFinalPrice) {
+        query.priceAfterDiscount.$lte = Number(maxFinalPrice);
       }
     }
 
@@ -207,6 +222,18 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       query["discount.type"] = discountType;
     }
 
+    const getCreatedAtSort = () => {
+      if (
+        creationDate === CreationDateFilters.NEWEST ||
+        !Object.values(CreationDateFilters).includes(
+          creationDate as CreationDateFilters,
+        )
+      ) {
+        return -1;
+      }
+      return 1;
+    };
+
     const [total, products] = await Promise.all([
       ProductModel.countDocuments(query),
       ProductModel.find(query)
@@ -220,7 +247,9 @@ const getProducts = async (req: express.Request, res: express.Response) => {
           select: "name",
           match: { isDeleted: { $ne: true } },
         })
-        .sort({ createdAt: -1 })
+        .sort({
+          createdAt: getCreatedAtSort(),
+        })
         .skip(skip)
         .limit(pageSize)
         .lean(),
