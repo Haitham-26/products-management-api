@@ -122,8 +122,10 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       categoryId,
       tagIds,
       keyword,
-      minPrice,
-      maxPrice,
+      minBasePrice,
+      maxBasePrice,
+      minFinalPrice,
+      maxFinalPrice,
       minQuantity,
       maxQuantity,
       discountType,
@@ -164,13 +166,23 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       ];
     }
 
-    if (!isNil(minPrice) || !isNil(maxPrice)) {
+    if (!isNil(minBasePrice) || !isNil(maxBasePrice)) {
       query.price = {};
-      if (minPrice) {
-        query.price.$gte = Number(minPrice);
+      if (minBasePrice) {
+        query.price.$gte = Number(minBasePrice);
       }
-      if (maxPrice) {
-        query.price.$lte = Number(maxPrice);
+      if (maxBasePrice) {
+        query.price.$lte = Number(maxBasePrice);
+      }
+    }
+
+    if (!isNil(minFinalPrice) || !isNil(maxFinalPrice)) {
+      query.priceAfterDiscount = {};
+      if (minFinalPrice) {
+        query.priceAfterDiscount.$gte = Number(minFinalPrice);
+      }
+      if (maxFinalPrice) {
+        query.priceAfterDiscount.$lte = Number(maxFinalPrice);
       }
     }
 
