@@ -110,6 +110,8 @@ const getOrders = async (req: express.Request, res: express.Response) => {
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
+    console.log(keyword);
+
     const currentPage = Math.max(1, Number(page) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
     const skip = (currentPage - 1) * pageSize;
@@ -124,6 +126,7 @@ const getOrders = async (req: express.Request, res: express.Response) => {
         { note: { $regex: keyword || "", $options: "i" } },
         { customerPhone: { $regex: keyword || "", $options: "i" } },
         { customerName: { $regex: keyword || "", $options: "i" } },
+        { customerEmail: { $regex: keyword || "", $options: "i" } },
       ];
     }
 
