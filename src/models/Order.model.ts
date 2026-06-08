@@ -8,6 +8,7 @@ export interface Order extends mongoose.Document {
   identifier: string;
   customerName: string;
   customerPhone?: string;
+  customerEmail?: string;
   userId: Types.ObjectId;
   items: OrderItem[];
   note?: string;
@@ -29,6 +30,10 @@ const OrderSchema = new mongoose.Schema(
       required: [true, "The customer name is required."],
     },
     customerPhone: {
+      type: String,
+      required: false,
+    },
+    customerEmail: {
       type: String,
       required: false,
     },

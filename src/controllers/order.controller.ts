@@ -26,7 +26,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
       products: Product[];
     }>(req);
 
-    const { items, note, customerName, customerPhone } =
+    const { items, note, customerName, customerPhone, customerEmail } =
       req.body as CreateOrderDto;
 
     await withTransaction(async (session) => {
@@ -72,6 +72,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
           {
             customerName,
             customerPhone,
+            customerEmail,
             identifier,
             items: orderItems,
             note,
@@ -150,17 +151,7 @@ const getOrders = async (req: express.Request, res: express.Response) => {
     }
 
     const [data, total] = await Promise.all([
-      OrderModel.find(query, {
-        identifier: 1,
-        customerName: 1,
-        customerPhone: 1,
-        items: 1,
-        note: 1,
-        status: 1,
-        totalPriceAtPurchase: 1,
-        isArchived: 1,
-        createdAt: 1,
-      })
+      OrderModel.find(query)
         .sort({
           createdAt: getCreatedAtSort(creationDate as CreationDateFilters),
         })
@@ -190,13 +181,20 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { note, customerName, customerPhone, isArchived, orderId } =
-      req.body as UpdateOrderDto;
+    const {
+      note,
+      customerName,
+      customerPhone,
+      isArchived,
+      orderId,
+      customerEmail,
+    } = req.body as UpdateOrderDto;
 
     const updateQuery: UpdateQuery<Order> = {
       note,
       customerName,
       customerPhone,
+      customerEmail,
     };
 
     if (isBoolean(isArchived)) {
