@@ -2,7 +2,7 @@ import express from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
-import { Types, UpdateQuery } from "mongoose";
+import { QueryOptions, Types, UpdateQuery } from "mongoose";
 import isNil from "lodash/isNil";
 import OrderModel, { Order } from "../models/Order.model";
 import ProductModel, { Product } from "../models/Product.model";
@@ -18,6 +18,7 @@ import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
 import { generateIdentifier } from "./counter.controller";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
+import { escapeSpecialChars } from "../utils/String";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -110,23 +111,23 @@ const getOrders = async (req: express.Request, res: express.Response) => {
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
-    console.log(keyword);
-
     const currentPage = Math.max(1, Number(page) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
     const skip = (currentPage - 1) * pageSize;
 
-    const query: any = {
+    const query: QueryOptions = {
       userId: new Types.ObjectId(userId as string),
     };
 
     if (isString(keyword)) {
+      const escapedKeyword = escapeSpecialChars(keyword);
+
       query.$or = [
-        { identifier: { $regex: keyword || "", $options: "i" } },
-        { note: { $regex: keyword || "", $options: "i" } },
-        { customerPhone: { $regex: keyword || "", $options: "i" } },
-        { customerName: { $regex: keyword || "", $options: "i" } },
-        { customerEmail: { $regex: keyword || "", $options: "i" } },
+        { identifier: { $regex: escapedKeyword || "", $options: "i" } },
+        { note: { $regex: escapedKeyword || "", $options: "i" } },
+        { customerPhone: { $regex: escapedKeyword || "", $options: "i" } },
+        { customerName: { $regex: escapedKeyword || "", $options: "i" } },
+        { customerEmail: { $regex: escapedKeyword || "", $options: "i" } },
       ];
     }
 

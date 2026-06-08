@@ -1,5 +1,5 @@
 import z from "zod";
-import { Regexes } from "../../../utils/Regexs";
+import { Regexes } from "../../../utils/String";
 import express from "express";
 import { ThrowZodError } from "../../../utils/ThrowZodError";
 
