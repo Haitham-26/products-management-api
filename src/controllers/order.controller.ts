@@ -105,7 +105,7 @@ const getOrders = async (req: express.Request, res: express.Response) => {
       minTotalPrice,
       maxTotalPrice,
       status,
-      visibility,
+      showArchived,
       creationDate,
     } = req.query;
 
@@ -131,11 +131,8 @@ const getOrders = async (req: express.Request, res: express.Response) => {
       ];
     }
 
-    if (
-      visibility &&
-      Object.values(OrderVisibility).includes(visibility as OrderVisibility)
-    ) {
-      query.isArchived = visibility === OrderVisibility.ARCHIVED;
+    if (showArchived !== "true") {
+      query.isArchived = false;
     }
 
     if (status && Object.values(OrderStatus).includes(status as OrderStatus)) {
