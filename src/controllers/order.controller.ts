@@ -202,12 +202,12 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
       updateQuery.isArchived = isArchived;
     }
 
+    console.log(isArchived);
+
     await OrderModel.updateOne(
       {
         _id: orderId,
-
         userId: new Types.ObjectId(userId),
-        status: OrderStatus.PENDING,
       },
       {
         $set: updateQuery,

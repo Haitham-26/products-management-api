@@ -7,6 +7,7 @@ import { RequestContext } from "../../utils/RequestContext";
 import OrderModel from "../../models/Order.model";
 import { OrderStatus } from "../../types/order/types/OrderStatus.enum";
 import { parsePhoneNumber } from "awesome-phonenumber";
+import has from "lodash/has";
 
 const updateOrderSchema = z
   .object({
@@ -65,7 +66,7 @@ export const UpdateOrderValidator = async (
     if (
       order.isArchived &&
       Object.keys(req.body).filter(
-        (key) => !["orderId", "isArchived"].includes(key),
+        (key) => !["orderId", "isArchived", "userId"].includes(key),
       ).length
     ) {
       res
@@ -74,7 +75,7 @@ export const UpdateOrderValidator = async (
       return;
     }
 
-    if (order.status !== OrderStatus.PENDING && !order.isArchived) {
+    if (order.status !== OrderStatus.PENDING && !has(req.body, "isArchived")) {
       res
         .status(StatusCode.BAD_REQUEST)
         .send({ message: "Only pending orders can be updated." });
