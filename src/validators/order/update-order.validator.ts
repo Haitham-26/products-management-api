@@ -74,7 +74,7 @@ export const UpdateOrderValidator = async (
       return;
     }
 
-    if (order.status !== OrderStatus.PENDING) {
+    if (order.status !== OrderStatus.PENDING && !order.isArchived) {
       res
         .status(StatusCode.BAD_REQUEST)
         .send({ message: "Only pending orders can be updated." });
