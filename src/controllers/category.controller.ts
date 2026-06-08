@@ -7,6 +7,8 @@ import { QueryOptions, Types } from "mongoose";
 import isNil from "lodash/isNil";
 import { withTransaction } from "../utils/withTransaction";
 import ProductModel from "../models/Product.model";
+import { getCreatedAtSort } from "../utils/getCreatedAtSort";
+import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 
 const createCategory = async (req: express.Request, res: express.Response) => {
   try {
@@ -30,7 +32,8 @@ const getCategories = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { keyword, meta, minChildrenCount, maxChildrenCount } = req.query;
+    const { keyword, meta, minChildrenCount, maxChildrenCount, creationDate } =
+      req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
@@ -69,7 +72,9 @@ const getCategories = async (req: express.Request, res: express.Response) => {
         createdAt: 1,
         childrenCount: 1,
       })
-        .sort({ createdAt: -1 })
+        .sort({
+          createdAt: getCreatedAtSort(creationDate as CreationDateFilters),
+        })
         .skip(skip)
         .limit(pageSize),
       CategoryModel.countDocuments(query),
