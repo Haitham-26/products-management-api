@@ -7,6 +7,7 @@ import { Types } from "mongoose";
 import isNil from "lodash/isNil";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
+import { escapeSpecialChars } from "../utils/String";
 
 const createTag = async (req: express.Request, res: express.Response) => {
   try {
@@ -45,9 +46,11 @@ const getTags = async (req: express.Request, res: express.Response) => {
     };
 
     if (isString(keyword)) {
+      const escapedKeyword = escapeSpecialChars(keyword);
+
       query.$or = [
-        { name: { $regex: keyword, $options: "i" } },
-        { description: { $regex: keyword, $options: "i" } },
+        { name: { $regex: escapedKeyword, $options: "i" } },
+        { description: { $regex: escapedKeyword, $options: "i" } },
       ];
     }
 

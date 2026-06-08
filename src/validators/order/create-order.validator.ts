@@ -28,6 +28,10 @@ const createOrderSchema = z
       )
       .optional()
       .or(z.literal("")),
+    customerEmail: z
+      .email("Please enter a valid email")
+      .optional()
+      .or(z.literal("")),
     items: z
       .array(
         z.object({

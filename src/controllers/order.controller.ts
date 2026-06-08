@@ -2,7 +2,7 @@ import express from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
-import { Types, UpdateQuery } from "mongoose";
+import { QueryOptions, Types, UpdateQuery } from "mongoose";
 import isNil from "lodash/isNil";
 import OrderModel, { Order } from "../models/Order.model";
 import ProductModel, { Product } from "../models/Product.model";
@@ -16,6 +16,9 @@ import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import isBoolean from "lodash/isBoolean";
 import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
 import { generateIdentifier } from "./counter.controller";
+import { getCreatedAtSort } from "../utils/getCreatedAtSort";
+import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
+import { escapeSpecialChars } from "../utils/String";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -24,7 +27,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
       products: Product[];
     }>(req);
 
-    const { items, note, customerName, customerPhone } =
+    const { items, note, customerName, customerPhone, customerEmail } =
       req.body as CreateOrderDto;
 
     await withTransaction(async (session) => {
@@ -70,6 +73,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
           {
             customerName,
             customerPhone,
+            customerEmail,
             identifier,
             items: orderItems,
             note,
@@ -95,8 +99,15 @@ const getOrders = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { keyword, meta, minTotalPrice, maxTotalPrice, status, visibility } =
-      req.query;
+    const {
+      keyword,
+      meta,
+      minTotalPrice,
+      maxTotalPrice,
+      status,
+      visibility,
+      creationDate,
+    } = req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
@@ -104,12 +115,20 @@ const getOrders = async (req: express.Request, res: express.Response) => {
     const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
     const skip = (currentPage - 1) * pageSize;
 
-    const query: any = {
+    const query: QueryOptions = {
       userId: new Types.ObjectId(userId as string),
     };
 
     if (isString(keyword)) {
-      query.note = { $regex: keyword, $options: "i" };
+      const escapedKeyword = escapeSpecialChars(keyword);
+
+      query.$or = [
+        { identifier: { $regex: escapedKeyword || "", $options: "i" } },
+        { note: { $regex: escapedKeyword || "", $options: "i" } },
+        { customerPhone: { $regex: escapedKeyword || "", $options: "i" } },
+        { customerName: { $regex: escapedKeyword || "", $options: "i" } },
+        { customerEmail: { $regex: escapedKeyword || "", $options: "i" } },
+      ];
     }
 
     if (
@@ -136,18 +155,10 @@ const getOrders = async (req: express.Request, res: express.Response) => {
     }
 
     const [data, total] = await Promise.all([
-      OrderModel.find(query, {
-        identifier: 1,
-        customerName: 1,
-        customerPhone: 1,
-        items: 1,
-        note: 1,
-        status: 1,
-        totalPriceAtPurchase: 1,
-        isArchived: 1,
-        createdAt: 1,
-      })
-        .sort({ createdAt: -1 })
+      OrderModel.find(query)
+        .sort({
+          createdAt: getCreatedAtSort(creationDate as CreationDateFilters),
+        })
         .skip(skip)
         .limit(pageSize),
       OrderModel.countDocuments(query),
@@ -174,13 +185,20 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { note, customerName, customerPhone, isArchived, orderId } =
-      req.body as UpdateOrderDto;
+    const {
+      note,
+      customerName,
+      customerPhone,
+      isArchived,
+      orderId,
+      customerEmail,
+    } = req.body as UpdateOrderDto;
 
     const updateQuery: UpdateQuery<Order> = {
       note,
       customerName,
       customerPhone,
+      customerEmail,
     };
 
     if (isBoolean(isArchived)) {

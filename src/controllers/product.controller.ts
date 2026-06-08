@@ -17,6 +17,7 @@ import { generateIdentifier } from "./counter.controller";
 import { ProductStockStatus } from "../types/product/types/ProductStockStatus.enum";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
+import { escapeSpecialChars } from "../utils/String";
 
 export class ProductService {
   constructor() {}
@@ -163,10 +164,12 @@ const getProducts = async (req: express.Request, res: express.Response) => {
     }
 
     if (isString(keyword)) {
+      const escapedKeyword = escapeSpecialChars(keyword);
+
       query.$or = [
-        { name: { $regex: keyword || "", $options: "i" } },
-        { description: { $regex: keyword || "", $options: "i" } },
-        { identifier: { $regex: keyword || "", $options: "i" } },
+        { name: { $regex: escapedKeyword || "", $options: "i" } },
+        { description: { $regex: escapedKeyword || "", $options: "i" } },
+        { identifier: { $regex: escapedKeyword || "", $options: "i" } },
       ];
     }
 

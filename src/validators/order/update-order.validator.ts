@@ -30,6 +30,10 @@ const updateOrderSchema = z
       )
       .optional()
       .or(z.literal("")),
+    customerEmail: z
+      .email("Please enter a valid email address")
+      .optional()
+      .or(z.literal("")),
     note: z
       .string()
       .trim()
@@ -57,7 +61,7 @@ export const UpdateOrderValidator = async (
       return;
     }
 
-    // This makes sure archived orders fields cannot be updated except for isArchived
+    // To make sure archived orders fields cannot be updated except for isArchived
     if (
       order.isArchived &&
       Object.keys(req.body).filter(

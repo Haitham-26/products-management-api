@@ -1,7 +1,7 @@
 import z from "zod";
 import express from "express";
 import { ThrowZodError } from "../../../utils/ThrowZodError";
-import { Regexes } from "../../../utils/Regexs";
+import { Regexes } from "../../../utils/String";
 
 const forgotPasswordNewSchema = z
   .object({

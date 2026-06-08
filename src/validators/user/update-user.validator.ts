@@ -1,6 +1,6 @@
 import z from "zod";
 import express from "express";
-import { Regexes } from "../../utils/Regexs";
+import { Regexes } from "../../utils/String";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import { RequestContext } from "../../utils/RequestContext";
 import UserModel from "../../models/User.model";
