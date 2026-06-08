@@ -16,6 +16,8 @@ import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import isBoolean from "lodash/isBoolean";
 import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
 import { generateIdentifier } from "./counter.controller";
+import { getCreatedAtSort } from "../utils/getCreatedAtSort";
+import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -95,8 +97,15 @@ const getOrders = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const { keyword, meta, minTotalPrice, maxTotalPrice, status, visibility } =
-      req.query;
+    const {
+      keyword,
+      meta,
+      minTotalPrice,
+      maxTotalPrice,
+      status,
+      visibility,
+      creationDate,
+    } = req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
@@ -109,7 +118,12 @@ const getOrders = async (req: express.Request, res: express.Response) => {
     };
 
     if (isString(keyword)) {
-      query.note = { $regex: keyword, $options: "i" };
+      query.$or = [
+        { identifier: { $regex: keyword || "", $options: "i" } },
+        { note: { $regex: keyword || "", $options: "i" } },
+        { customerPhone: { $regex: keyword || "", $options: "i" } },
+        { customerName: { $regex: keyword || "", $options: "i" } },
+      ];
     }
 
     if (
@@ -147,7 +161,9 @@ const getOrders = async (req: express.Request, res: express.Response) => {
         isArchived: 1,
         createdAt: 1,
       })
-        .sort({ createdAt: -1 })
+        .sort({
+          createdAt: getCreatedAtSort(creationDate as CreationDateFilters),
+        })
         .skip(skip)
         .limit(pageSize),
       OrderModel.countDocuments(query),
