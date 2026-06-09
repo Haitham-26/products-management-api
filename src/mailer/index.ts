@@ -1,4 +1,6 @@
 import nodemailer from "nodemailer";
+import path from "path";
+import fs from "fs/promises";
 
 require("dotenv").config();
 
@@ -16,15 +18,28 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const getTokenTemplate = async (title: string, body: string, token: string) => {
+  const templatePath = path.join(__dirname, "./templates/template-token.html");
+
+  let html = await fs.readFile(templatePath, "utf-8");
+
+  html = html
+    .replace(/{{title}}/g, title)
+    .replace(/{{body}}/g, body)
+    .replace(/{{token}}/g, token);
+
+  return html;
+};
+
 const sendEmail = async (to: string, subject: string, html: string) => {
   try {
     const formattedHtml = html.replace(
       /{{logo}}/g,
-      `${process.env.CLIENT_URL}/images/logo.png`
+      `${process.env.CLIENT_URL}/images/logo.png`,
     );
 
     await transporter.sendMail({
-      from: `"BeSaraha" <${process.env.MAIL_USER}>`,
+      from: `"Productly" <${process.env.MAIL_USER}>`,
       to,
       subject,
       html: formattedHtml,
@@ -34,4 +49,20 @@ const sendEmail = async (to: string, subject: string, html: string) => {
   }
 };
 
-export default sendEmail;
+const sendSignUpToken = async (to: string, token: string) => {
+  try {
+    const title = "Email Verification";
+
+    const html = await getTokenTemplate(
+      title,
+      "To confirm your email address and activate your account, please enter the verification code:",
+      token,
+    );
+
+    await sendEmail(to, title, html);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export { sendEmail, sendSignUpToken };
