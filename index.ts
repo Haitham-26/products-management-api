@@ -10,7 +10,8 @@ import tagRouter from "./src/services/tag.service";
 import orderRouter from "./src/services/order.service";
 import settingsRouter from "./src/services/settings.service";
 import dashboardRouter from "./src/services/dashboard.service";
-import usersPermissions from "./src/services/users-permissions.service";
+import usersPermissionsRouter from "./src/services/users-permissions.service";
+import { startCronJobs } from "./src/cron";
 
 require("dotenv").config();
 
@@ -29,9 +30,6 @@ app.use(
 );
 app.use(globalLimiter);
 
-app.use("/healthcheck", (req, res) => {
-  res.status(200).send("Healthy");
-});
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
 app.use("/settings", settingsRouter);
@@ -40,7 +38,11 @@ app.use("/categories", categoryRouter);
 app.use("/tags", tagRouter);
 app.use("/orders", orderRouter);
 app.use("/dashboard", dashboardRouter);
-app.use("/users-permissions", usersPermissions);
+app.use("/users-permissions", usersPermissionsRouter);
+
+app.use("/healthcheck", (req, res) => {
+  res.status(200).send("Healthy");
+});
 
 mongoose
   .connect(process.env.DB!)
@@ -48,6 +50,8 @@ mongoose
     app.listen(process.env.PORT, () => {
       console.log(`Server is running on port ${process.env.PORT}`);
     });
+
+    startCronJobs();
 
     console.log("Connected to MongoDB");
   })

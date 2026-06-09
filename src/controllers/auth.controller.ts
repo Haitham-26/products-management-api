@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import UserModel from "../models/User.model";
 import { generateToken } from "../utils/generateToken";
 import { SignUpToken } from "../types/auth/signup/SignUpToken";
-import sendEmail from "../mailer";
+import { sendSignUpToken, sendEmail } from "../mailer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import jwt from "jsonwebtoken";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
@@ -58,11 +58,7 @@ const signUpEmail = async (req: express.Request, res: express.Response) => {
       signUpMethod: SignUpMethods.EMAIL,
     });
 
-    sendEmail(
-      email,
-      "Email Verification",
-      `The verification code is: ${token}`,
-    );
+    await sendSignUpToken(email, token);
 
     res
       .status(StatusCode.OK)
