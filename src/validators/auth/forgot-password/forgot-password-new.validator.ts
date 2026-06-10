@@ -2,10 +2,14 @@ import z from "zod";
 import express from "express";
 import { ThrowZodError } from "../../../utils/ThrowZodError";
 import { Regexes } from "../../../utils/String";
+import { RequestContext } from "../../../utils/RequestContext";
+import { User } from "../../../models/User.model";
+import bcrypt from "bcrypt";
+import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 
 const forgotPasswordNewSchema = z
   .object({
-    password: z
+    newPassword: z
       .string()
       .trim()
       .min(6, "The password must be at least 6 characters long")
@@ -20,8 +24,22 @@ export const ForgotPasswordNewValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
+    const { user } = RequestContext<{ user: User }>(req);
+
     const body = forgotPasswordNewSchema.parse(req.body);
     req.body = body;
+
+    const isCurrentPassword = await bcrypt.compare(
+      req.body.newPassword,
+      user.password as string,
+    );
+
+    if (isCurrentPassword) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "The new password must be different from the current password",
+      });
+      return;
+    }
 
     next();
   } catch (e) {

@@ -32,7 +32,7 @@ export const ForgotPasswordTokenValidator = async (
     ) {
       res.status(StatusCode.BAD_REQUEST).send({
         message:
-          "حدث خطأ أثناء التحقق من الرمز، يرجى إعادة بدء عملية إعادة تعيين كلمة السر من البداية.",
+          "Something went wrong, please restart the process from the beginning.",
       });
       return;
     }
@@ -42,14 +42,14 @@ export const ForgotPasswordTokenValidator = async (
       Date.now()
     ) {
       res.status(StatusCode.BAD_REQUEST).send({
-        message: "صلاحية الرمز منتهية، يرجى طلب رمز جديد.",
+        message: "The verification code has expired, please request a new one.",
       });
       return;
     }
 
     if (user.forgotPasswordCode.code !== req.body.token) {
       res.status(StatusCode.BAD_REQUEST).send({
-        message: "رمز التحقق غير صحيح",
+        message: "Incorrect verification code.",
       });
       return;
     }

@@ -7,6 +7,7 @@ export interface User extends mongoose.Document {
   name: string;
   email: string;
   emailVerified: boolean;
+  password?: string;
   signUpMethod: SignUpMethods;
   avatar?: string;
   optCode?: string;

@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import UserModel from "../models/User.model";
 import { generateToken } from "../utils/generateToken";
 import { SignUpToken } from "../types/auth/signup/SignUpToken";
-import { sendSignUpToken, sendEmail } from "../mailer";
+import { sendSignUpToken, sendForgotPasswordToken } from "../mailer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import jwt from "jsonwebtoken";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
@@ -249,7 +249,7 @@ const forgotPasswordEmail = async (
       },
     );
 
-    sendEmail(email, "Password Reset", `The verification code is: ${token}`);
+    await sendForgotPasswordToken(email, token);
 
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -273,13 +273,13 @@ const forgotPasswordNew = async (
   res: express.Response,
 ) => {
   try {
-    const { email, password } = req.body;
+    const { email, newPassword } = req.body;
 
     await UserModel.findOneAndUpdate(
       { email },
       {
         $set: {
-          password: await bcrypt.hash(password, 10),
+          password: await bcrypt.hash(newPassword, 10),
         },
         $unset: {
           forgotPasswordCode: "",

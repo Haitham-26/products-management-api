@@ -69,4 +69,20 @@ const sendSignUpToken = async (to: string, token: string) => {
   }
 };
 
-export { sendEmail, sendSignUpToken };
+const sendForgotPasswordToken = async (to: string, token: string) => {
+  try {
+    const title = "Reset Password";
+
+    const html = await getTokenTemplate(
+      title,
+      "Use the following code to continue the password reset process:",
+      token,
+    );
+
+    await sendEmail(to, title, html);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export { sendEmail, sendSignUpToken, sendForgotPasswordToken };
