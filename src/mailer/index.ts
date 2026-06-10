@@ -33,16 +33,20 @@ const getTokenTemplate = async (title: string, body: string, token: string) => {
 
 const sendEmail = async (to: string, subject: string, html: string) => {
   try {
-    const formattedHtml = html.replace(
-      /{{logo}}/g,
-      `${process.env.CLIENT_URL}/images/logo.png`,
-    );
+    const logoPath = path.resolve("public/images/logo.png");
 
     await transporter.sendMail({
-      from: `"Productly" <${process.env.MAIL_USER}>`,
+      from: `"Inventix" <${process.env.MAIL_USER}>`,
       to,
       subject,
-      html: formattedHtml,
+      html,
+      attachments: [
+        {
+          filename: "logo.png",
+          path: logoPath,
+          cid: "logo",
+        },
+      ],
     });
   } catch (e) {
     console.log("Email error:", e);

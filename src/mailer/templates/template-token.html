@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Verification Code</title>
   </head>
+
   <body
     style="
       margin: 0;
-      padding: 24px;
-      background-color: #f9fbfd;
+      padding: 0;
+      background: #f6f9fc;
       font-family: Arial, Helvetica, sans-serif;
-      color: #0f172a;
     "
   >
     <table
@@ -20,101 +20,169 @@
       cellspacing="0"
       cellpadding="0"
       border="0"
+      style="margin: 0; padding: 0; width: 100%; background: #f6f9fc"
     >
       <tr>
-        <td align="center">
+        <td align="center" style="padding: 24px 12px">
           <table
             role="presentation"
-            width="600"
+            width="100%"
             cellspacing="0"
             cellpadding="0"
             border="0"
             style="
-              background-color: #ffffff;
-              border: 1px solid #e5e7eb;
-              border-radius: 16px;
+              max-width: 600px;
+              width: 100%;
+              background: #ffffff;
+              border-radius: 20px;
               overflow: hidden;
+              border: 1px solid #e2e8f0;
             "
           >
             <tr>
-              <td
-                align="center"
-                style="
-                  background-color: #4da3ff;
-                  color: #f3f3f3;
-                  padding: 32px 24px;
-                  font-size: 24px;
-                  font-weight: bold;
-                "
-              >
-                {{title}}
+              <td align="center" style="padding: 40px 24px 24px">
+                <img
+                  src="cid:logo"
+                  alt="Inventix"
+                  width="180"
+                  style="
+                    display: block;
+                    width: 180px;
+                    max-width: 60%;
+                    height: auto;
+                    margin: 0 auto;
+                  "
+                />
+
+                <h1
+                  style="
+                    margin: 20px 0 0;
+                    font-size: 28px;
+                    color: #0f172a;
+                    text-align: center;
+                  "
+                >
+                  {{title}}
+                </h1>
               </td>
             </tr>
 
             <tr>
-              <td style="padding: 32px 24px">
+              <td style="padding: 0 32px 40px">
                 <p
                   style="
-                    margin: 0 0 24px;
-                    color: #64748b;
+                    margin: 0;
                     font-size: 16px;
-                    line-height: 1.6;
+                    line-height: 1.7;
+                    color: #475569;
+                    text-align: center;
                   "
                 >
                   {{body}}
                 </p>
 
+                <div style="height: 32px"></div>
+
                 <table
                   role="presentation"
-                  align="center"
+                  width="100%"
                   cellspacing="0"
                   cellpadding="0"
                   border="0"
-                  style="margin: 0 auto 16px auto"
                 >
                   <tr>
-                    <td
-                      style="
-                        background-color: #f9fbfd;
-                        border: 2px dashed #4da3ff;
-                        border-radius: 10px;
-                        padding: 18px 32px;
-                        font-size: 24px;
-                        font-weight: bold;
-                        letter-spacing: 8px;
-                        color: #0f172a;
-                        text-align: center;
-                      "
-                    >
-                      {{token}}
+                    <td align="center">
+                      <table
+                        role="presentation"
+                        cellspacing="0"
+                        cellpadding="0"
+                        border="0"
+                      >
+                        <tr>
+                          <td
+                            style="
+                              background: #f8fafc;
+                              border: 1px solid #dbeafe;
+                              border-radius: 16px;
+                              padding: 24px 32px;
+                              text-align: center;
+                            "
+                          >
+                            <div
+                              style="
+                                font-size: 36px;
+                                font-weight: 700;
+                                letter-spacing: 10px;
+                                color: #4da3ff;
+                                text-align: center;
+                              "
+                            >
+                              {{token}}
+                            </div>
+                          </td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                 </table>
 
+                <div style="height: 24px"></div>
+
                 <p
                   style="
-                    margin: 24px 0 0;
-                    color: #64748b;
+                    margin: 0;
+                    text-align: center;
+                    color: #94a3b8;
                     font-size: 14px;
-                    line-height: 1.6;
                   "
                 >
-                  Please note that this code will expire in 5 minutes.
+                  This verification code expires in 5 minutes.
                 </p>
+
+                <div style="height: 32px"></div>
+
+                <!-- WARNING BOX -->
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellspacing="0"
+                  cellpadding="0"
+                  border="0"
+                >
+                  <tr>
+                    <td
+                      style="
+                        background: #f8fafc;
+                        border-radius: 12px;
+                        padding: 16px;
+                        color: #64748b;
+                        font-size: 14px;
+                        line-height: 1.6;
+                        text-align: center;
+                      "
+                    >
+                      If you didn't request this code, you can safely ignore
+                      this email.
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
 
+            <!-- FOOTER -->
             <tr>
               <td
                 align="center"
                 style="
+                  border-top: 1px solid #e2e8f0;
                   padding: 20px;
-                  border-top: 1px solid #e5e7eb;
-                  color: #64748b;
+                  color: #94a3b8;
                   font-size: 12px;
                 "
               >
-                This is an automated message. Please do not reply.
+                © 2026 Inventix. All rights reserved.
+                <br />
+                This is an automated email. Please do not reply.
               </td>
             </tr>
           </table>
