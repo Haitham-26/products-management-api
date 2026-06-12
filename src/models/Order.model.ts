@@ -94,6 +94,7 @@ const OrderSchema = new mongoose.Schema(
     userId: {
       type: Types.ObjectId,
       required: [true, "The userId is required."],
+      index: true,
     },
   },
   { timestamps: true },

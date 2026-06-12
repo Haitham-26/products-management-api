@@ -26,6 +26,7 @@ const ProductSchema = new mongoose.Schema(
     identifier: {
       type: String,
       required: [true, "The identifier is required."],
+      unique: true,
     },
     name: {
       type: String,
@@ -63,6 +64,7 @@ const ProductSchema = new mongoose.Schema(
     userId: {
       type: Types.ObjectId,
       required: [true, "The userId is required."],
+      index: true,
     },
     categoryId: {
       type: Types.ObjectId,
@@ -77,6 +79,7 @@ const ProductSchema = new mongoose.Schema(
     isDeleted: {
       type: Boolean,
       default: false,
+      index: true,
     },
     deletedAt: {
       type: Date,

@@ -14,7 +14,6 @@ const MemberInvitationSchema = new mongoose.Schema(
       type: Types.ObjectId,
       required: [true, "The inviterId is required."],
       index: true,
-      unique: true,
     },
     email: {
       type: String,

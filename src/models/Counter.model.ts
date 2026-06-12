@@ -8,7 +8,12 @@ export interface Counter extends Document {
 }
 
 const CounterSchema = new Schema<Counter>({
-  key: { type: String, required: true, enum: Object.values(CounterKeys) },
+  key: {
+    type: String,
+    required: true,
+    enum: Object.values(CounterKeys),
+    index: true,
+  },
   userId: {
     type: Schema.Types.ObjectId,
     required: true,
