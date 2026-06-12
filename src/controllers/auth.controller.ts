@@ -1,14 +1,15 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import UserModel from "../models/User.model";
+import UserModel, { User } from "../models/User.model";
 import { generateToken } from "../utils/generateToken";
 import { SignUpToken } from "../types/auth/signup/SignUpToken";
-import { sendSignUpToken, sendEmail } from "../mailer";
+import { sendSignUpToken, sendForgotPasswordToken } from "../mailer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import jwt from "jsonwebtoken";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
 import { withTransaction } from "../utils/withTransaction";
 import SettingsModel from "../models/Settings.model";
+import { RequestContext } from "../utils/RequestContext";
 
 function getJWTToken(userId: string) {
   const jwtToken = jwt.sign({ userId }, process.env.JWT_SECRET!, {
@@ -135,6 +136,34 @@ const signUpToken = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const signupResendToken = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+
+    const newToken = generateToken();
+
+    await UserModel.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          optCode: newToken,
+        },
+      },
+    );
+
+    await sendSignUpToken(user.email, newToken);
+
+    res.status(StatusCode.OK).send({
+      message: "The verification code has been sent to your email",
+    });
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 //Login
 const login = async (req: express.Request, res: express.Response) => {
   try {
@@ -233,12 +262,12 @@ const forgotPasswordEmail = async (
   res: express.Response,
 ) => {
   try {
-    const { email } = req.body;
+    const { user } = RequestContext<{ user: User }>(req);
 
     const token = generateToken();
 
-    await UserModel.findOneAndUpdate(
-      { email },
+    await UserModel.updateOne(
+      { email: user.email },
       {
         $set: {
           forgotPasswordCode: {
@@ -249,7 +278,7 @@ const forgotPasswordEmail = async (
       },
     );
 
-    sendEmail(email, "Password Reset", `The verification code is: ${token}`);
+    await sendForgotPasswordToken(user.email, token);
 
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -273,13 +302,13 @@ const forgotPasswordNew = async (
   res: express.Response,
 ) => {
   try {
-    const { email, password } = req.body;
+    const { email, newPassword } = req.body;
 
     await UserModel.findOneAndUpdate(
       { email },
       {
         $set: {
-          password: await bcrypt.hash(password, 10),
+          password: await bcrypt.hash(newPassword, 10),
         },
         $unset: {
           forgotPasswordCode: "",
@@ -297,6 +326,7 @@ export {
   signUpEmail,
   login,
   signUpToken,
+  signupResendToken,
   googleLogin,
   forgotPasswordEmail,
   forgotPasswordToken,
