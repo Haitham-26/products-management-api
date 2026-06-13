@@ -30,7 +30,7 @@ const updateUser = async (req: express.Request, res: express.Response) => {
       name: name?.trim(),
     };
 
-    await UserModel.findByIdAndUpdate(userId, { $set: updateDto });
+    await UserModel.updateOne({ _id: userId }, { $set: updateDto });
 
     res.status(StatusCode.OK).send();
   } catch (e) {
