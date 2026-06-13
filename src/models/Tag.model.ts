@@ -29,6 +29,7 @@ const TagSchema = new mongoose.Schema(
     isDeleted: {
       type: Boolean,
       default: false,
+      index: true,
     },
     deletedAt: {
       type: Date,
@@ -37,6 +38,7 @@ const TagSchema = new mongoose.Schema(
     userId: {
       type: Types.ObjectId,
       required: [true, "The userId is required."],
+      index: true,
     },
   },
   { timestamps: true },

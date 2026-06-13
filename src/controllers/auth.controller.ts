@@ -186,7 +186,7 @@ const login = async (req: express.Request, res: express.Response) => {
 
     if (!isPasswordCorrect) {
       res.status(StatusCode.BAD_REQUEST).send({
-        message: "Incorrect password",
+        message: "Incorrect email or password",
       });
       return;
     }

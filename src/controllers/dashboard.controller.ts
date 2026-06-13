@@ -1,10 +1,10 @@
-import express from "express";
-import { RequestContext } from "../utils/RequestContext";
+import OrderModel from "../models/Order.model";
 import ProductModel from "../models/Product.model";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
+import express from "express";
+import { RequestContext } from "../utils/RequestContext";
 import { Types } from "mongoose";
 import SettingsModel from "../models/Settings.model";
-import OrderModel from "../models/Order.model";
 
 export const getDashboardStats = async (
   req: express.Request,
@@ -17,184 +17,135 @@ export const getDashboardStats = async (
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const startOf7Days = new Date();
-    startOf7Days.setHours(0, 0, 0, 0);
+    const startOf7Days = new Date(startOfToday);
     startOf7Days.setDate(startOf7Days.getDate() - 7);
 
-    const startOf30Days = new Date();
-    startOf30Days.setHours(0, 0, 0, 0);
+    const startOf30Days = new Date(startOfToday);
     startOf30Days.setDate(startOf30Days.getDate() - 30);
 
-    const settings = await SettingsModel.findOne({ userId });
+    const settings = await SettingsModel.findOne(
+      { userId },
+      { "inventory.defaultMinStock": 1 },
+    ).lean();
+
     const minStockDefault = settings?.inventory?.defaultMinStock || 10;
 
-    const [productsAggregation, ordersAggregation] = await Promise.all([
-      ProductModel.aggregate([
-        {
-          $match: {
-            userId: userObjectId,
-            isDeleted: { $ne: true },
-          },
+    const matchStage = {
+      $match: {
+        userId: userObjectId,
+        isDeleted: { $ne: true },
+      },
+    };
+
+    const byDateGroup = {
+      $group: {
+        _id: null,
+        totalCount: { $sum: 1 },
+        todayCount: {
+          $sum: { $cond: [{ $gte: ["$createdAt", startOfToday] }, 1, 0] },
         },
-        {
-          $facet: {
-            totalCount: [{ $count: "count" }],
-            todayCount: [
-              { $match: { createdAt: { $gte: startOfToday } } },
-              { $count: "count" },
-            ],
-            lastWeekCount: [
-              {
-                $match: {
-                  createdAt: {
-                    $gte: startOf7Days,
-                    $lt: startOfToday,
-                  },
-                },
-              },
-              { $count: "count" },
-            ],
-            lastMonthCount: [
-              {
-                $match: {
-                  createdAt: {
-                    $gte: startOf30Days,
-                    $lt: startOfToday,
-                  },
-                },
-              },
-              { $count: "count" },
-            ],
-            outOfStockProducts: [
-              { $match: { quantity: 0 } },
-              { $count: "count" },
-            ],
-            lowStockProducts: [
-              {
-                $match: {
-                  $expr: {
-                    $lte: [
-                      "$quantity",
-                      { $ifNull: ["$minStock", minStockDefault] },
+        lastWeekCount: {
+          $sum: { $cond: [{ $gte: ["$createdAt", startOf7Days] }, 1, 0] },
+        },
+        lastMonthCount: {
+          $sum: { $cond: [{ $gte: ["$createdAt", startOf30Days] }, 1, 0] },
+        },
+      },
+    };
+
+    const [productsByDate, ordersByDate, stockCounts, mostSoldProducts] =
+      await Promise.all([
+        ProductModel.aggregate([matchStage, byDateGroup]).exec(),
+        OrderModel.aggregate([matchStage, byDateGroup]).exec(),
+        ProductModel.aggregate([
+          matchStage,
+          {
+            $project: {
+              isOutOfStock: { $cond: [{ $eq: ["$quantity", 0] }, 1, 0] },
+              isLowStock: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gt: ["$quantity", 0] },
+                      {
+                        $lte: [
+                          "$quantity",
+                          { $ifNull: ["$minStock", minStockDefault] },
+                        ],
+                      },
                     ],
                   },
-                  quantity: { $gt: 0 },
-                },
+                  1,
+                  0,
+                ],
               },
-              { $count: "count" },
-            ],
+            },
           },
-        },
-      ]),
-      OrderModel.aggregate([
-        {
-          $match: {
-            userId: userObjectId,
-            isDeleted: { $ne: true },
+          {
+            $group: {
+              _id: null,
+              outOfStockCount: { $sum: "$isOutOfStock" },
+              lowStockCount: { $sum: "$isLowStock" },
+            },
           },
-        },
-        {
-          $facet: {
-            totalCount: [{ $count: "count" }],
-            todayCount: [
-              { $match: { createdAt: { $gte: startOfToday } } },
-              { $count: "count" },
-            ],
-            lastWeekCount: [
-              {
-                $match: {
-                  createdAt: {
-                    $gte: startOf7Days,
-                    $lt: startOfToday,
-                  },
-                },
-              },
-              { $count: "count" },
-            ],
-            lastMonthCount: [
-              {
-                $match: {
-                  createdAt: {
-                    $gte: startOf30Days,
-                    $lt: startOfToday,
-                  },
-                },
-              },
-              { $count: "count" },
-            ],
-            mostSoldProducts: [
-              {
-                $match: {
-                  userId: userObjectId,
-                  isDeleted: { $ne: true },
-                },
-              },
-
-              {
-                $group: {
-                  _id: "$productId",
-                  totalSold: { $sum: "$quantity" }, // أو 1 حسب النظام
-                },
-              },
-
-              {
-                $sort: { totalSold: -1 },
-              },
-
-              {
-                $limit: 5,
-              },
-
-              {
-                $lookup: {
-                  from: "products",
-                  localField: "_id",
-                  foreignField: "_id",
-                  as: "product",
-                },
-              },
-
-              {
-                $unwind: "$product",
-              },
-
-              {
-                $project: {
-                  _id: 0,
-                  productId: "$_id",
-                  name: "$product.name",
-                  quantity: "$totalSold",
-                },
-              },
-            ],
+        ]).exec(),
+        OrderModel.aggregate([
+          matchStage,
+          { $project: { items: 1 } },
+          { $unwind: "$items" },
+          {
+            $group: {
+              _id: "$items.productId",
+              totalSold: { $sum: "$items.quantity" },
+            },
           },
-        },
-      ]),
-    ]);
+          { $sort: { totalSold: -1 } },
+          { $limit: 5 },
+          {
+            $lookup: {
+              from: "products",
+              localField: "_id",
+              foreignField: "_id",
+              as: "product",
+              pipeline: [{ $project: { name: 1 } }],
+            },
+          },
+          { $unwind: "$product" },
+          {
+            $project: {
+              _id: 0,
+              productId: "$_id",
+              name: "$product.name",
+              totalSold: 1,
+            },
+          },
+        ]).exec(),
+      ]);
 
-    const productsResult = productsAggregation[0] || {};
-    const ordersResult = ordersAggregation[0] || {};
+    const productsByDateResult = productsByDate[0] || {};
+    const ordersByDateResult = ordersByDate[0] || {};
+    const stockResult = stockCounts[0] || {};
 
     res.status(StatusCode.OK).json({
       products: {
-        totalCount: productsResult.totalCount?.[0]?.count || 0,
-        todayCount: productsResult.todayCount?.[0]?.count || 0,
-        lastWeekCount: productsResult.lastWeekCount?.[0]?.count || 0,
-        lastMonthCount: productsResult.lastMonthCount?.[0]?.count || 0,
+        totalCount: productsByDateResult.totalCount || 0,
+        todayCount: productsByDateResult.todayCount || 0,
+        lastWeekCount: productsByDateResult.lastWeekCount || 0,
+        lastMonthCount: productsByDateResult.lastMonthCount || 0,
       },
       lowStockProducts: {
-        totalCount: productsResult.lowStockProducts?.[0]?.count || 0,
+        totalCount: stockResult.lowStockCount || 0,
       },
       outOfStockProducts: {
-        totalCount: productsResult.outOfStockProducts?.[0]?.count || 0,
+        totalCount: stockResult.outOfStockCount || 0,
       },
       orders: {
-        totalCount: ordersResult.totalCount?.[0]?.count || 0,
-        todayCount: ordersResult.todayCount?.[0]?.count || 0,
-        lastWeekCount: ordersResult.lastWeekCount?.[0]?.count || 0,
-        lastMonthCount: ordersResult.lastMonthCount?.[0]?.count || 0,
+        totalCount: ordersByDateResult.totalCount || 0,
+        todayCount: ordersByDateResult.todayCount || 0,
+        lastWeekCount: ordersByDateResult.lastWeekCount || 0,
+        lastMonthCount: ordersByDateResult.lastMonthCount || 0,
       },
-      mostSoldProducts: ordersResult.mostSoldProducts || [],
+      mostSoldProducts,
     });
   } catch (e) {
     console.error(e);

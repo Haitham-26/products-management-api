@@ -29,10 +29,12 @@ const CategorySchema = new mongoose.Schema(
     userId: {
       type: Types.ObjectId,
       required: [true, "The userId is required."],
+      index: true,
     },
     isDeleted: {
       type: Boolean,
       default: false,
+      index: true,
     },
     deletedAt: {
       type: Date,
