@@ -304,7 +304,7 @@ const forgotPasswordNew = async (
   try {
     const { email, newPassword } = req.body;
 
-    await UserModel.findOneAndUpdate(
+    await UserModel.updateOne(
       { email },
       {
         $set: {
