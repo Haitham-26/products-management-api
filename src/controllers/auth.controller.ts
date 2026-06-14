@@ -1,23 +1,15 @@
 import express from "express";
 import bcrypt from "bcrypt";
 import UserModel, { User } from "../models/User.model";
-import { generateToken } from "../utils/generateToken";
+import { generateVerificationToken } from "../utils/generateVerificationToken";
 import { SignUpToken } from "../types/auth/signup/SignUpToken";
 import { sendSignUpToken, sendForgotPasswordToken } from "../mailer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
-import jwt from "jsonwebtoken";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
 import { withTransaction } from "../utils/withTransaction";
 import SettingsModel from "../models/Settings.model";
 import { RequestContext } from "../utils/RequestContext";
-
-function getJWTToken(userId: string) {
-  const jwtToken = jwt.sign({ userId }, process.env.JWT_SECRET!, {
-    expiresIn: "7d",
-  });
-
-  return jwtToken;
-}
+import { generateJWT } from "../utils/generateJWT";
 
 //Sign Up - Email
 const signUpEmail = async (req: express.Request, res: express.Response) => {
@@ -49,7 +41,7 @@ const signUpEmail = async (req: express.Request, res: express.Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const token = generateToken();
+    const token = generateVerificationToken();
 
     await UserModel.create({
       ...req.body,
@@ -105,12 +97,15 @@ const signUpToken = async (req: express.Request, res: express.Response) => {
     }
 
     await withTransaction(async (session) => {
-      await UserModel.findByIdAndUpdate(
-        isEmailExist._id,
+      await UserModel.updateOne(
+        { _id: isEmailExist._id },
         {
           emailVerified: true,
           $unset: {
             optCode: "",
+          },
+          $set: {
+            tokenVersion: 0,
           },
         },
         { session },
@@ -128,7 +123,10 @@ const signUpToken = async (req: express.Request, res: express.Response) => {
 
     res.status(StatusCode.OK).send({
       user: isEmailExist,
-      token: getJWTToken(isEmailExist._id.toString()),
+      token: generateJWT(
+        isEmailExist._id.toString(),
+        isEmailExist.tokenVersion || 0,
+      ),
     });
   } catch (e) {
     console.log(e);
@@ -143,7 +141,7 @@ const signupResendToken = async (
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
-    const newToken = generateToken();
+    const newToken = generateVerificationToken();
 
     await UserModel.updateOne(
       { _id: user._id },
@@ -198,9 +196,10 @@ const login = async (req: express.Request, res: express.Response) => {
       return;
     }
 
-    res
-      .status(StatusCode.OK)
-      .send({ user, token: getJWTToken(user._id.toString()) });
+    res.status(StatusCode.OK).send({
+      user,
+      token: generateJWT(user._id.toString(), user.tokenVersion),
+    });
   } catch (e) {
     console.log(e);
     res.status(StatusCode.INTERNAL_ERROR).send(e);
@@ -249,9 +248,10 @@ const googleLogin = async (req: express.Request, res: express.Response) => {
       });
     }
 
-    res
-      .status(StatusCode.OK)
-      .send({ user, token: getJWTToken(user!._id.toString()) });
+    res.status(StatusCode.OK).send({
+      user,
+      token: generateJWT(user!._id.toString(), user!.tokenVersion),
+    });
   } catch (e) {
     res.status(StatusCode.INTERNAL_ERROR).send(e);
   }
@@ -264,7 +264,7 @@ const forgotPasswordEmail = async (
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
-    const token = generateToken();
+    const token = generateVerificationToken();
 
     await UserModel.updateOne(
       { email: user.email },
@@ -304,11 +304,14 @@ const forgotPasswordNew = async (
   try {
     const { email, newPassword } = req.body;
 
-    await UserModel.findOneAndUpdate(
+    await UserModel.updateOne(
       { email },
       {
         $set: {
           password: await bcrypt.hash(newPassword, 10),
+        },
+        $inc: {
+          tokenVersion: 1,
         },
         $unset: {
           forgotPasswordCode: "",

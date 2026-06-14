@@ -2,6 +2,9 @@ import UserModel from "../models/User.model";
 import express from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
+import { Types } from "mongoose";
+import bcrypt from "bcrypt";
+import { generateJWT } from "../utils/generateJWT";
 
 const getUserById = async (req: express.Request, res: express.Response) => {
   try {
@@ -30,7 +33,7 @@ const updateUser = async (req: express.Request, res: express.Response) => {
       name: name?.trim(),
     };
 
-    await UserModel.findByIdAndUpdate(userId, { $set: updateDto });
+    await UserModel.updateOne({ _id: userId }, { $set: updateDto });
 
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -38,4 +41,31 @@ const updateUser = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export { getUserById, updateUser };
+const resetPassword = async (req: express.Request, res: express.Response) => {
+  try {
+    const { newPassword } = req.body;
+
+    const { userId } = RequestContext<{ userId: string }>(req);
+
+    const user = await UserModel.findOneAndUpdate(
+      { _id: new Types.ObjectId(userId) },
+      {
+        $set: {
+          password: await bcrypt.hash(newPassword, 10),
+        },
+        $inc: {
+          tokenVersion: 1,
+        },
+      },
+      { new: true },
+    );
+
+    res
+      .status(StatusCode.OK)
+      .send({ token: generateJWT(user!._id.toString(), user!.tokenVersion) });
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export { getUserById, updateUser, resetPassword };

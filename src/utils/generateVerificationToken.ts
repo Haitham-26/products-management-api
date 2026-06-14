@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-export const generateToken = () => {
+export const generateVerificationToken = () => {
   const allowedChars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 

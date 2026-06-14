@@ -3,8 +3,6 @@ import express from "express";
 import { Regexes } from "../../utils/String";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import { RequestContext } from "../../utils/RequestContext";
-import UserModel from "../../models/User.model";
-import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 
 const userUpdateSchema = z
   .object({
