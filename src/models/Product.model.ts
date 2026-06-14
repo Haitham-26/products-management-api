@@ -1,12 +1,14 @@
 import mongoose, { model, Types } from "mongoose";
 import { ProductDiscount } from "../types/product/types/ProductDiscount";
 import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
+import { ProductStatus } from "../types/product/types/ProductStatus.enum";
 
 export interface Product extends mongoose.Document {
   _id: Types.ObjectId;
   identifier: string;
   userId: Types.ObjectId;
   name: string;
+  status: ProductStatus;
   description?: string;
   price: number;
   quantity: number;
@@ -31,6 +33,11 @@ const ProductSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, "The name is required."],
+    },
+    status: {
+      type: String,
+      enum: Object.values(ProductStatus),
+      default: ProductStatus.PUBLISHED,
     },
     description: {
       type: String,

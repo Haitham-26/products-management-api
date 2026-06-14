@@ -8,6 +8,7 @@ import CategoryModel from "../../models/Category.model";
 import TagModel from "../../models/Tag.model";
 import { RequestContext } from "../../utils/RequestContext";
 import { ProductDiscountTypes } from "../../types/product/types/ProductDiscountTypes.enum";
+import { ProductStatus } from "../../types/product/types/ProductStatus.enum";
 
 const updateProductSchema = z
   .object({
@@ -15,13 +16,15 @@ const updateProductSchema = z
       .string()
       .trim()
       .min(1, "Name must be at least 1 character")
-      .max(100, "Name must be at most 100 characters"),
+      .max(100, "Name must be at most 100 characters")
+      .optional(),
     description: z
       .string()
       .trim()
       .max(512, "Description must be at most 512 characters")
       .optional(),
-    price: z.number().min(0, "Price must be at least 0"),
+    status: z.enum(Object.values(ProductStatus)).optional(),
+    price: z.number().min(0, "Price must be at least 0").optional(),
     quantity: z.number().min(0, "Quantity must be at least 0").optional(),
     discount: z
       .object({
