@@ -18,6 +18,8 @@ import { ProductStockStatus } from "../types/product/types/ProductStockStatus.en
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { escapeSpecialChars } from "../utils/String";
+import { ProductStatus } from "../types/product/types/ProductStatus.enum";
+import isNull from "lodash/isNull";
 
 export class ProductService {
   constructor() {}
@@ -125,6 +127,7 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       categoryId,
       tagIds,
       keyword,
+      showDraft,
       creationDate,
       minBasePrice,
       maxBasePrice,
@@ -147,6 +150,10 @@ const getProducts = async (req: express.Request, res: express.Response) => {
       userId: new Types.ObjectId(userId as string),
       isDeleted: { $ne: true },
     };
+
+    if (showDraft !== "true") {
+      query.status = { $ne: ProductStatus.DRAFT };
+    }
 
     if (categoryId && Types.ObjectId.isValid(categoryId as string)) {
       query.categoryId = new Types.ObjectId(categoryId as string);
@@ -315,6 +322,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
       categoryId,
       tags,
       minStock,
+      status,
     } = req.body;
 
     const { product } = RequestContext<{ product: Product }>(req);
@@ -328,13 +336,17 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
       updateDto.description = description;
     }
 
-    if (!isNaN(price)) {
+    if (Object.values(ProductStatus).includes(status as ProductStatus)) {
+      updateDto.status = status;
+    }
+
+    if (!isNaN(price) && isNull(price)) {
       updateDto.price = Number(price);
     }
-    if (!isNaN(quantity)) {
+    if (!isNaN(quantity) && isNull(quantity)) {
       updateDto.quantity = Number(quantity);
     }
-    if (!isUndefined(minStock)) {
+    if (!isUndefined(minStock) && !isNaN(minStock)) {
       updateDto.minStock = Number(minStock);
     }
 
