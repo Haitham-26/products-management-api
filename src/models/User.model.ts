@@ -13,6 +13,7 @@ export interface User extends mongoose.Document {
   optCode?: string;
   roles: UserRoles[];
   organizationId?: string;
+  tokenVersion: number;
   forgotPasswordCode?: {
     code: string;
     createdAt: string;
@@ -51,6 +52,10 @@ const UserSchema = new mongoose.Schema(
     },
     optCode: {
       type: String,
+    },
+    tokenVersion: {
+      type: Number,
+      default: 0,
     },
     roles: {
       type: [String],

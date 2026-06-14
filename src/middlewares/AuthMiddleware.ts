@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import UserModel from "../models/User.model";
+import isNull from "lodash/isNull";
 
 interface AuthRequest extends Request {
   userId?: string;
@@ -17,20 +18,31 @@ export const AuthMiddleware = async (
     const token = req.headers.authorization?.split(" ")[1];
 
     if (!token) {
-      res.status(StatusCode.UNAUTHORIZED).send("فشلت المصادقة");
+      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
       return;
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
       userId: string;
+      tokenVersion?: number;
     };
+
+    if (isNull(decoded.tokenVersion)) {
+      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
+      return;
+    }
 
     const userId = decoded.userId;
 
     const user = await UserModel.findById(userId);
 
     if (!user) {
-      res.status(StatusCode.UNAUTHORIZED).send("فشلت المصادقة");
+      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
+      return;
+    }
+
+    if (user.tokenVersion !== decoded.tokenVersion) {
+      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
       return;
     }
 
