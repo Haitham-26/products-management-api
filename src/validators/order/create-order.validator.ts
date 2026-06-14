@@ -6,6 +6,7 @@ import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import ProductModel from "../../models/Product.model";
 import { RequestContext } from "../../utils/RequestContext";
 import { parsePhoneNumber } from "awesome-phonenumber";
+import { ProductStatus } from "../../types/product/types/ProductStatus.enum";
 
 const createOrderSchema = z
   .object({
@@ -75,12 +76,14 @@ export const CreateOrderValidator = async (
     const products = await ProductModel.find({
       _id: { $in: productIds },
       isDeleted: { $ne: true },
+      status: { $ne: ProductStatus.DRAFT },
       userId,
     });
 
     if (products.length !== productIds.length) {
       res.status(StatusCode.NOT_FOUND).send({
-        message: "Some products not found, they may have been deleted",
+        message:
+          "Some products not found, they may have been deleted or moved to draft",
       });
       return;
     }
