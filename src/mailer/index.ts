@@ -18,7 +18,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const getTokenTemplate = async (title: string, body: string, token: string) => {
+const generateTokenTemplate = async (
+  title: string,
+  body: string,
+  token: string,
+) => {
   const templatePath = path.join(__dirname, "./templates/template-token.html");
 
   let html = await fs.readFile(templatePath, "utf-8");
@@ -27,6 +31,25 @@ const getTokenTemplate = async (title: string, body: string, token: string) => {
     .replace(/{{title}}/g, title)
     .replace(/{{body}}/g, body)
     .replace(/{{token}}/g, token);
+
+  return html;
+};
+
+const generateLinkTemplate = async (
+  title: string,
+  body: string,
+  link: string,
+  linkTitle: string,
+) => {
+  const templatePath = path.join(__dirname, "./templates/template-link.html");
+
+  let html = await fs.readFile(templatePath, "utf-8");
+
+  html = html
+    .replace(/{{title}}/g, title)
+    .replace(/{{body}}/g, body)
+    .replace(/{{link}}/g, link)
+    .replace(/{{linkTitle}}/g, linkTitle);
 
   return html;
 };
@@ -53,11 +76,11 @@ const sendEmail = async (to: string, subject: string, html: string) => {
   }
 };
 
-const sendSignUpToken = async (to: string, token: string) => {
+const sendSignUpTokenEmail = async (to: string, token: string) => {
   try {
     const title = "Email Verification";
 
-    const html = await getTokenTemplate(
+    const html = await generateTokenTemplate(
       title,
       "To confirm your email address and activate your account, please enter the verification code:",
       token,
@@ -69,11 +92,11 @@ const sendSignUpToken = async (to: string, token: string) => {
   }
 };
 
-const sendForgotPasswordToken = async (to: string, token: string) => {
+const sendForgotPasswordTokenEmail = async (to: string, token: string) => {
   try {
     const title = "Reset Password";
 
-    const html = await getTokenTemplate(
+    const html = await generateTokenTemplate(
       title,
       "Use the following code to continue the password reset process:",
       token,
@@ -85,4 +108,35 @@ const sendForgotPasswordToken = async (to: string, token: string) => {
   }
 };
 
-export { sendEmail, sendSignUpToken, sendForgotPasswordToken };
+const sendMemberInvitationEmail = async (
+  to: string,
+  link: string,
+  organizationOwnerName: string,
+) => {
+  try {
+    const subject = "Join Organization Invitation";
+
+    const body = `
+    You have been invited to join ${organizationOwnerName}'s organization.<br/><br/>
+    Click the link below to continue.
+  `;
+
+    const html = await generateLinkTemplate(
+      subject,
+      body,
+      link,
+      "Join Organization",
+    );
+
+    await sendEmail(to, subject, html);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export {
+  sendEmail,
+  sendSignUpTokenEmail,
+  sendForgotPasswordTokenEmail,
+  sendMemberInvitationEmail,
+};
