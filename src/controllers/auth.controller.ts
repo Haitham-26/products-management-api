@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import UserModel, { User } from "../models/User.model";
 import { generateVerificationToken } from "../utils/generateVerificationToken";
 import { SignUpToken } from "../types/auth/signup/SignUpToken";
-import { sendSignUpToken, sendForgotPasswordToken } from "../mailer";
+import { sendSignUpTokenEmail, sendForgotPasswordTokenEmail } from "../mailer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
 import { withTransaction } from "../utils/withTransaction";
@@ -51,7 +51,7 @@ const signUpEmail = async (req: express.Request, res: express.Response) => {
       signUpMethod: SignUpMethods.EMAIL,
     });
 
-    await sendSignUpToken(email, token);
+    await sendSignUpTokenEmail(email, token);
 
     res
       .status(StatusCode.OK)
@@ -152,7 +152,7 @@ const signupResendToken = async (
       },
     );
 
-    await sendSignUpToken(user.email, newToken);
+    await sendSignUpTokenEmail(user.email, newToken);
 
     res.status(StatusCode.OK).send({
       message: "The verification code has been sent to your email",
@@ -278,7 +278,7 @@ const forgotPasswordEmail = async (
       },
     );
 
-    await sendForgotPasswordToken(user.email, token);
+    await sendForgotPasswordTokenEmail(user.email, token);
 
     res.status(StatusCode.OK).send();
   } catch (e) {
