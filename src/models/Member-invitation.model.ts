@@ -1,28 +1,59 @@
 import mongoose, { model, Types } from "mongoose";
+import { InvitationStatus } from "../types/users-permissions/types/InvitationStatus.enum";
+import { User } from "./User.model";
 
 export interface MemberInvitation extends mongoose.Document {
   _id: Types.ObjectId;
+
+  inviter: Partial<User>;
   inviterId: Types.ObjectId;
-  email: string;
-  createdAt: string;
-  updatedAt: string;
+
+  inviteeEmail: string;
+  status: InvitationStatus;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const MemberInvitationSchema = new mongoose.Schema(
   {
     inviterId: {
       type: Types.ObjectId,
-      required: [true, "The inviterId is required."],
+      ref: "User",
+      required: [true, "The inviter id is required."],
       index: true,
     },
-    email: {
+
+    inviteeEmail: {
       type: String,
-      required: [true, "The email is required."],
+      required: [true, "The invitee email is required."],
+      index: true,
+    },
+
+    status: {
+      type: String,
+      enum: Object.values(InvitationStatus),
+      default: InvitationStatus.PENDING,
     },
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
+);
+
+MemberInvitationSchema.virtual("inviter", {
+  ref: "User",
+  localField: "inviterId",
+  foreignField: "_id",
+  justOne: true,
+});
+
+// Auto delete after 30 days
+MemberInvitationSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: 30 * 24 * 60 * 60 },
 );
 
 const MemberInvitationModel = model("MemberInvitation", MemberInvitationSchema);

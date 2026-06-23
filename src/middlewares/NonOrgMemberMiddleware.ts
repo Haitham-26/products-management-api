@@ -4,7 +4,7 @@ import { RequestContext } from "../utils/RequestContext";
 import { User } from "../models/User.model";
 import { UserRoles } from "../types/user/types/UserRoles.enum";
 
-export const OrganizationOwnerOnlyMiddleware = async (
+export const NonOrgMemberMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -12,12 +12,12 @@ export const OrganizationOwnerOnlyMiddleware = async (
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
-    const isOwner = user.roles.includes(UserRoles.OWNER);
+    const isMember = user.roles.includes(UserRoles.MEMBER);
 
-    if (!isOwner) {
+    if (isMember) {
       res
         .status(StatusCode.FORBIDDEN)
-        .send("Only organization owner can take this action");
+        .send("Organization members cannot take this action");
       return;
     }
 
