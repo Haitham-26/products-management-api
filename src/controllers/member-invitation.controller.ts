@@ -142,9 +142,37 @@ const cancelInvitation = async (
   }
 };
 
+const declineInvitation = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+
+    const { invitationId } = req.body;
+
+    await MemberInvitationModel.updateOne(
+      {
+        _id: new Types.ObjectId(invitationId as string),
+        inviteeEmail: user.email,
+      },
+      {
+        $set: {
+          status: InvitationStatus.DECLINED,
+        },
+      },
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 export {
   inviteMembers,
   getOwnerInvitations,
   getJoinOrgInvitations,
   cancelInvitation,
+  declineInvitation,
 };
