@@ -84,12 +84,21 @@ const inviteMembers = async (req: express.Request, res: express.Response) => {
 
     await MemberInvitationModel.bulkWrite(
       (emails as string[]).map((email) => ({
-        insertOne: {
-          document: {
-            inviterId: user._id,
+        updateOne: {
+          filter: {
             inviteeEmail: email,
-            status: InvitationStatus.PENDING,
+            status: {
+              $in: [InvitationStatus.DECLINED, InvitationStatus.CANCELLED],
+            },
           },
+          update: {
+            $set: { status: InvitationStatus.PENDING },
+            $setOnInsert: {
+              inviterId: user._id,
+              inviteeEmail: email,
+            },
+          },
+          upsert: true,
         },
       })),
     );
