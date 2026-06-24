@@ -15,7 +15,7 @@ const getOwnerInvitations = async (
 
     const invitations = await MemberInvitationModel.find({
       inviterId: user._id,
-    });
+    }).sort({ createdAt: -1 });
 
     res.status(StatusCode.OK).json({ invitations });
   } catch (e) {
@@ -59,6 +59,11 @@ const getJoinOrgInvitations = async (
           createdAt: 1,
           updatedAt: 1,
           inviter: 1,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
         },
       },
     ]);
