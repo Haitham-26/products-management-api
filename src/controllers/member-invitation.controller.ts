@@ -34,6 +34,7 @@ const getJoinOrgInvitations = async (
       {
         $match: {
           inviteeEmail: user.email,
+          status: InvitationStatus.PENDING,
         },
       },
       {
