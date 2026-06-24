@@ -2,8 +2,78 @@ import express from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import MemberInvitationModel from "../models/Member-invitation.model";
-import sendEmail from "../mailer";
+import { sendMemberInvitationEmail } from "../mailer";
 import { User } from "../models/User.model";
+import { InvitationStatus } from "../types/users-permissions/types/InvitationStatus.enum";
+
+const getOwnerInvitations = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+
+    const invitations = await MemberInvitationModel.find({
+      inviterId: user._id,
+    }).sort({ createdAt: -1 });
+
+    res.status(StatusCode.OK).json({ invitations });
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const getJoinOrgInvitations = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+
+    const invitations = await MemberInvitationModel.aggregate([
+      {
+        $match: {
+          inviteeEmail: user.email,
+          status: InvitationStatus.PENDING,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          let: { inviterId: "$inviterId" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$inviterId"] } } },
+            { $project: { _id: 0, name: 1 } },
+          ],
+          as: "inviter",
+        },
+      },
+      {
+        $unwind: {
+          path: "$inviter",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          inviter: 1,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ]);
+
+    res.status(StatusCode.OK).json({ invitations });
+  } catch (e) {
+    console.log(e);
+  }
+};
 
 const inviteMembers = async (req: express.Request, res: express.Response) => {
   try {
@@ -16,27 +86,18 @@ const inviteMembers = async (req: express.Request, res: express.Response) => {
         insertOne: {
           document: {
             inviterId: user._id,
-            email,
+            inviteeEmail: email,
+            status: InvitationStatus.PENDING,
           },
         },
       })),
     );
 
-    const generateInvitationLink = (email: string) => {
-      const organizationId = user._id;
-
-      const link = `${process.env.CLIENT_URL}/invite?organizationId=${organizationId}&inviteeEmail=${email}`;
-
-      return link;
-    };
-
-    for (const email of emails) {
-      sendEmail(
-        email,
-        "Invitation",
-        `You have been invited to join ${user.name}'s organization. \n\n <a href="${generateInvitationLink(email)}">Click here to join</a>`,
-      );
-    }
+    await Promise.allSettled(
+      emails.map((email: string) =>
+        sendMemberInvitationEmail(email, user.name),
+      ),
+    );
 
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -44,4 +105,4 @@ const inviteMembers = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export { inviteMembers };
+export { inviteMembers, getOwnerInvitations, getJoinOrgInvitations };

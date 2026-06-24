@@ -110,7 +110,6 @@ const sendForgotPasswordTokenEmail = async (to: string, token: string) => {
 
 const sendMemberInvitationEmail = async (
   to: string,
-  link: string,
   organizationOwnerName: string,
 ) => {
   try {
@@ -124,7 +123,7 @@ const sendMemberInvitationEmail = async (
     const html = await generateLinkTemplate(
       subject,
       body,
-      link,
+      process.env.CLIENT_URL!,
       "Join Organization",
     );
 

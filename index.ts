@@ -10,7 +10,7 @@ import tagRouter from "./src/services/tag.service";
 import orderRouter from "./src/services/order.service";
 import settingsRouter from "./src/services/settings.service";
 import dashboardRouter from "./src/services/dashboard.service";
-import usersPermissionsRouter from "./src/services/users-permissions.service";
+import membersInvitationRouter from "./src/services/member-invitation.service";
 import { startCronJobs } from "./src/cron";
 
 require("dotenv").config();
@@ -39,7 +39,7 @@ app.use("/categories", categoryRouter);
 app.use("/tags", tagRouter);
 app.use("/orders", orderRouter);
 app.use("/dashboard", dashboardRouter);
-app.use("/users-permissions", usersPermissionsRouter);
+app.use("/users-permissions", membersInvitationRouter);
 
 app.use("/healthcheck", (req, res) => {
   res.status(200).send("Healthy");

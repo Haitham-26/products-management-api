@@ -4,6 +4,9 @@ import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import z from "zod";
 import UserModel, { User } from "../../models/User.model";
+import { UserRoles } from "../../types/user/types/UserRoles.enum";
+import MemberInvitationModel from "../../models/Member-invitation.model";
+import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
 
 const inviteMembersSchema = z
   .object({
@@ -35,14 +38,31 @@ export const InviteMembersValidator = async (
       return;
     }
 
-    const usersInOrgs = await UserModel.find({
-      email: { $in: req.body.emails },
-      organizationId: { $type: "objectId" },
-    });
+    const [usersInOrgs, existingPendingInvitations] = await Promise.all([
+      UserModel.find({
+        email: { $in: req.body.emails },
+        $or: [
+          { roles: { $in: [UserRoles.OWNER] } },
+          { organizationId: { $exists: true } },
+        ],
+      }),
+      MemberInvitationModel.find({
+        inviteeEmail: { $in: req.body.emails },
+        inviterId: user._id,
+        status: InvitationStatus.PENDING,
+      }),
+    ]);
 
     if (usersInOrgs.length) {
       res.status(StatusCode.BAD_REQUEST).send({
         message: `Some of the invited emails are already in an organization: ${usersInOrgs.map((user) => user.email).join(", ")}`,
+      });
+      return;
+    }
+
+    if (existingPendingInvitations.length) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: `Some of the invited emails already have pending invitations: ${existingPendingInvitations.map((invitation) => invitation.inviteeEmail).join(", ")}`,
       });
       return;
     }
