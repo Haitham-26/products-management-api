@@ -5,6 +5,7 @@ import MemberInvitationModel from "../models/Member-invitation.model";
 import { sendMemberInvitationEmail } from "../mailer";
 import { User } from "../models/User.model";
 import { InvitationStatus } from "../types/users-permissions/types/InvitationStatus.enum";
+import { Types } from "mongoose";
 
 const getOwnerInvitations = async (
   req: express.Request,
@@ -105,4 +106,36 @@ const inviteMembers = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export { inviteMembers, getOwnerInvitations, getJoinOrgInvitations };
+const cancelInvitation = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
+    const { invitationId } = req.body;
+
+    await MemberInvitationModel.updateOne(
+      {
+        _id: new Types.ObjectId(invitationId as string),
+        inviterId: userId,
+      },
+      {
+        $set: {
+          status: InvitationStatus.CANCELLED,
+        },
+      },
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+export {
+  inviteMembers,
+  getOwnerInvitations,
+  getJoinOrgInvitations,
+  cancelInvitation,
+};

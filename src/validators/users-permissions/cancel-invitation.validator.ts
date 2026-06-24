@@ -1,0 +1,50 @@
+import express from "express";
+import { RequestContext } from "../../utils/RequestContext";
+import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
+import { ThrowZodError } from "../../utils/ThrowZodError";
+import { User } from "../../models/User.model";
+import MemberInvitationModel from "../../models/Member-invitation.model";
+import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
+import { Types } from "mongoose";
+
+export const CancelInvitationValidator = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+
+    const { invitationId } = req.body;
+
+    if (!Types.ObjectId.isValid(invitationId)) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "Invalid invitation id",
+      });
+      return;
+    }
+
+    const invitation = await MemberInvitationModel.findOne({
+      _id: new Types.ObjectId(invitationId as string),
+      inviterId: user._id,
+    });
+
+    if (!invitation) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "Invitation not found",
+      });
+      return;
+    }
+
+    if (invitation.status !== InvitationStatus.PENDING) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "Cannot cancel an invitation that is not pending",
+      });
+      return;
+    }
+
+    next();
+  } catch (e) {
+    ThrowZodError(res, e);
+  }
+};
