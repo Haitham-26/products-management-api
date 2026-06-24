@@ -27,6 +27,7 @@ membersInvitationRouter.post(
 membersInvitationRouter.post(
   "/invite-members",
   AuthMiddleware,
+  NonOrgMemberMiddleware,
   InviteMembersValidator,
   inviteMembers,
 );
