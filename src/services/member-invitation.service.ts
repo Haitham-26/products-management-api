@@ -4,9 +4,11 @@ import {
   inviteMembers,
   getOwnerInvitations,
   getJoinOrgInvitations,
+  cancelInvitation,
 } from "../controllers/member-invitation.controller";
 import { InviteMembersValidator } from "../validators/users-permissions/invite-members.validator";
 import { NonOrgMemberMiddleware } from "../middlewares/NonOrgMemberMiddleware";
+import { CancelInvitationValidator } from "../validators/users-permissions/cancel-invitation.validator";
 
 const membersInvitationRouter = express.Router();
 
@@ -30,6 +32,14 @@ membersInvitationRouter.post(
   NonOrgMemberMiddleware,
   InviteMembersValidator,
   inviteMembers,
+);
+
+membersInvitationRouter.post(
+  "/cancel-invitation",
+  AuthMiddleware,
+  NonOrgMemberMiddleware,
+  CancelInvitationValidator,
+  cancelInvitation,
 );
 
 export default membersInvitationRouter;
