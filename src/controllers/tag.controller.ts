@@ -3,7 +3,7 @@ import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
 import TagModel, { Tag } from "../models/Tag.model";
-import { Types } from "mongoose";
+import { QueryOptions, Types } from "mongoose";
 import isNil from "lodash/isNil";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
@@ -40,9 +40,9 @@ const getTags = async (req: express.Request, res: express.Response) => {
     const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
     const skip = (currentPage - 1) * pageSize;
 
-    const query: any = {
+    const query: QueryOptions = {
       isDeleted: { $ne: true },
-      userId: new Types.ObjectId(userId as string),
+      userId,
     };
 
     if (isString(keyword)) {

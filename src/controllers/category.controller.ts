@@ -43,7 +43,7 @@ const getCategories = async (req: express.Request, res: express.Response) => {
     const skip = (currentPage - 1) * pageSize;
 
     const query: QueryOptions = {
-      userId: new Types.ObjectId(userId as string),
+      userId,
       isDeleted: { $ne: true },
     };
 

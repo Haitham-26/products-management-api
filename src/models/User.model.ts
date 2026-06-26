@@ -1,6 +1,7 @@
 import mongoose, { model, Types } from "mongoose";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
 import { UserRoles } from "../types/user/types/UserRoles.enum";
+import { UserPermissions } from "../types/user/types/UserPermissions";
 
 export interface User extends mongoose.Document {
   _id: string;
@@ -13,6 +14,7 @@ export interface User extends mongoose.Document {
   optCode?: string;
   roles: UserRoles[];
   organizationId?: string;
+  permissions?: UserPermissions;
   tokenVersion: number;
   forgotPasswordCode?: {
     code: string;
@@ -64,6 +66,9 @@ const UserSchema = new mongoose.Schema(
     },
     organizationId: {
       type: Types.ObjectId,
+    },
+    permissions: {
+      type: Object,
     },
     forgotPasswordCode: {
       code: {

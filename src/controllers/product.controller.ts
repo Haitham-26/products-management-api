@@ -20,6 +20,7 @@ import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.e
 import { escapeSpecialChars } from "../utils/String";
 import { ProductStatus } from "../types/product/types/ProductStatus.enum";
 import isNull from "lodash/isNull";
+import { QueryOptions } from "mongoose";
 
 export class ProductService {
   constructor() {}
@@ -122,8 +123,9 @@ const createProduct = async (req: express.Request, res: express.Response) => {
 
 const getProducts = async (req: express.Request, res: express.Response) => {
   try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
     const {
-      userId,
       categoryId,
       tagIds,
       keyword,
@@ -146,8 +148,8 @@ const getProducts = async (req: express.Request, res: express.Response) => {
     const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
     const skip = (currentPage - 1) * pageSize;
 
-    const query: any = {
-      userId: new Types.ObjectId(userId as string),
+    const query: QueryOptions = {
+      userId,
       isDeleted: { $ne: true },
     };
 

@@ -7,7 +7,7 @@ import MemberInvitationModel from "../../models/Member-invitation.model";
 import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
 import { Types } from "mongoose";
 
-export const CancelInvitationValidator = async (
+export const DeclineInvitationValidator = async (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction,
@@ -26,7 +26,7 @@ export const CancelInvitationValidator = async (
 
     const invitation = await MemberInvitationModel.findOne({
       _id: new Types.ObjectId(invitationId as string),
-      inviterId: user._id,
+      inviteeEmail: user.email,
     });
 
     if (!invitation) {
@@ -38,7 +38,7 @@ export const CancelInvitationValidator = async (
 
     if (invitation.status !== InvitationStatus.PENDING) {
       res.status(StatusCode.BAD_REQUEST).send({
-        message: "Cannot cancel an invitation that is not pending",
+        message: "Cannot decline an invitation that is not pending",
       });
       return;
     }

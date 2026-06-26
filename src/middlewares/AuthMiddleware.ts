@@ -4,6 +4,7 @@ import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import UserModel from "../models/User.model";
 import isNull from "lodash/isNull";
+import { Types } from "mongoose";
 
 interface AuthRequest extends Request {
   userId?: string;
@@ -32,7 +33,7 @@ export const AuthMiddleware = async (
       return;
     }
 
-    const userId = decoded.userId;
+    const userId = new Types.ObjectId(decoded.userId);
 
     const user = await UserModel.findById(userId);
 
