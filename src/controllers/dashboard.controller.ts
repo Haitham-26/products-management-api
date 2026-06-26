@@ -12,8 +12,6 @@ export const getDashboardStats = async (
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    console.log(userId);
-
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 

@@ -11,6 +11,8 @@ export interface MemberInvitation extends mongoose.Document {
   inviteeEmail: string;
   status: InvitationStatus;
 
+  sentAt: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +37,11 @@ const MemberInvitationSchema = new mongoose.Schema(
       enum: Object.values(InvitationStatus),
       default: InvitationStatus.PENDING,
     },
+
+    sentAt: {
+      type: Date,
+      default: Date.now(),
+    },
   },
   {
     timestamps: true,
@@ -52,7 +59,7 @@ MemberInvitationSchema.virtual("inviter", {
 
 // Auto delete after 30 days
 MemberInvitationSchema.index(
-  { createdAt: 1 },
+  { sentAt: 1 },
   { expireAfterSeconds: 30 * 24 * 60 * 60 },
 );
 

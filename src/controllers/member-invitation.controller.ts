@@ -93,9 +93,10 @@ const inviteMembers = async (req: express.Request, res: express.Response) => {
             status: {
               $in: [InvitationStatus.DECLINED, InvitationStatus.CANCELLED],
             },
+            inviterId: user._id,
           },
           update: {
-            $set: { status: InvitationStatus.PENDING },
+            $set: { status: InvitationStatus.PENDING, sentAt: Date.now() },
             $setOnInsert: {
               inviterId: user._id,
               inviteeEmail: email,
