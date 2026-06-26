@@ -7,7 +7,7 @@ import MemberInvitationModel from "../../models/Member-invitation.model";
 import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
 import { Types } from "mongoose";
 
-export const DeclineInvitationValidator = async (
+export const AcceptInvitationValidator = async (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction,
@@ -38,7 +38,7 @@ export const DeclineInvitationValidator = async (
 
     if (invitation.status !== InvitationStatus.PENDING) {
       res.status(StatusCode.BAD_REQUEST).send({
-        message: "Cannot decline an invitation that is not pending",
+        message: "Cannot accept an invitation that is not pending",
       });
       return;
     }

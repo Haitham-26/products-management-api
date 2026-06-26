@@ -3,7 +3,6 @@ import ProductModel from "../models/Product.model";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import express from "express";
 import { RequestContext } from "../utils/RequestContext";
-import { Types } from "mongoose";
 import SettingsModel from "../models/Settings.model";
 
 export const getDashboardStats = async (
@@ -12,7 +11,8 @@ export const getDashboardStats = async (
 ) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
-    const userObjectId = new Types.ObjectId(userId);
+
+    console.log(userId);
 
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
@@ -32,7 +32,7 @@ export const getDashboardStats = async (
 
     const matchStage = {
       $match: {
-        userId: userObjectId,
+        userId,
         isDeleted: { $ne: true },
       },
     };

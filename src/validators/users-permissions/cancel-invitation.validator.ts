@@ -43,6 +43,18 @@ export const CancelInvitationValidator = async (
       return;
     }
 
+    const EXPIRES_IN = 30 * 24 * 60 * 60 * 1000;
+
+    const isExpired =
+      new Date(invitation.createdAt).getTime() + EXPIRES_IN < Date.now();
+
+    if (isExpired) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "Invitation has expired",
+      });
+      return;
+    }
+
     next();
   } catch (e) {
     ThrowZodError(res, e);
