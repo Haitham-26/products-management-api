@@ -7,6 +7,8 @@ import {
   cancelInvitation,
   declineInvitation,
   acceptInvitation,
+  getOrgMembers,
+  removeMember,
 } from "../controllers/member-invitation.controller";
 import { InviteMembersValidator } from "../validators/users-permissions/invite-members.validator";
 import { NonOrgMemberMiddleware } from "../middlewares/NonOrgMemberMiddleware";
@@ -60,6 +62,15 @@ membersInvitationRouter.post(
   NonOrgMemberMiddleware,
   AcceptInvitationValidator,
   acceptInvitation,
+);
+
+membersInvitationRouter.post("/members", AuthMiddleware, getOrgMembers);
+
+membersInvitationRouter.post(
+  "/members/remove",
+  AuthMiddleware,
+  NonOrgMemberMiddleware,
+  removeMember,
 );
 
 export default membersInvitationRouter;

@@ -66,6 +66,7 @@ const UserSchema = new mongoose.Schema(
     },
     organizationId: {
       type: Types.ObjectId,
+      index: true,
     },
     permissions: {
       type: Object,

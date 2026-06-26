@@ -251,6 +251,97 @@ const acceptInvitation = async (
   }
 };
 
+const removeMember = async (req: express.Request, res: express.Response) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+    const { memberId } = req.body;
+
+    await withTransaction(async (session) => {
+      const orgMembers = await UserModel.find(
+        { organizationId: user._id },
+        null,
+        { session },
+      );
+
+      const updateOwner =
+        orgMembers.length === 1 ? { $pull: { roles: UserRoles.OWNER } } : {};
+
+      await UserModel.updateOne({ _id: user._id }, updateOwner, { session });
+
+      const removed = await UserModel.findOne({
+        _id: memberId,
+        organizationId: user._id,
+      }).session(session);
+
+      if (!removed) {
+        res.status(StatusCode.NOT_FOUND).send({ message: "Member not found" });
+        return;
+      }
+
+      await UserModel.updateOne(
+        { _id: memberId },
+        {
+          $unset: { organizationId: "" },
+          $pull: { roles: UserRoles.MEMBER },
+        },
+        { session },
+      );
+    });
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+const getOrgMembers = async (req: express.Request, res: express.Response) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+
+    let members = [];
+
+    if (user.organizationId) {
+      members = await UserModel.aggregate([
+        {
+          $match: {
+            $or: [{ _id: user.organizationId }, { organizationId: user._id }],
+            _id: { $ne: user._id },
+          },
+        },
+        {
+          $addFields: {
+            isOwner: {
+              $cond: [{ $in: [UserRoles.OWNER, "$roles"] }, 1, 0],
+            },
+          },
+        },
+        {
+          $sort: {
+            isOwner: -1,
+            createdAt: -1,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            email: 1,
+            avatar: 1,
+            roles: 1,
+          },
+        },
+      ]);
+    } else {
+      members = await UserModel.find({ organizationId: user._id })
+        .select("_id name email avatar permissions roles")
+        .sort({ createdAt: -1 });
+    }
+
+    res.status(StatusCode.OK).json(members);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 export {
   inviteMembers,
   getOwnerInvitations,
@@ -258,4 +349,6 @@ export {
   cancelInvitation,
   declineInvitation,
   acceptInvitation,
+  getOrgMembers,
+  removeMember,
 };
