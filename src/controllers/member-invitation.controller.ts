@@ -271,8 +271,7 @@ const removeMember = async (req: express.Request, res: express.Response) => {
       }).session(session);
 
       if (!removed) {
-        res.status(StatusCode.NOT_FOUND).send({ message: "Member not found" });
-        return;
+        throw new Error("Member not found");
       }
 
       await UserModel.updateOne(
