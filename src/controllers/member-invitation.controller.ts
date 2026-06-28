@@ -306,8 +306,16 @@ const getOrgMembers = async (req: express.Request, res: express.Response) => {
     const { user } = RequestContext<{ user: User }>(req);
 
     const matchStage = user.organizationId
-      ? { $or: [{ _id: user.organizationId }, { organizationId: user._id }] }
-      : { organizationId: user._id };
+      ? {
+          $or: [
+            { organizationId: user.organizationId },
+            { _id: user._id },
+            { _id: user.organizationId },
+          ],
+        }
+      : {
+          $or: [{ organizationId: user._id }, { _id: user._id }],
+        };
 
     const members = await UserModel.aggregate([
       { $match: matchStage },
@@ -336,7 +344,7 @@ const getOrgMembers = async (req: express.Request, res: express.Response) => {
           email: 1,
           avatar: 1,
           roles: 1,
-          ...(user.organizationId ? {} : { permissions: 1 }),
+          ...(!user.organizationId ? { permissions: 1 } : {}),
         },
       },
     ]);
