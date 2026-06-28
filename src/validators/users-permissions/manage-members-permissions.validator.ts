@@ -13,27 +13,31 @@ const manageMembersPermissionsSchema = z.object({
     message: "Invalid userId",
   }),
 
-  members: z.record(
-    z.string().refine((val) => Types.ObjectId.isValid(val), {
-      message: "Invalid member id",
-    }),
+  members: z
+    .record(
+      z.string().refine((val) => Types.ObjectId.isValid(val), {
+        message: "Invalid member id",
+      }),
 
-    z.object(
-      Object.fromEntries(
-        Object.values(PermissionEntities).map((entity) => [
-          entity,
-          z.object(
-            Object.fromEntries(
-              Object.values(CRUDPermissions).map((permission) => [
-                permission,
-                z.boolean(),
-              ]),
+      z.object(
+        Object.fromEntries(
+          Object.values(PermissionEntities).map((entity) => [
+            entity,
+            z.object(
+              Object.fromEntries(
+                Object.values(CRUDPermissions).map((permission) => [
+                  permission,
+                  z.boolean(),
+                ]),
+              ),
             ),
-          ),
-        ]),
+          ]),
+        ),
       ),
-    ),
-  ),
+    )
+    .refine((members) => Object.keys(members).length > 0, {
+      message: "At least one member is required",
+    }),
 });
 
 export const ManageMembersPermissionsValidator = async (
