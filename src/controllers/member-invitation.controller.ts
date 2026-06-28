@@ -9,7 +9,7 @@ import { Types } from "mongoose";
 import { UserRoles } from "../types/user/types/UserRoles.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { withTransaction } from "../utils/withTransaction";
-import isEmpty from "lodash/isEmpty";
+import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 
 const getOwnerInvitations = async (
   req: express.Request,
@@ -410,6 +410,65 @@ const leaveOrg = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const manageMembersPermissions = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { members } = req.body;
+
+    const { userId } = RequestContext<{ userId: string }>(req);
+
+    await UserModel.bulkWrite(
+      Object.entries(members).map(([memberId, permissions]) => {
+        const typedPermissions = permissions as Record<
+          PermissionEntities,
+          Record<CRUDPermissions, boolean>
+        >;
+
+        const normalizedPermissions = Object.fromEntries(
+          Object.entries(typedPermissions).map(([entity, crudPermissions]) => {
+            const typedCrud = crudPermissions as Record<
+              CRUDPermissions,
+              boolean
+            >;
+
+            return [
+              entity,
+              typedCrud.READ
+                ? typedCrud
+                : {
+                    CREATE: false,
+                    READ: false,
+                    UPDATE: false,
+                    DELETE: false,
+                  },
+            ];
+          }),
+        );
+
+        return {
+          updateOne: {
+            filter: {
+              _id: memberId,
+              organizationId: userId,
+            },
+            update: {
+              $set: {
+                permissions: normalizedPermissions,
+              },
+            },
+          },
+        };
+      }),
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 export {
   inviteMembers,
   getOwnerInvitations,
@@ -420,4 +479,5 @@ export {
   getOrgMembers,
   removeMember,
   leaveOrg,
+  manageMembersPermissions,
 };
