@@ -210,6 +210,13 @@ const acceptInvitation = async (
         { session },
       );
 
+      await MemberInvitationModel.deleteMany(
+        {
+          inviterId: user._id,
+        },
+        { session },
+      );
+
       await UserModel.updateOne(
         { _id: invitation.inviterId },
         {
@@ -293,48 +300,46 @@ const removeMember = async (req: express.Request, res: express.Response) => {
     console.log(e);
   }
 };
+
 const getOrgMembers = async (req: express.Request, res: express.Response) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
-    let members = [];
+    const matchStage = user.organizationId
+      ? { $or: [{ _id: user.organizationId }, { organizationId: user._id }] }
+      : { organizationId: user._id };
 
-    if (user.organizationId) {
-      members = await UserModel.aggregate([
-        {
-          $match: {
-            $or: [{ _id: user.organizationId }, { organizationId: user._id }],
-            _id: { $ne: user._id },
+    const members = await UserModel.aggregate([
+      { $match: matchStage },
+      {
+        $addFields: {
+          sortPriority: {
+            $cond: [
+              { $eq: ["$_id", user._id] },
+              0,
+              {
+                $cond: [
+                  { $in: [UserRoles.OWNER, { $ifNull: ["$roles", []] }] },
+                  1,
+                  2,
+                ],
+              },
+            ],
           },
         },
-        {
-          $addFields: {
-            isOwner: {
-              $cond: [{ $in: [UserRoles.OWNER, "$roles"] }, 1, 0],
-            },
-          },
+      },
+      { $sort: { sortPriority: 1, createdAt: -1 } },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          avatar: 1,
+          roles: 1,
+          ...(user.organizationId ? {} : { permissions: 1 }),
         },
-        {
-          $sort: {
-            isOwner: -1,
-            createdAt: -1,
-          },
-        },
-        {
-          $project: {
-            _id: 1,
-            name: 1,
-            email: 1,
-            avatar: 1,
-            roles: 1,
-          },
-        },
-      ]);
-    } else {
-      members = await UserModel.find({ organizationId: user._id })
-        .select("_id name email avatar permissions roles")
-        .sort({ createdAt: -1 });
-    }
+      },
+    ]);
 
     res.status(StatusCode.OK).json(members);
   } catch (e) {
