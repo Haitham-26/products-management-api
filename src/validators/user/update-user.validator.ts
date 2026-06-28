@@ -2,16 +2,21 @@ import z from "zod";
 import express from "express";
 import { Regexes } from "../../utils/String";
 import { ThrowZodError } from "../../utils/ThrowZodError";
-import { RequestContext } from "../../utils/RequestContext";
 
 const userUpdateSchema = z
   .object({
     name: z
       .string()
       .trim()
-      .min(3, "الاسم يجب ان يكون على الاقل 3 حروف")
-      .max(30, "الاسم يجب ان يكون على الاكثر 30 حرف")
-      .regex(Regexes.NAME, "الاسم يحتوي على رموز غير صالحة"),
+      .min(3, "Name must be at least 3 characters long")
+      .max(30, "Name must be at most 30 characters long")
+      .regex(Regexes.NAME, "Name contains invalid characters"),
+    company: z
+      .string()
+      .trim()
+      .max(50, "Company name must be at most 50 characters long")
+      .optional()
+      .or(z.literal("")),
   })
   .partial();
 
@@ -21,8 +26,6 @@ export const UserUpdateValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
-
     const body = userUpdateSchema.parse(req.body);
     req.body = body;
 

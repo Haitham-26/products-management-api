@@ -9,6 +9,7 @@ import { Types } from "mongoose";
 import { UserRoles } from "../types/user/types/UserRoles.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { withTransaction } from "../utils/withTransaction";
+import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 
 const getOwnerInvitations = async (
   req: express.Request,
@@ -47,7 +48,7 @@ const getJoinOrgInvitations = async (
           let: { inviterId: "$inviterId" },
           pipeline: [
             { $match: { $expr: { $eq: ["$_id", "$$inviterId"] } } },
-            { $project: { _id: 0, name: 1 } },
+            { $project: { _id: 0, name: 1, company: 1 } },
           ],
           as: "inviter",
         },
@@ -109,7 +110,7 @@ const inviteMembers = async (req: express.Request, res: express.Response) => {
 
     await Promise.allSettled(
       emails.map((email: string) =>
-        sendMemberInvitationEmail(email, user.name),
+        sendMemberInvitationEmail(email, user?.company || user.name),
       ),
     );
 
@@ -210,6 +211,13 @@ const acceptInvitation = async (
         { session },
       );
 
+      await MemberInvitationModel.deleteMany(
+        {
+          inviterId: user._id,
+        },
+        { session },
+      );
+
       await UserModel.updateOne(
         { _id: invitation.inviterId },
         {
@@ -251,6 +259,215 @@ const acceptInvitation = async (
   }
 };
 
+const removeMember = async (req: express.Request, res: express.Response) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+    const { memberId } = req.body;
+
+    await withTransaction(async (session) => {
+      const removed = await UserModel.findOne({
+        _id: memberId,
+        organizationId: user._id,
+      }).session(session);
+
+      if (!removed) {
+        throw new Error("Member not found");
+      }
+
+      await UserModel.updateOne(
+        { _id: memberId },
+        {
+          $unset: { organizationId: "", permissions: "" },
+          $pull: { roles: UserRoles.MEMBER },
+        },
+        { session },
+      );
+
+      const remainingMembersCount = await UserModel.countDocuments(
+        { organizationId: user._id },
+        { session },
+      );
+
+      if (remainingMembersCount === 0) {
+        await UserModel.updateOne(
+          { _id: user._id },
+          { $pull: { roles: UserRoles.OWNER } },
+          { session },
+        );
+      }
+    });
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const getOrgMembers = async (req: express.Request, res: express.Response) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+
+    const matchStage = user.organizationId
+      ? {
+          $or: [
+            { organizationId: user.organizationId },
+            { _id: user._id },
+            { _id: user.organizationId },
+          ],
+        }
+      : {
+          $or: [{ organizationId: user._id }, { _id: user._id }],
+        };
+
+    const members = await UserModel.aggregate([
+      { $match: matchStage },
+      {
+        $addFields: {
+          sortPriority: {
+            $cond: [
+              { $eq: ["$_id", user._id] },
+              0,
+              {
+                $cond: [
+                  { $in: [UserRoles.OWNER, { $ifNull: ["$roles", []] }] },
+                  1,
+                  2,
+                ],
+              },
+            ],
+          },
+        },
+      },
+      { $sort: { sortPriority: 1, createdAt: -1 } },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          company: {
+            $cond: [
+              { $in: [UserRoles.OWNER, "$roles"] },
+              "$company",
+              "$$REMOVE",
+            ],
+          },
+          email: 1,
+          avatar: 1,
+          roles: 1,
+          ...(!user.organizationId ? { permissions: 1 } : {}),
+        },
+      },
+    ]);
+
+    res.status(StatusCode.OK).json(members);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const leaveOrg = async (req: express.Request, res: express.Response) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+
+    const isMember =
+      user.roles.includes(UserRoles.MEMBER) &&
+      Types.ObjectId.isValid(user.organizationId as string);
+
+    if (!isMember) {
+      res
+        .status(StatusCode.NOT_FOUND)
+        .send({ message: "You are not a member of an organization" });
+      return;
+    }
+
+    await withTransaction(async (session) => {
+      await UserModel.updateOne(
+        { _id: user._id },
+        {
+          $unset: { organizationId: "", permissions: "" },
+          $pull: { roles: UserRoles.MEMBER },
+        },
+        { session },
+      );
+
+      const remainingMembersCount = await UserModel.countDocuments(
+        { organizationId: user.organizationId },
+        { session },
+      );
+
+      if (remainingMembersCount === 0) {
+        await UserModel.updateOne(
+          { _id: user.organizationId },
+          { $pull: { roles: UserRoles.OWNER } },
+          { session },
+        );
+      }
+    });
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const manageMembersPermissions = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { members } = req.body;
+
+    const { userId } = RequestContext<{ userId: string }>(req);
+
+    await UserModel.bulkWrite(
+      Object.entries(members).map(([memberId, permissions]) => {
+        const typedPermissions = permissions as Record<
+          PermissionEntities,
+          Record<CRUDPermissions, boolean>
+        >;
+
+        const normalizedPermissions = Object.fromEntries(
+          Object.entries(typedPermissions).map(([entity, crudPermissions]) => {
+            const typedCrud = crudPermissions as Record<
+              CRUDPermissions,
+              boolean
+            >;
+
+            return [
+              entity,
+              typedCrud.READ
+                ? typedCrud
+                : {
+                    CREATE: false,
+                    READ: false,
+                    UPDATE: false,
+                    DELETE: false,
+                  },
+            ];
+          }),
+        );
+
+        return {
+          updateOne: {
+            filter: {
+              _id: memberId,
+              organizationId: userId,
+            },
+            update: {
+              $set: {
+                permissions: normalizedPermissions,
+              },
+            },
+          },
+        };
+      }),
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 export {
   inviteMembers,
   getOwnerInvitations,
@@ -258,4 +475,8 @@ export {
   cancelInvitation,
   declineInvitation,
   acceptInvitation,
+  getOrgMembers,
+  removeMember,
+  leaveOrg,
+  manageMembersPermissions,
 };
