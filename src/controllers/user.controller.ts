@@ -25,15 +25,11 @@ const getUserById = async (req: express.Request, res: express.Response) => {
 
 const updateUser = async (req: express.Request, res: express.Response) => {
   try {
-    const { name } = req.body;
+    const { name, company } = req.body;
 
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const updateDto = {
-      name: name?.trim(),
-    };
-
-    await UserModel.updateOne({ _id: userId }, { $set: updateDto });
+    await UserModel.updateOne({ _id: userId }, { $set: { name, company } });
 
     res.status(StatusCode.OK).send();
   } catch (e) {

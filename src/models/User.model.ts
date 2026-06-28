@@ -7,6 +7,7 @@ export interface User extends mongoose.Document {
   _id: string;
   name: string;
   email: string;
+  company?: string;
   emailVerified: boolean;
   password?: string;
   signUpMethod: SignUpMethods;
@@ -29,8 +30,12 @@ const UserSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, "The name is required."],
+      trim: true,
     },
-
+    company: {
+      type: String,
+      trim: true,
+    },
     email: {
       type: String,
       required: [true, "The email is required."],

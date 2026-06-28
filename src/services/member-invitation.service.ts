@@ -9,6 +9,7 @@ import {
   acceptInvitation,
   getOrgMembers,
   removeMember,
+  leaveOrg,
 } from "../controllers/member-invitation.controller";
 import { InviteMembersValidator } from "../validators/users-permissions/invite-members.validator";
 import { NonOrgMemberMiddleware } from "../middlewares/NonOrgMemberMiddleware";
@@ -72,5 +73,7 @@ membersInvitationRouter.post(
   NonOrgMemberMiddleware,
   removeMember,
 );
+
+membersInvitationRouter.post("/organization/leave", AuthMiddleware, leaveOrg);
 
 export default membersInvitationRouter;

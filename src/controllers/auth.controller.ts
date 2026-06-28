@@ -14,7 +14,7 @@ import { generateJWT } from "../utils/generateJWT";
 //Sign Up - Email
 const signUpEmail = async (req: express.Request, res: express.Response) => {
   try {
-    const { email, password } = req.body as SignUpEmailDto;
+    const { email, password, name, company } = req.body as SignUpEmailDto;
 
     const isEmailExist = await UserModel.findOne({ email });
 
@@ -44,7 +44,9 @@ const signUpEmail = async (req: express.Request, res: express.Response) => {
     const token = generateVerificationToken();
 
     await UserModel.create({
-      ...req.body,
+      name,
+      company,
+      email,
       password: hashedPassword,
       emailVerified: false,
       optCode: token,
