@@ -10,7 +10,7 @@ export const getDashboardStats = async (
   res: express.Response,
 ) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
@@ -22,7 +22,7 @@ export const getDashboardStats = async (
     startOf30Days.setDate(startOf30Days.getDate() - 30);
 
     const settings = await SettingsModel.findOne(
-      { userId },
+      { userId: scopeId },
       { "inventory.defaultMinStock": 1 },
     ).lean();
 
@@ -30,7 +30,7 @@ export const getDashboardStats = async (
 
     const matchStage = {
       $match: {
-        userId,
+        userId: scopeId,
         isDeleted: { $ne: true },
       },
     };

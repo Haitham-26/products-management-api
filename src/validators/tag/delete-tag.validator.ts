@@ -10,11 +10,11 @@ export const DeleteTagValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { id } = req.params;
 
-    const tag = await TagModel.findOne({ _id: id, userId });
+    const tag = await TagModel.findOne({ _id: id, userId: scopeId });
 
     if (!tag) {
       res.status(StatusCode.NOT_FOUND).send({ message: "Tag not found" });

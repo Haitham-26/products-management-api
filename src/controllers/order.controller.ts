@@ -14,7 +14,6 @@ import { OrderItem } from "../types/order/types/OrderItem";
 import { ProductService } from "./product.controller";
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import isBoolean from "lodash/isBoolean";
-import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
 import { generateIdentifier } from "./counter.controller";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
@@ -22,8 +21,8 @@ import { escapeSpecialChars } from "../utils/String";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId, products } = RequestContext<{
-      userId: string;
+    const { scopeId, products } = RequestContext<{
+      scopeId: string;
       products: Product[];
     }>(req);
 
@@ -82,7 +81,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
               (total, item) => total + item.finalPrice * item.quantity,
               0,
             ),
-            userId,
+            userId: scopeId,
           },
         ],
         { session },
@@ -97,7 +96,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
 
 const getOrders = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const {
       keyword,
@@ -116,7 +115,7 @@ const getOrders = async (req: express.Request, res: express.Response) => {
     const skip = (currentPage - 1) * pageSize;
 
     const query: QueryOptions = {
-      userId,
+      userId: scopeId,
     };
 
     if (isString(keyword)) {
@@ -180,7 +179,7 @@ const getOrders = async (req: express.Request, res: express.Response) => {
 
 const updateOrder = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const {
       note,
@@ -205,7 +204,7 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
     await OrderModel.updateOne(
       {
         _id: orderId,
-        userId: new Types.ObjectId(userId),
+        userId: scopeId,
       },
       {
         $set: updateQuery,
@@ -225,7 +224,10 @@ const manageOrderStatus = async (
   try {
     const { orderId, status } = req.body;
 
-    const { order } = RequestContext<{ order: Order }>(req);
+    const { order, scopeId } = RequestContext<{
+      order: Order;
+      scopeId: string;
+    }>(req);
 
     const currentStatus = order.status;
     const newStatus = status;
@@ -258,7 +260,11 @@ const manageOrderStatus = async (
     await withTransaction(async (session) => {
       const bulkOps = order.items.map((item) => ({
         updateOne: {
-          filter: { _id: item.productId, isDeleted: { $ne: true } },
+          filter: {
+            userId: scopeId,
+            _id: item.productId,
+            isDeleted: { $ne: true },
+          },
           update: {
             $inc: {
               quantity: getProductNewQuantity(item),
@@ -270,7 +276,7 @@ const manageOrderStatus = async (
       await ProductModel.bulkWrite(bulkOps, { session });
 
       await OrderModel.updateOne(
-        { _id: orderId },
+        { _id: orderId, userId: scopeId },
         { $set: { status: newStatus } },
         { session },
       );

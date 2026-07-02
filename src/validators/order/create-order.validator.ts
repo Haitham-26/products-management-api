@@ -57,7 +57,7 @@ export const CreateOrderValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const body = createOrderSchema.parse(req.body);
     req.body = body;
@@ -77,7 +77,7 @@ export const CreateOrderValidator = async (
       _id: { $in: productIds },
       isDeleted: { $ne: true },
       status: { $ne: ProductStatus.DRAFT },
-      userId,
+      userId: scopeId,
     });
 
     if (products.length !== productIds.length) {

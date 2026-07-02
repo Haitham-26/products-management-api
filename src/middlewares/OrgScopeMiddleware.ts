@@ -6,7 +6,6 @@ import { UserRoles } from "../types/user/types/UserRoles.enum";
 
 /**
  * @description Middleware that checks if the user is a member of an organization
- * and sets the userId as the organizationId in the request context to be used in the db queries
  */
 export const OrgScopeMiddleware = async (
   req: Request,
@@ -20,7 +19,7 @@ export const OrgScopeMiddleware = async (
       user.roles.includes(UserRoles.MEMBER) && user.organizationId;
 
     if (isMember) {
-      RequestContext(req, { userId: user.organizationId });
+      RequestContext(req, { scopeId: user.organizationId });
     }
 
     next();
