@@ -9,13 +9,28 @@ import {
 import { CreateCategoryValidator } from "../validators/category/create-category.validator";
 import { UpdateCategoryValidator } from "../validators/category/update-category.validator";
 import { OrgScopeMiddleware } from "../middlewares/OrgScopeMiddleware";
+import { UserPermissionsMiddleware } from "../middlewares/UserPermissionsMiddleware";
+import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
+import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 
 const categoryRouter = express.Router();
 
-categoryRouter.get("/", AuthMiddleware, OrgScopeMiddleware, getCategories);
+categoryRouter.get(
+  "/",
+  AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.categories, [
+    CRUDPermissions.READ,
+  ]),
+  OrgScopeMiddleware,
+  getCategories,
+);
 categoryRouter.post(
   "/create",
   AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.categories, [
+    CRUDPermissions.READ,
+    CRUDPermissions.CREATE,
+  ]),
   OrgScopeMiddleware,
   CreateCategoryValidator,
   createCategory,
@@ -23,6 +38,10 @@ categoryRouter.post(
 categoryRouter.patch(
   "/update",
   AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.categories, [
+    CRUDPermissions.UPDATE,
+    CRUDPermissions.READ,
+  ]),
   OrgScopeMiddleware,
   UpdateCategoryValidator,
   updateCategory,
@@ -30,6 +49,10 @@ categoryRouter.patch(
 categoryRouter.delete(
   "/delete",
   AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.categories, [
+    CRUDPermissions.DELETE,
+    CRUDPermissions.READ,
+  ]),
   OrgScopeMiddleware,
   deleteCategory,
 );
