@@ -8,7 +8,7 @@ export const globalLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     message:
-      "تقوم بالكثير من الإجراءات بسرعة كبيرة جداً، يرجى المحاولة لاحقاً بعد 15 دقيقة",
+      "You have reached the maximum number of requests, please try again later.",
   },
   statusCode: StatusCode.TOO_MANY_REQUESTS,
 });
@@ -20,7 +20,7 @@ export const sendMessageLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     message:
-      "لقد وصلت للحد الأقصى من الرسائل، انتظر 30 دقيقة قبل المحاولة مرة أخرى",
+      "You have reached the maximum number of requests, please try again later.",
   },
   statusCode: StatusCode.TOO_MANY_REQUESTS,
 });
@@ -32,7 +32,7 @@ export const replyOnQuestionLimiter = rateLimit({
   legacyHeaders: false,
   message: {
     message:
-      "أنت ترد على الأسئلة بسرعة كبيرة، انتظر 10 دقائق قبل المحاولة مرة أخرى!",
+      "You have reached the maximum number of requests, please try again later.",
   },
   statusCode: StatusCode.TOO_MANY_REQUESTS,
 });
