@@ -1,6 +1,7 @@
 import express from "express";
 import { AuthMiddleware } from "../middlewares/AuthMiddleware";
 import {
+  bulkManageProductStatus,
   createProduct,
   deleteBulkProducts,
   deleteProduct,
@@ -15,6 +16,7 @@ import { OrgScopeMiddleware } from "../middlewares/OrgScopeMiddleware";
 import { UserPermissionsMiddleware } from "../middlewares/UserPermissionsMiddleware";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
+import { BulkManageProductStatusValidator } from "../validators/product/bulk-manage-product-status.validator";
 
 const productRouter = express.Router();
 
@@ -58,6 +60,7 @@ productRouter.post(
   CreateProductValidator,
   createProduct,
 );
+
 productRouter.patch(
   "/update",
   AuthMiddleware,
@@ -68,6 +71,17 @@ productRouter.patch(
   OrgScopeMiddleware,
   UpdateProductValidator,
   updateProduct,
+);
+productRouter.patch(
+  "/manage-status/bulk",
+  AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.products, [
+    CRUDPermissions.UPDATE,
+    CRUDPermissions.READ,
+  ]),
+  OrgScopeMiddleware,
+  BulkManageProductStatusValidator,
+  bulkManageProductStatus,
 );
 productRouter.patch(
   "/manage-stock",

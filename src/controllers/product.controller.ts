@@ -518,6 +518,27 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const bulkManageProductStatus = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+
+    const { productIds, status } = req.body;
+
+    await ProductModel.updateMany(
+      { _id: { $in: productIds }, userId: scopeId },
+      { $set: { status } },
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+    res.status(500).send();
+  }
+};
+
 const manageProductStock = async (
   req: express.Request,
   res: express.Response,
@@ -546,5 +567,6 @@ export {
   deleteProduct,
   deleteBulkProducts,
   updateProduct,
+  bulkManageProductStatus,
   manageProductStock,
 };
