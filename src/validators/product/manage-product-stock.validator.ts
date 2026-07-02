@@ -24,12 +24,15 @@ export const ManageProductStockValidator = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { id } = req.params;
+    const { productId } = req.params;
 
     const body = manageProductStockSchema.parse(req.body);
     req.body = body;
 
-    const product = await ProductModel.findOne({ _id: id, userId: scopeId });
+    const product = await ProductModel.findOne({
+      _id: productId,
+      userId: scopeId,
+    });
 
     if (!product) {
       res.status(StatusCode.NOT_FOUND).send({ message: "Product not found" });

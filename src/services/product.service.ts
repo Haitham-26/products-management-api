@@ -2,6 +2,7 @@ import express from "express";
 import { AuthMiddleware } from "../middlewares/AuthMiddleware";
 import {
   createProduct,
+  deleteBulkProducts,
   deleteProduct,
   getProducts,
   manageProductStock,
@@ -27,7 +28,7 @@ productRouter.get(
   getProducts,
 );
 productRouter.delete(
-  "/:id/delete",
+  "/delete",
   AuthMiddleware,
   UserPermissionsMiddleware(PermissionEntities.products, [
     CRUDPermissions.DELETE,
@@ -35,6 +36,16 @@ productRouter.delete(
   ]),
   OrgScopeMiddleware,
   deleteProduct,
+);
+productRouter.delete(
+  "/delete/bulk",
+  AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.products, [
+    CRUDPermissions.DELETE,
+    CRUDPermissions.READ,
+  ]),
+  OrgScopeMiddleware,
+  deleteBulkProducts,
 );
 productRouter.post(
   "/create",
@@ -48,7 +59,7 @@ productRouter.post(
   createProduct,
 );
 productRouter.patch(
-  "/:id/update",
+  "/update",
   AuthMiddleware,
   UserPermissionsMiddleware(PermissionEntities.products, [
     CRUDPermissions.UPDATE,
@@ -59,7 +70,7 @@ productRouter.patch(
   updateProduct,
 );
 productRouter.patch(
-  "/:id/manage-stock",
+  "/manage-stock",
   AuthMiddleware,
   UserPermissionsMiddleware(PermissionEntities.products, [
     CRUDPermissions.UPDATE,
