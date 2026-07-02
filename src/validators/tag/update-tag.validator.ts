@@ -28,9 +28,9 @@ export const UpdateTagValidator = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { id } = req.params;
+    const { tagId } = req.body;
 
-    const tag = await TagModel.findById({ _id: id, userId: scopeId });
+    const tag = await TagModel.findById({ _id: tagId, userId: scopeId });
 
     if (!tag) {
       res.status(StatusCode.NOT_FOUND).send({ message: "Tag not found" });

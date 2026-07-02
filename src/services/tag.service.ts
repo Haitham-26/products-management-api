@@ -2,13 +2,13 @@ import express from "express";
 import { AuthMiddleware } from "../middlewares/AuthMiddleware";
 import {
   createTag,
+  deleteBulkTags,
   deleteTag,
   getTags,
   updateTag,
 } from "../controllers/tag.controller";
 import { UpdateTagValidator } from "../validators/tag/update-tag.validator";
 import { CreateTagValidator } from "../validators/tag/create-tag.validator";
-import { DeleteTagValidator } from "../validators/tag/delete-tag.validator";
 import { OrgScopeMiddleware } from "../middlewares/OrgScopeMiddleware";
 import { UserPermissionsMiddleware } from "../middlewares/UserPermissionsMiddleware";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
@@ -24,16 +24,26 @@ tagRouter.get(
   getTags,
 );
 tagRouter.delete(
-  "/:id/delete",
+  "/delete",
   AuthMiddleware,
   UserPermissionsMiddleware(PermissionEntities.tags, [
     CRUDPermissions.DELETE,
     CRUDPermissions.READ,
   ]),
   OrgScopeMiddleware,
-  DeleteTagValidator,
   deleteTag,
 );
+tagRouter.delete(
+  "/delete/bulk",
+  AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.tags, [
+    CRUDPermissions.DELETE,
+    CRUDPermissions.READ,
+  ]),
+  OrgScopeMiddleware,
+  deleteBulkTags,
+);
+
 tagRouter.post(
   "/create",
   AuthMiddleware,
@@ -46,7 +56,7 @@ tagRouter.post(
   createTag,
 );
 tagRouter.patch(
-  "/:id/update",
+  "/update",
   AuthMiddleware,
   UserPermissionsMiddleware(PermissionEntities.tags, [
     CRUDPermissions.UPDATE,
