@@ -13,14 +13,14 @@ import { escapeSpecialChars } from "../utils/String";
 
 const createCategory = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { name, description } = req.body;
 
     await CategoryModel.create({
       name,
       description,
-      userId,
+      userId: scopeId,
     });
 
     res.status(StatusCode.OK).send();
@@ -31,7 +31,7 @@ const createCategory = async (req: express.Request, res: express.Response) => {
 
 const getCategories = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { keyword, meta, minChildrenCount, maxChildrenCount, creationDate } =
       req.query;
@@ -43,7 +43,7 @@ const getCategories = async (req: express.Request, res: express.Response) => {
     const skip = (currentPage - 1) * pageSize;
 
     const query: QueryOptions = {
-      userId,
+      userId: scopeId,
       isDeleted: { $ne: true },
     };
 
@@ -89,9 +89,6 @@ const getCategories = async (req: express.Request, res: express.Response) => {
         total,
         page: currentPage,
         limit: pageSize,
-        totalPages: Math.ceil(total / pageSize),
-        hasNextPage: currentPage < Math.ceil(total / pageSize),
-        hasPrevPage: currentPage > 1,
       },
     });
   } catch (e) {
@@ -102,14 +99,14 @@ const getCategories = async (req: express.Request, res: express.Response) => {
 
 const deleteCategory = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { categoryId } = req.body;
 
     await withTransaction(async (session) => {
       const category = await CategoryModel.findOne({
         _id: categoryId,
-        userId,
+        userId: scopeId,
       }).session(session);
 
       if (!category) {
@@ -117,13 +114,16 @@ const deleteCategory = async (req: express.Request, res: express.Response) => {
       }
 
       await ProductModel.updateMany(
-        { categoryId: new Types.ObjectId(categoryId as string), userId },
+        {
+          categoryId: new Types.ObjectId(categoryId as string),
+          userId: scopeId,
+        },
         { $set: { categoryId: null } },
         { session },
       );
 
       await CategoryModel.updateOne(
-        { _id: new Types.ObjectId(categoryId as string), userId },
+        { _id: new Types.ObjectId(categoryId as string), userId: scopeId },
         { $set: { isDeleted: true, deletedAt: new Date() } },
         { session },
       );
@@ -137,7 +137,7 @@ const deleteCategory = async (req: express.Request, res: express.Response) => {
 
 const updateCategory = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { name, description, categoryId } = req.body;
 
@@ -152,7 +152,7 @@ const updateCategory = async (req: express.Request, res: express.Response) => {
     }
 
     await CategoryModel.findOneAndUpdate(
-      { _id: new Types.ObjectId(categoryId as string), userId },
+      { _id: new Types.ObjectId(categoryId as string), userId: scopeId },
       {
         $set: updateDto,
       },

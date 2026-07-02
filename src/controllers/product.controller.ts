@@ -47,7 +47,7 @@ export class ProductService {
 
 const createProduct = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const {
       name,
@@ -80,7 +80,7 @@ const createProduct = async (req: express.Request, res: express.Response) => {
               price,
               discount,
             ),
-            userId,
+            userId: scopeId,
             categoryId: categoryId
               ? new Types.ObjectId(categoryId as string)
               : undefined,
@@ -95,7 +95,7 @@ const createProduct = async (req: express.Request, res: express.Response) => {
 
       if (categoryId) {
         await CategoryModel.updateOne(
-          { _id: new Types.ObjectId(categoryId as string) },
+          { _id: new Types.ObjectId(categoryId as string), userId: scopeId },
           { $inc: { childrenCount: 1 } },
           { session },
         );
@@ -104,6 +104,7 @@ const createProduct = async (req: express.Request, res: express.Response) => {
       if (tags?.length) {
         await TagModel.updateMany(
           {
+            userId: scopeId,
             _id: {
               $in: tags.map((tagId: string) => new Types.ObjectId(tagId)),
             },
@@ -123,7 +124,7 @@ const createProduct = async (req: express.Request, res: express.Response) => {
 
 const getProducts = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const {
       categoryId,
@@ -149,7 +150,7 @@ const getProducts = async (req: express.Request, res: express.Response) => {
     const skip = (currentPage - 1) * pageSize;
 
     const query: QueryOptions = {
-      userId,
+      userId: scopeId,
       isDeleted: { $ne: true },
     };
 
@@ -262,9 +263,6 @@ const getProducts = async (req: express.Request, res: express.Response) => {
         total,
         page: currentPage,
         limit: pageSize,
-        totalPages: Math.ceil(total / pageSize),
-        hasNextPage: currentPage < Math.ceil(total / pageSize),
-        hasPrevPage: currentPage > 1,
       },
     });
   } catch (e) {
@@ -275,20 +273,20 @@ const getProducts = async (req: express.Request, res: express.Response) => {
 
 const deleteProduct = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { id } = req.params;
 
     await withTransaction(async (session) => {
       const product = await ProductModel.findOneAndUpdate(
-        { _id: id, userId },
+        { _id: id, userId: scopeId },
         { $set: { isDeleted: true, deletedAt: new Date() } },
         { new: true, session },
       ).populate("tags", "_id");
 
       if (product?.categoryId) {
         await CategoryModel.updateOne(
-          { _id: product.categoryId },
+          { _id: product.categoryId, userId: scopeId },
           { $inc: { childrenCount: -1 } },
           { session },
         );
@@ -296,7 +294,7 @@ const deleteProduct = async (req: express.Request, res: express.Response) => {
 
       if (product?.tags?.length) {
         await TagModel.updateMany(
-          { _id: { $in: product.tags.map((tag) => tag._id) } },
+          { userId: scopeId, _id: { $in: product.tags.map((tag) => tag._id) } },
           { $inc: { usageCount: -1 } },
           { session },
         );
@@ -311,7 +309,7 @@ const deleteProduct = async (req: express.Request, res: express.Response) => {
 
 const updateProduct = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { id } = req.params;
 
@@ -412,7 +410,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
       }
 
       await ProductModel.findOneAndUpdate(
-        { _id: id, userId },
+        { _id: id, userId: scopeId },
         { $set: updateDto },
         { session },
       );
@@ -423,7 +421,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
       ) {
         if (oldCategoryId) {
           await CategoryModel.updateOne(
-            { _id: oldCategoryId },
+            { _id: oldCategoryId, userId: scopeId },
             { $inc: { childrenCount: -1 } },
             { session },
           );
@@ -431,7 +429,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
 
         if (newCategoryId) {
           await CategoryModel.updateOne(
-            { _id: newCategoryId },
+            { _id: newCategoryId, userId: scopeId },
             { $inc: { childrenCount: 1 } },
             { session },
           );
@@ -440,7 +438,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
 
       if (removedTags.length) {
         await TagModel.updateMany(
-          { _id: { $in: removedTags } },
+          { _id: { $in: removedTags }, userId: scopeId },
           { $inc: { usageCount: -1 } },
           { session },
         );
@@ -448,7 +446,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
 
       if (addedTags.length) {
         await TagModel.updateMany(
-          { _id: { $in: addedTags } },
+          { _id: { $in: addedTags }, userId: scopeId },
           { $inc: { usageCount: 1 } },
           { session },
         );
@@ -469,10 +467,12 @@ const manageProductStock = async (
   try {
     const { id } = req.params;
 
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+
     const { stockChange } = req.body;
 
     await ProductModel.updateOne(
-      { _id: new Types.ObjectId(id) },
+      { _id: new Types.ObjectId(id), userId: scopeId },
       { $inc: { quantity: Number(stockChange) } },
     );
 

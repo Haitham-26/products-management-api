@@ -30,9 +30,9 @@ const updateSettings = async (req: express.Request, res: express.Response) => {
 
 const getSettings = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const settings = await SettingsModel.findOne({ userId });
+    const settings = await SettingsModel.findOne({ userId: scopeId });
 
     res.status(StatusCode.OK).json(settings);
   } catch (e) {

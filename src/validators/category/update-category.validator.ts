@@ -27,13 +27,13 @@ export const UpdateCategoryValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { categoryId } = req.body;
 
     const category = await CategoryModel.findOne({
       _id: new Types.ObjectId(categoryId as string),
-      userId,
+      userId: scopeId,
     });
 
     if (!category) {

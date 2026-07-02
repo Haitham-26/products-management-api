@@ -39,7 +39,7 @@ export const CreateProductValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const body = createProductSchema.parse(req.body);
     req.body = body;
@@ -48,7 +48,7 @@ export const CreateProductValidator = async (
       if (Types.ObjectId.isValid(body.categoryId as string)) {
         const category = await CategoryModel.findOne({
           _id: req.body.categoryId,
-          userId,
+          userId: scopeId,
         });
 
         if (!category) {
@@ -80,9 +80,10 @@ export const CreateProductValidator = async (
         return;
       }
 
-      const tags = await TagModel.find({ _id: { $in: tagIds }, userId }).select(
-        "_id",
-      );
+      const tags = await TagModel.find({
+        _id: { $in: tagIds },
+        userId: scopeId,
+      }).select("_id");
 
       if (tags.length !== tagIds.length) {
         res.status(StatusCode.NOT_FOUND).send({ message: "Tag not found" });

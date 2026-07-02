@@ -3,7 +3,7 @@ import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
 import TagModel, { Tag } from "../models/Tag.model";
-import { QueryOptions, Types } from "mongoose";
+import { QueryOptions } from "mongoose";
 import isNil from "lodash/isNil";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
@@ -11,14 +11,14 @@ import { escapeSpecialChars } from "../utils/String";
 
 const createTag = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { name, description } = req.body;
 
     await TagModel.create({
       name,
       description,
-      userId,
+      userId: scopeId,
     });
 
     res.status(StatusCode.OK).send();
@@ -29,7 +29,7 @@ const createTag = async (req: express.Request, res: express.Response) => {
 
 const getTags = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { keyword, meta, minUsageCount, maxUsageCount, creationDate } =
       req.query;
@@ -42,7 +42,7 @@ const getTags = async (req: express.Request, res: express.Response) => {
 
     const query: QueryOptions = {
       isDeleted: { $ne: true },
-      userId,
+      userId: scopeId,
     };
 
     if (isString(keyword)) {
@@ -87,9 +87,6 @@ const getTags = async (req: express.Request, res: express.Response) => {
         total,
         page: currentPage,
         limit: pageSize,
-        totalPages: Math.ceil(total / pageSize),
-        hasNextPage: currentPage < Math.ceil(total / pageSize),
-        hasPrevPage: currentPage > 1,
       },
     });
   } catch (e) {
@@ -100,11 +97,11 @@ const getTags = async (req: express.Request, res: express.Response) => {
 
 const deleteTag = async (req: express.Request, res: express.Response) => {
   try {
-    const { tag, userId } = RequestContext<{ tag: Tag; userId: string }>(req);
+    const { tag, scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
 
     if (tag.usageCount > 0) {
       await TagModel.updateOne(
-        { _id: tag._id, userId },
+        { _id: tag._id, userId: scopeId },
         {
           $set: {
             isDeleted: true,
@@ -113,7 +110,7 @@ const deleteTag = async (req: express.Request, res: express.Response) => {
         },
       );
     } else {
-      await TagModel.deleteOne({ _id: tag._id, userId });
+      await TagModel.deleteOne({ _id: tag._id, userId: scopeId });
     }
 
     res.sendStatus(StatusCode.OK);
@@ -125,7 +122,7 @@ const deleteTag = async (req: express.Request, res: express.Response) => {
 
 const updateTag = async (req: express.Request, res: express.Response) => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { id } = req.params;
 
@@ -142,7 +139,7 @@ const updateTag = async (req: express.Request, res: express.Response) => {
     }
 
     await TagModel.findOneAndUpdate(
-      { _id: id, userId },
+      { _id: id, userId: scopeId },
       {
         $set: updateDto,
       },
