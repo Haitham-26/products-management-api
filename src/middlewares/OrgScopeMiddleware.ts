@@ -18,9 +18,9 @@ export const OrgScopeMiddleware = async (
     const isMember =
       user.roles.includes(UserRoles.MEMBER) && user.organizationId;
 
-    if (isMember) {
-      RequestContext(req, { scopeId: user.organizationId });
-    }
+    const scopeId = isMember ? user.organizationId : user._id;
+
+    RequestContext(req, { scopeId });
 
     next();
   } catch (e) {

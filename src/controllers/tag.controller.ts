@@ -11,7 +11,7 @@ import { escapeSpecialChars } from "../utils/String";
 
 const createTag = async (req: express.Request, res: express.Response) => {
   try {
-    const { scopeId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { name, description } = req.body;
 
@@ -87,9 +87,6 @@ const getTags = async (req: express.Request, res: express.Response) => {
         total,
         page: currentPage,
         limit: pageSize,
-        totalPages: Math.ceil(total / pageSize),
-        hasNextPage: currentPage < Math.ceil(total / pageSize),
-        hasPrevPage: currentPage > 1,
       },
     });
   } catch (e) {

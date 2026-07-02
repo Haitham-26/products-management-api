@@ -166,9 +166,6 @@ const getOrders = async (req: express.Request, res: express.Response) => {
         total,
         page: currentPage,
         limit: pageSize,
-        totalPages: Math.ceil(total / pageSize),
-        hasNextPage: currentPage < Math.ceil(total / pageSize),
-        hasPrevPage: currentPage > 1,
       },
     });
   } catch (e) {
