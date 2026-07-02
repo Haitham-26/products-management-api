@@ -2,6 +2,7 @@ import express from "express";
 import { AuthMiddleware } from "../middlewares/AuthMiddleware";
 import {
   createCategory,
+  deleteBulkCategories,
   deleteCategory,
   getCategories,
   updateCategory,
@@ -55,6 +56,17 @@ categoryRouter.delete(
   ]),
   OrgScopeMiddleware,
   deleteCategory,
+);
+
+categoryRouter.delete(
+  "/delete/bulk",
+  AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.categories, [
+    CRUDPermissions.DELETE,
+    CRUDPermissions.READ,
+  ]),
+  OrgScopeMiddleware,
+  deleteBulkCategories,
 );
 
 export default categoryRouter;

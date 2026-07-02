@@ -135,6 +135,47 @@ const deleteCategory = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const deleteBulkCategories = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+
+    const { categoryIds } = req.body;
+
+    await withTransaction(async (session) => {
+      const categories = await CategoryModel.find({
+        _id: { $in: categoryIds },
+        userId: scopeId,
+      }).session(session);
+
+      if (!categories.length) {
+        return;
+      }
+
+      await ProductModel.updateMany(
+        {
+          categoryId: { $in: categoryIds },
+          userId: scopeId,
+        },
+        { $set: { categoryId: null } },
+        { session },
+      );
+
+      await CategoryModel.updateMany(
+        { _id: { $in: categoryIds }, userId: scopeId },
+        { $set: { isDeleted: true, deletedAt: new Date() } },
+        { session },
+      );
+    });
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 const updateCategory = async (req: express.Request, res: express.Response) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
@@ -164,4 +205,10 @@ const updateCategory = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export { createCategory, getCategories, deleteCategory, updateCategory };
+export {
+  createCategory,
+  getCategories,
+  deleteCategory,
+  deleteBulkCategories,
+  updateCategory,
+};
