@@ -28,8 +28,8 @@ export const ManageOrderStatusValidator = async (
     req.body = body;
 
     const order = await OrderModel.findOne({
-      _id: new Types.ObjectId(body.orderId),
-      userId: new Types.ObjectId(userId),
+      _id: body.orderId,
+      userId: userId,
     });
 
     if (!order) {

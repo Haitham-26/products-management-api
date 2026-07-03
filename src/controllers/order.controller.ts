@@ -18,6 +18,7 @@ import { generateIdentifier } from "./counter.controller";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { escapeSpecialChars } from "../utils/String";
+import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -214,6 +215,33 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const bulkManageOrderVisibility = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+
+    const { orderIds, visibility } = req.body;
+
+    await OrderModel.updateMany(
+      {
+        _id: { $in: orderIds },
+        userId: scopeId,
+      },
+      {
+        $set: {
+          isArchived: visibility === OrderVisibility.ARCHIVED,
+        },
+      },
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 const manageOrderStatus = async (
   req: express.Request,
   res: express.Response,
@@ -286,4 +314,10 @@ const manageOrderStatus = async (
   }
 };
 
-export { createOrder, getOrders, updateOrder, manageOrderStatus };
+export {
+  createOrder,
+  getOrders,
+  updateOrder,
+  bulkManageOrderVisibility,
+  manageOrderStatus,
+};

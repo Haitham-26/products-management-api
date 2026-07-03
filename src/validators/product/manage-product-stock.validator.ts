@@ -24,7 +24,7 @@ export const ManageProductStockValidator = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { productId } = req.params;
+    const { productId } = req.body;
 
     const body = manageProductStockSchema.parse(req.body);
     req.body = body;

@@ -52,8 +52,10 @@ export const UpdateOrderValidator = async (
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
+    const { orderId } = req.body;
+
     const order = await OrderModel.findOne({
-      _id: req.params.id,
+      _id: orderId,
       userId: new Types.ObjectId(userId),
     });
 

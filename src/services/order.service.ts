@@ -1,6 +1,7 @@
 import express from "express";
 import { AuthMiddleware } from "../middlewares/AuthMiddleware";
 import {
+  bulkManageOrderVisibility,
   createOrder,
   getOrders,
   manageOrderStatus,
@@ -13,6 +14,7 @@ import { OrgScopeMiddleware } from "../middlewares/OrgScopeMiddleware";
 import { UserPermissionsMiddleware } from "../middlewares/UserPermissionsMiddleware";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
+import { BulkManageOrderVisibilityValidator } from "../validators/order/bulk-manage-order-visibility.validator";
 
 const orderRouter = express.Router();
 
@@ -35,7 +37,7 @@ orderRouter.post(
   createOrder,
 );
 orderRouter.patch(
-  "/:id/update",
+  "/update",
   AuthMiddleware,
   UserPermissionsMiddleware(PermissionEntities.orders, [
     CRUDPermissions.UPDATE,
@@ -46,7 +48,18 @@ orderRouter.patch(
   updateOrder,
 );
 orderRouter.patch(
-  "/:id/manage-status",
+  "/manage-visibility/bulk",
+  AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.orders, [
+    CRUDPermissions.UPDATE,
+    CRUDPermissions.READ,
+  ]),
+  OrgScopeMiddleware,
+  BulkManageOrderVisibilityValidator,
+  bulkManageOrderVisibility,
+);
+orderRouter.patch(
+  "/manage-status",
   AuthMiddleware,
   UserPermissionsMiddleware(PermissionEntities.orders, [
     CRUDPermissions.UPDATE,
