@@ -6,6 +6,7 @@ import { Order } from "../models/Order.model";
 type StockCheckResult = {
   insufficientStockProductIds: string[];
   productMap: Map<string, Product>;
+  orderIdentifiersByProductId: Map<string, string[]>;
 };
 
 export const checkOrderProductsStockAvailability = async (
@@ -16,6 +17,7 @@ export const checkOrderProductsStockAvailability = async (
   const orderService = new OrderService();
 
   const quantityByProductId = new Map<string, number>();
+  const orderIdentifiersByProductId = new Map<string, string[]>();
 
   for (const order of orders) {
     for (const item of order.items) {
@@ -35,6 +37,15 @@ export const checkOrderProductsStockAvailability = async (
         id,
         (quantityByProductId.get(id) || 0) + quantity,
       );
+
+      const existingOrderIdentifiers =
+        orderIdentifiersByProductId.get(id) || [];
+
+      if (!existingOrderIdentifiers.includes(order.identifier)) {
+        existingOrderIdentifiers.push(order.identifier);
+      }
+
+      orderIdentifiersByProductId.set(id, existingOrderIdentifiers);
     }
   }
 
@@ -67,18 +78,44 @@ export const checkOrderProductsStockAvailability = async (
     });
   }
 
-  return { insufficientStockProductIds, productMap };
+  return {
+    insufficientStockProductIds,
+    productMap,
+    orderIdentifiersByProductId,
+  };
 };
 
 export const buildInsufficientStockMessage = (
   insufficientStockProductIds: string[],
   productMap: Map<string, Product>,
+  orderIdentifiersByProductId: Map<string, string[]>,
 ): string => {
-  const productLabels = insufficientStockProductIds.map((id) => {
+  const productIdsByOrderIdentifier = new Map<string, string[]>();
+
+  for (const productId of insufficientStockProductIds) {
+    const orderIdentifiers = orderIdentifiersByProductId.get(productId) || [];
+
+    for (const orderIdentifier of orderIdentifiers) {
+      const existing = productIdsByOrderIdentifier.get(orderIdentifier) || [];
+
+      existing.push(productId);
+
+      productIdsByOrderIdentifier.set(orderIdentifier, existing);
+    }
+  }
+
+  const productLabel = (id: string) => {
     const product = productMap.get(id);
-
     return product?.name || id;
-  });
+  };
 
-  return `Insufficient stock for the following products: ${productLabels.join(", ")}.`;
+  const messages = Array.from(productIdsByOrderIdentifier.entries()).map(
+    ([orderIdentifier, productIds]) => {
+      const labels = productIds.map(productLabel).join(", ");
+
+      return `Order ${orderIdentifier}: insufficient stock for ${labels}`;
+    },
+  );
+
+  return messages.join(". ");
 };

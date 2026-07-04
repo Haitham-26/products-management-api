@@ -47,18 +47,22 @@ export const BulkManageOrderStatusValidator = async (
       return;
     }
 
-    const { insufficientStockProductIds, productMap } =
-      await checkOrderProductsStockAvailability(
-        orders as unknown as Order[],
-        body.status as OrderStatus,
-        scopeId,
-      );
+    const {
+      insufficientStockProductIds,
+      productMap,
+      orderIdentifiersByProductId,
+    } = await checkOrderProductsStockAvailability(
+      orders as unknown as Order[],
+      body.status as OrderStatus,
+      scopeId,
+    );
 
     if (insufficientStockProductIds.length) {
       res.status(StatusCode.BAD_REQUEST).send({
         message: buildInsufficientStockMessage(
           insufficientStockProductIds,
           productMap,
+          orderIdentifiersByProductId,
         ),
       });
       return;
