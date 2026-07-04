@@ -1,4 +1,4 @@
-import express from "express";
+import { RequestHandler } from "express";
 import bcrypt from "bcrypt";
 import UserModel, { User } from "../models/User.model";
 import { generateVerificationToken } from "../utils/generateVerificationToken";
@@ -10,9 +10,10 @@ import { withTransaction } from "../utils/withTransaction";
 import SettingsModel from "../models/Settings.model";
 import { RequestContext } from "../utils/RequestContext";
 import { generateJWT } from "../utils/generateJWT";
+import { OAuth2Client } from "google-auth-library";
 
 //Sign Up - Email
-const signUpEmail = async (req: express.Request, res: express.Response) => {
+const signUpEmail: RequestHandler = async (req, res) => {
   try {
     const { email, password, name, company } = req.body as SignUpEmailDto;
 
@@ -65,7 +66,7 @@ const signUpEmail = async (req: express.Request, res: express.Response) => {
 };
 
 // Sign Up - Token
-const signUpToken = async (req: express.Request, res: express.Response) => {
+const signUpToken: RequestHandler = async (req, res) => {
   try {
     const { email, token } = req.body as SignUpToken;
 
@@ -136,10 +137,7 @@ const signUpToken = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const signupResendToken = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const signupResendToken: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -165,7 +163,7 @@ const signupResendToken = async (
 };
 
 //Login
-const login = async (req: express.Request, res: express.Response) => {
+const login: RequestHandler = async (req, res) => {
   try {
     const { email, password } = req.body as LoginDto;
 
@@ -203,21 +201,43 @@ const login = async (req: express.Request, res: express.Response) => {
       token: generateJWT(user._id.toString(), user.tokenVersion),
     });
   } catch (e) {
-    console.log(e);
     res.status(StatusCode.INTERNAL_ERROR).send(e);
   }
 };
 
-const googleLogin = async (req: express.Request, res: express.Response) => {
-  const { email, name, avatar } = req.body;
+const googleLogin: RequestHandler = async (req, res) => {
+  const { idToken } = req.body;
+
+  const client = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+  );
 
   try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload) {
+      res.status(400).send({ message: "Invalid Google token" });
+      return;
+    }
+
+    const { email, name, picture, email_verified } = payload;
+
+    if (!email || !email_verified) {
+      res.status(400).send({ message: "Your google account is not verified" });
+      return;
+    }
+
     let user = await UserModel.findOne({ email });
 
     if (user && user?.signUpMethod !== SignUpMethods.GOOGLE) {
       res.status(StatusCode.BAD_REQUEST).send({
-        message:
-          "This account was created with a different sign-up method. Please login with the correct method.",
+        message: "This account was not created with a google account.",
       });
       return;
     }
@@ -229,9 +249,10 @@ const googleLogin = async (req: express.Request, res: express.Response) => {
             {
               email,
               name,
-              avatar,
+              avatar: picture,
               emailVerified: true,
               signUpMethod: SignUpMethods.GOOGLE,
+              tokenVersion: 0,
             },
           ],
           { session },
@@ -239,14 +260,7 @@ const googleLogin = async (req: express.Request, res: express.Response) => {
 
         user = newUser;
 
-        await SettingsModel.create(
-          [
-            {
-              userId: user._id,
-            },
-          ],
-          { session },
-        );
+        await SettingsModel.create([{ userId: user._id }], { session });
       });
     }
 
@@ -255,14 +269,14 @@ const googleLogin = async (req: express.Request, res: express.Response) => {
       token: generateJWT(user!._id.toString(), user!.tokenVersion),
     });
   } catch (e) {
-    res.status(StatusCode.INTERNAL_ERROR).send(e);
+    console.log(e);
+    res.status(StatusCode.INTERNAL_ERROR).send({
+      message: "Something went wrong",
+    });
   }
 };
 
-const forgotPasswordEmail = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const forgotPasswordEmail: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -288,10 +302,7 @@ const forgotPasswordEmail = async (
   }
 };
 
-const forgotPasswordToken = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const forgotPasswordToken: RequestHandler = async (req, res) => {
   try {
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -299,10 +310,7 @@ const forgotPasswordToken = async (
   }
 };
 
-const forgotPasswordNew = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const forgotPasswordNew: RequestHandler = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
 
