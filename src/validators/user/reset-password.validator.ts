@@ -6,6 +6,7 @@ import { RequestContext } from "../../utils/RequestContext";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import { User } from "../../models/User.model";
+import { SignUpMethods } from "../../types/auth/shared/SignUpMethods";
 
 const resetPasswordNewSchema = z
   .object({
@@ -31,6 +32,14 @@ export const ResetPasswordValidator = async (
 ): Promise<void> => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
+
+    if (user.signUpMethod !== SignUpMethods.EMAIL) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message:
+          "You cannot reset this account's password because it was created with google",
+      });
+      return;
+    }
 
     const body = resetPasswordNewSchema.parse(req.body);
     req.body = body;

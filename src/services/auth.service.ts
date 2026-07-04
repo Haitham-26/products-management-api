@@ -29,6 +29,7 @@ authRouter.post(
 
 authRouter.post("/login", LoginValidator, login);
 authRouter.post("/google-login", googleLogin);
+
 // This endpoint is used for resend token too
 authRouter.post(
   "/forgot-password/email",
