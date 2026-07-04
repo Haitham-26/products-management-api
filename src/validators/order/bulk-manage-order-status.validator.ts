@@ -1,0 +1,50 @@
+import express from "express";
+import { Types } from "mongoose";
+import z from "zod";
+import { OrderStatus } from "../../types/order/types/OrderStatus.enum";
+import { ThrowZodError } from "../../utils/ThrowZodError";
+import { RequestContext } from "../../utils/RequestContext";
+import OrderModel from "../../models/Order.model";
+import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
+
+const bulkManageOrderStatusSchema = z
+  .object({
+    orderIds: z
+      .array(
+        z.string().refine((val) => Types.ObjectId.isValid(val), {
+          message: "Invalid orderId",
+        }),
+      )
+      .min(1, "At least one order id is required"),
+    status: z.enum(Object.keys(OrderStatus)),
+  })
+  .loose();
+
+export const BulkManageOrderStatusValidator = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    const { userId } = RequestContext<{ userId: string }>(req);
+
+    const body = bulkManageOrderStatusSchema.parse(req.body);
+    req.body = body;
+
+    const orders = await OrderModel.find({
+      _id: { $in: body.orderIds },
+      userId: userId,
+    });
+
+    if (body.orderIds.length !== orders.length) {
+      res
+        .status(StatusCode.NOT_FOUND)
+        .send({ message: "Some orders not found" });
+      return;
+    }
+
+    next();
+  } catch (e) {
+    ThrowZodError(res, e);
+  }
+};
