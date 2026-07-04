@@ -370,7 +370,6 @@ const bulkManageOrderStatus = async (
                   userId: scopeId,
                   _id: item.productId,
                   isDeleted: { $ne: true },
-                  status: { $ne: OrderStatus.CONFIRMED },
                 },
                 update: {
                   $inc: {
