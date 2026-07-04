@@ -50,11 +50,13 @@ export const UpdateOrderValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+
+    const { orderId } = req.body;
 
     const order = await OrderModel.findOne({
-      _id: req.params.id,
-      userId: new Types.ObjectId(userId),
+      _id: orderId,
+      userId: scopeId,
     });
 
     if (!order) {

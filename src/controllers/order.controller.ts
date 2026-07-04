@@ -18,6 +18,40 @@ import { generateIdentifier } from "./counter.controller";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { escapeSpecialChars } from "../utils/String";
+import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
+
+export class OrderService {
+  constructor() {}
+
+  getProductNewQuantity(
+    orderItem: OrderItem,
+    currentStatus: OrderStatus,
+    newStatus: OrderStatus,
+  ) {
+    if (
+      currentStatus === OrderStatus.PENDING &&
+      newStatus === OrderStatus.CONFIRMED
+    ) {
+      return 0;
+    }
+
+    if (
+      currentStatus === OrderStatus.PENDING &&
+      newStatus === OrderStatus.CANCELLED
+    ) {
+      return orderItem.quantity;
+    }
+
+    if (
+      currentStatus === OrderStatus.CANCELLED &&
+      newStatus === OrderStatus.PENDING
+    ) {
+      return -orderItem.quantity;
+    }
+
+    return 0;
+  }
+}
 
 const createOrder = async (req: express.Request, res: express.Response) => {
   try {
@@ -214,6 +248,33 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const bulkManageOrderVisibility = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+
+    const { orderIds, visibility } = req.body;
+
+    await OrderModel.updateMany(
+      {
+        _id: { $in: orderIds },
+        userId: scopeId,
+      },
+      {
+        $set: {
+          isArchived: visibility === OrderVisibility.ARCHIVED,
+        },
+      },
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 const manageOrderStatus = async (
   req: express.Request,
   res: express.Response,
@@ -229,30 +290,7 @@ const manageOrderStatus = async (
     const currentStatus = order.status;
     const newStatus = status;
 
-    const getProductNewQuantity = (orderItem: OrderItem) => {
-      if (
-        currentStatus === OrderStatus.PENDING &&
-        newStatus === OrderStatus.CONFIRMED
-      ) {
-        return 0;
-      }
-
-      if (
-        currentStatus === OrderStatus.PENDING &&
-        newStatus === OrderStatus.CANCELLED
-      ) {
-        return orderItem.quantity;
-      }
-
-      if (
-        currentStatus === OrderStatus.CANCELLED &&
-        newStatus === OrderStatus.PENDING
-      ) {
-        return -orderItem.quantity;
-      }
-
-      return 0;
-    };
+    const orderService = new OrderService();
 
     await withTransaction(async (session) => {
       const bulkOps = order.items.map((item) => ({
@@ -264,7 +302,11 @@ const manageOrderStatus = async (
           },
           update: {
             $inc: {
-              quantity: getProductNewQuantity(item),
+              quantity: orderService.getProductNewQuantity(
+                item,
+                currentStatus,
+                newStatus,
+              ),
             },
           },
         },
@@ -286,4 +328,95 @@ const manageOrderStatus = async (
   }
 };
 
-export { createOrder, getOrders, updateOrder, manageOrderStatus };
+const bulkManageOrderStatus = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { orderIds, status: newStatus } = req.body;
+
+    const { scopeId } = RequestContext<{
+      scopeId: string;
+    }>(req);
+
+    const orderService = new OrderService();
+
+    await withTransaction(async (session) => {
+      const orders = await OrderModel.find({
+        _id: { $in: orderIds },
+        userId: scopeId,
+        isDeleted: { $ne: true },
+        status: { $ne: OrderStatus.CONFIRMED },
+      }).session(session);
+
+      const productBulkOps = orders
+        .filter((order) => {
+          // Cancelled orders' status cannot be directly changed to CONFIRMED
+          if (
+            order.status === OrderStatus.CANCELLED &&
+            newStatus === OrderStatus.CONFIRMED
+          ) {
+            return false;
+          } else {
+            return true;
+          }
+        })
+        .flatMap((order) =>
+          order.items
+            .flatMap((item) => item)
+            .map((item) => ({
+              updateOne: {
+                filter: {
+                  userId: scopeId,
+                  _id: item.productId,
+                  isDeleted: { $ne: true },
+                },
+                update: {
+                  $inc: {
+                    quantity: orderService.getProductNewQuantity(
+                      item.toObject() as unknown as OrderItem,
+                      order.status,
+                      newStatus,
+                    ),
+                  },
+                },
+              },
+            })),
+        );
+
+      await OrderModel.updateMany(
+        {
+          _id: { $in: orderIds },
+          userId: scopeId,
+          isDeleted: { $ne: true },
+          status: { $ne: OrderStatus.CONFIRMED },
+          ...(newStatus === OrderStatus.CONFIRMED
+            ? {
+                status: {
+                  $nin: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+                },
+              }
+            : {}),
+        },
+        { $set: { status: newStatus } },
+        { session },
+      );
+
+      await ProductModel.bulkWrite(productBulkOps, { session });
+    });
+
+    res.sendStatus(200);
+  } catch (e) {
+    console.log(e);
+    res.sendStatus(500);
+  }
+};
+
+export {
+  createOrder,
+  getOrders,
+  updateOrder,
+  bulkManageOrderVisibility,
+  manageOrderStatus,
+  bulkManageOrderStatus,
+};

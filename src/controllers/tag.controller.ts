@@ -97,7 +97,21 @@ const getTags = async (req: express.Request, res: express.Response) => {
 
 const deleteTag = async (req: express.Request, res: express.Response) => {
   try {
-    const { tag, scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
+    const { scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
+
+    const { tagId } = req.body;
+
+    const tag = await TagModel.findOne({
+      _id: tagId,
+      userId: scopeId,
+    });
+
+    if (!tag) {
+      res.status(StatusCode.NOT_FOUND).send({
+        message: "Tag not found",
+      });
+      return;
+    }
 
     if (tag.usageCount > 0) {
       await TagModel.updateOne(
@@ -120,11 +134,62 @@ const deleteTag = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const deleteBulkTags = async (req: express.Request, res: express.Response) => {
+  try {
+    const { scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
+
+    const { tagIds } = req.body;
+
+    const tags = await TagModel.find({
+      _id: { $in: tagIds },
+      userId: scopeId,
+    });
+
+    if (!tags.length) {
+      res.status(StatusCode.NOT_FOUND).send({
+        message: "Tags not found",
+      });
+      return;
+    }
+
+    await TagModel.bulkWrite(
+      tags.map((tag) => {
+        const date = new Date();
+
+        if (tag.usageCount > 0) {
+          return {
+            updateOne: {
+              filter: { _id: tag._id, userId: scopeId },
+              update: {
+                $set: {
+                  isDeleted: true,
+                  deletedAt: date,
+                },
+              },
+            },
+          };
+        } else {
+          return {
+            deleteOne: {
+              filter: { _id: tag._id, userId: scopeId },
+            },
+          };
+        }
+      }),
+    );
+
+    res.sendStatus(StatusCode.OK);
+  } catch (e) {
+    console.log(e);
+    res.sendStatus(500);
+  }
+};
+
 const updateTag = async (req: express.Request, res: express.Response) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { id } = req.params;
+    const { tagId } = req.body;
 
     const { name, description } = req.body;
 
@@ -139,7 +204,7 @@ const updateTag = async (req: express.Request, res: express.Response) => {
     }
 
     await TagModel.findOneAndUpdate(
-      { _id: id, userId: scopeId },
+      { _id: tagId, userId: scopeId },
       {
         $set: updateDto,
       },
@@ -151,4 +216,4 @@ const updateTag = async (req: express.Request, res: express.Response) => {
   }
 };
 
-export { createTag, getTags, deleteTag, updateTag };
+export { createTag, getTags, deleteTag, deleteBulkTags, updateTag };

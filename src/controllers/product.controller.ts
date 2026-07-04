@@ -275,11 +275,11 @@ const deleteProduct = async (req: express.Request, res: express.Response) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { id } = req.params;
+    const { productId } = req.body;
 
     await withTransaction(async (session) => {
       const product = await ProductModel.findOneAndUpdate(
-        { _id: id, userId: scopeId },
+        { _id: productId, userId: scopeId },
         { $set: { isDeleted: true, deletedAt: new Date() } },
         { new: true, session },
       ).populate("tags", "_id");
@@ -307,11 +307,69 @@ const deleteProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const deleteBulkProducts = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+    const { productIds } = req.body;
+
+    await withTransaction(async (session) => {
+      const products = await ProductModel.find({
+        _id: { $in: productIds },
+        userId: scopeId,
+      })
+        .session(session)
+        .populate("tags", "_id");
+
+      await ProductModel.updateMany(
+        { _id: { $in: productIds }, userId: scopeId },
+        { $set: { isDeleted: true, deletedAt: new Date() } },
+        { session },
+      );
+
+      const categoryOperations = products
+        .filter((product) => product.categoryId)
+        .map((product) => ({
+          updateOne: {
+            filter: { _id: product.categoryId, userId: scopeId },
+            update: { $inc: { childrenCount: -1 } },
+          },
+        }));
+
+      if (categoryOperations.length) {
+        await CategoryModel.bulkWrite(categoryOperations, { session });
+      }
+
+      const tagOperations = products
+        .filter((product) => product?.tags?.length)
+        .map((product) => ({
+          updateMany: {
+            filter: {
+              userId: scopeId,
+              _id: { $in: product.tags.map((tag) => tag._id) },
+            },
+            update: { $inc: { usageCount: -1 } },
+          },
+        }));
+
+      if (tagOperations.length) {
+        await TagModel.bulkWrite(tagOperations, { session });
+      }
+    });
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 const updateProduct = async (req: express.Request, res: express.Response) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { id } = req.params;
+    const { productId } = req.body;
 
     const {
       name,
@@ -410,7 +468,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
       }
 
       await ProductModel.findOneAndUpdate(
-        { _id: id, userId: scopeId },
+        { _id: productId, userId: scopeId },
         { $set: updateDto },
         { session },
       );
@@ -460,19 +518,40 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const bulkManageProductStatus = async (
+  req: express.Request,
+  res: express.Response,
+) => {
+  try {
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+
+    const { productIds, status } = req.body;
+
+    await ProductModel.updateMany(
+      { _id: { $in: productIds }, userId: scopeId },
+      { $set: { status } },
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    console.log(e);
+    res.status(500).send();
+  }
+};
+
 const manageProductStock = async (
   req: express.Request,
   res: express.Response,
 ) => {
   try {
-    const { id } = req.params;
+    const { productId } = req.body;
 
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { stockChange } = req.body;
 
     await ProductModel.updateOne(
-      { _id: new Types.ObjectId(id), userId: scopeId },
+      { _id: productId, userId: scopeId },
       { $inc: { quantity: Number(stockChange) } },
     );
 
@@ -486,6 +565,8 @@ export {
   createProduct,
   getProducts,
   deleteProduct,
+  deleteBulkProducts,
   updateProduct,
+  bulkManageProductStatus,
   manageProductStock,
 };

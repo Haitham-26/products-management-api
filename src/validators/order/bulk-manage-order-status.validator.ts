@@ -11,16 +11,20 @@ import {
   checkOrderProductsStockAvailability,
 } from "../../utils/orderProductsStockValidation";
 
-const manageOrderStatusSchema = z
+const bulkManageOrderStatusSchema = z
   .object({
-    orderId: z.string().refine((val) => Types.ObjectId.isValid(val), {
-      message: "Invalid orderId",
-    }),
+    orderIds: z
+      .array(
+        z.string().refine((val) => Types.ObjectId.isValid(val), {
+          message: "Invalid orderId",
+        }),
+      )
+      .min(1, "At least one order id is required"),
     status: z.enum(Object.keys(OrderStatus)),
   })
   .loose();
 
-export const ManageOrderStatusValidator = async (
+export const BulkManageOrderStatusValidator = async (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction,
@@ -28,40 +32,18 @@ export const ManageOrderStatusValidator = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const body = manageOrderStatusSchema.parse(req.body);
+    const body = bulkManageOrderStatusSchema.parse(req.body);
     req.body = body;
 
-    const order = await OrderModel.findOne({
-      _id: body.orderId,
+    const orders = await OrderModel.find({
+      _id: { $in: body.orderIds },
       userId: scopeId,
     });
 
-    if (!order) {
-      res.status(StatusCode.NOT_FOUND).send({ message: "Order not found" });
-      return;
-    }
-
-    if (order.status === OrderStatus.CONFIRMED) {
+    if (body.orderIds.length !== orders.length) {
       res
-        .status(StatusCode.BAD_REQUEST)
-        .send({ message: "Confirmed order's status cannot be changed" });
-      return;
-    }
-
-    if (order.status.toLowerCase() === body.status.toLowerCase()) {
-      res
-        .status(StatusCode.BAD_REQUEST)
-        .send({ message: "The order is already in this status" });
-      return;
-    }
-
-    if (
-      order.status === OrderStatus.CANCELLED &&
-      body.status === OrderStatus.CONFIRMED
-    ) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Cancelled order's status cannot be changed to confirmed. ",
-      });
+        .status(StatusCode.NOT_FOUND)
+        .send({ message: "Some orders not found" });
       return;
     }
 
@@ -70,7 +52,7 @@ export const ManageOrderStatusValidator = async (
       productMap,
       orderIdentifiersByProductId,
     } = await checkOrderProductsStockAvailability(
-      [order as unknown as Order],
+      orders as unknown as Order[],
       body.status as OrderStatus,
       scopeId,
     );
@@ -85,8 +67,6 @@ export const ManageOrderStatusValidator = async (
       });
       return;
     }
-
-    RequestContext(req, { order });
 
     next();
   } catch (e) {

@@ -88,6 +88,8 @@ export const CreateOrderValidator = async (
       return;
     }
 
+    let insufficientStockProductNames: string[] = [];
+
     for (const product of products) {
       if (
         ((product.quantity as number) || 0) <
@@ -95,11 +97,17 @@ export const CreateOrderValidator = async (
             ?.quantity as number) ||
         0
       ) {
-        res.status(StatusCode.BAD_REQUEST).send({
-          message: `Product ${product.name} has insufficient quantity`,
-        });
-        return;
+        insufficientStockProductNames.push(product.name as string);
       }
+    }
+
+    if (insufficientStockProductNames.length) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: `Insufficient stock for ${insufficientStockProductNames.join(
+          ", ",
+        )}`,
+      });
+      return;
     }
 
     RequestContext(req, { products });
