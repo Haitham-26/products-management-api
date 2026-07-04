@@ -26,7 +26,7 @@ export const BulkManageOrderVisibilityValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { orderIds } = req.body;
 
@@ -35,7 +35,7 @@ export const BulkManageOrderVisibilityValidator = async (
 
     const orders = await OrderModel.find({
       _id: { $in: orderIds },
-      userId,
+      userId: scopeId,
     });
 
     if (orderIds.length !== orders.length) {

@@ -26,14 +26,14 @@ export const BulkManageOrderStatusValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
-    const { userId } = RequestContext<{ userId: string }>(req);
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const body = bulkManageOrderStatusSchema.parse(req.body);
     req.body = body;
 
     const orders = await OrderModel.find({
       _id: { $in: body.orderIds },
-      userId: userId,
+      userId: scopeId,
     });
 
     if (body.orderIds.length !== orders.length) {

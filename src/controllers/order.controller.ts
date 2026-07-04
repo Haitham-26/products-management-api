@@ -20,7 +20,7 @@ import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.e
 import { escapeSpecialChars } from "../utils/String";
 import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
 
-class OrderService {
+export class OrderService {
   constructor() {}
 
   getProductNewQuantity(
