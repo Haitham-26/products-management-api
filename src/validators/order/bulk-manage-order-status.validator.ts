@@ -4,8 +4,12 @@ import z from "zod";
 import { OrderStatus } from "../../types/order/types/OrderStatus.enum";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import { RequestContext } from "../../utils/RequestContext";
-import OrderModel from "../../models/Order.model";
+import OrderModel, { Order } from "../../models/Order.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
+import {
+  buildInsufficientStockMessage,
+  checkStockAvailability,
+} from "../../utils/orderStockValidation";
 
 const bulkManageOrderStatusSchema = z
   .object({
@@ -40,6 +44,23 @@ export const BulkManageOrderStatusValidator = async (
       res
         .status(StatusCode.NOT_FOUND)
         .send({ message: "Some orders not found" });
+      return;
+    }
+
+    const { insufficientStockProductIds, productMap } =
+      await checkStockAvailability(
+        orders as unknown as Order[],
+        body.status as OrderStatus,
+        scopeId,
+      );
+
+    if (insufficientStockProductIds.length) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: buildInsufficientStockMessage(
+          insufficientStockProductIds,
+          productMap,
+        ),
+      });
       return;
     }
 
