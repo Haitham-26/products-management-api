@@ -8,8 +8,8 @@ import OrderModel, { Order } from "../../models/Order.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import {
   buildInsufficientStockMessage,
-  checkStockAvailability,
-} from "../../utils/orderStockValidation";
+  checkOrderProductsStockAvailability,
+} from "../../utils/orderProductsStockValidation";
 
 const manageOrderStatusSchema = z
   .object({
@@ -66,7 +66,7 @@ export const ManageOrderStatusValidator = async (
     }
 
     const { insufficientStockProductIds, productMap } =
-      await checkStockAvailability(
+      await checkOrderProductsStockAvailability(
         [order as unknown as Order],
         body.status as OrderStatus,
         scopeId,

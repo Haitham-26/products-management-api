@@ -8,7 +8,7 @@ type StockCheckResult = {
   productMap: Map<string, Product>;
 };
 
-export const checkStockAvailability = async (
+export const checkOrderProductsStockAvailability = async (
   orders: Order[],
   newStatus: OrderStatus,
   scopeId: string,
