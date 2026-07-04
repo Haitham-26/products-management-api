@@ -9,11 +9,11 @@ export const generateIdentifier = async (
   key: CounterKeys,
   session?: mongoose.ClientSession,
 ): Promise<string> => {
-  const { userId } = RequestContext<{ userId: string }>(req);
+  const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
   const counter = await CounterModel.findOneAndUpdate(
-    { key, userId },
-    { $inc: { seq: 1 }, $setOnInsert: { userId } },
+    { key, userId: scopeId },
+    { $inc: { seq: 1 }, $setOnInsert: { userId: scopeId } },
     {
       new: true,
       upsert: true,
