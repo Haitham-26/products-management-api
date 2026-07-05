@@ -6,7 +6,7 @@ import { Types } from "mongoose";
 import bcrypt from "bcrypt";
 import { generateJWT } from "../utils/generateJWT";
 import { UploadService } from "../services/upload.service";
-import isNil from "lodash/isNil";
+import isUndefined from "lodash/isUndefined";
 
 const getUserById = async (req: express.Request, res: express.Response) => {
   try {
@@ -33,16 +33,18 @@ const updateUser = async (req: express.Request, res: express.Response) => {
       req,
     );
 
-    let avatarUrl: string | null | undefined = avatar;
+    let avatarUrl: string | null | undefined;
     let avatarPublicId: string | null | undefined = user.avatarPublicId;
 
     if (req.file) {
       const uploaded = await UploadService.uploadImage(req.file);
       avatarUrl = uploaded.secure_url;
       avatarPublicId = uploaded.public_id;
-    } else if (isNil(avatar) || avatar === "null") {
+    } else if (avatar === "null" || (!avatar?.length && !isUndefined(avatar))) {
       avatarUrl = null;
       avatarPublicId = null;
+    } else {
+      avatarUrl = avatar;
     }
 
     const previousAvatarPublicId = user.avatarPublicId;

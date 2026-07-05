@@ -17,6 +17,7 @@ const userUpdateSchema = z
       .max(50, "Company name must be at most 50 characters long")
       .optional()
       .or(z.literal("")),
+    avatar: z.string().optional().or(z.literal("")),
   })
   .partial();
 
