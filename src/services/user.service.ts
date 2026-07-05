@@ -21,8 +21,8 @@ userRouter.patch(
 userRouter.patch(
   "/update",
   AuthMiddleware,
-  UserUpdateValidator,
   upload.single("avatar"),
+  UserUpdateValidator,
   updateUser,
 );
 
