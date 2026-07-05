@@ -7,6 +7,7 @@ import {
 import { AuthMiddleware } from "../middlewares/AuthMiddleware";
 import { UserUpdateValidator } from "../validators/user/update-user.validator";
 import { ResetPasswordValidator } from "../validators/user/reset-password.validator";
+import upload from "../middlewares/UploadImageMiddleware";
 
 const userRouter = express.Router();
 
@@ -17,6 +18,12 @@ userRouter.patch(
   ResetPasswordValidator,
   resetPassword,
 );
-userRouter.patch("/update", AuthMiddleware, UserUpdateValidator, updateUser);
+userRouter.patch(
+  "/update",
+  AuthMiddleware,
+  UserUpdateValidator,
+  upload.single("avatar"),
+  updateUser,
+);
 
 export default userRouter;
