@@ -12,6 +12,7 @@ import settingsRouter from "./src/services/settings.service";
 import dashboardRouter from "./src/services/dashboard.service";
 import membersInvitationRouter from "./src/services/member-invitation.service";
 import { startCronJobs } from "./src/cron";
+import { multerErrorHandler } from "./src/utils/multerErrorHandler";
 
 require("dotenv").config();
 
@@ -40,6 +41,8 @@ app.use("/tags", tagRouter);
 app.use("/orders", orderRouter);
 app.use("/dashboard", dashboardRouter);
 app.use("/users-permissions", membersInvitationRouter);
+
+app.use(multerErrorHandler);
 
 app.use("/healthcheck", (req, res) => {
   res.status(200).send("Healthy");

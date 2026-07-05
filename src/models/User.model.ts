@@ -12,6 +12,7 @@ export interface User extends mongoose.Document {
   password?: string;
   signUpMethod: SignUpMethods;
   avatar?: string;
+  avatarPublicId?: string;
   optCode?: string;
   roles: UserRoles[];
   organizationId?: string;
@@ -44,6 +45,9 @@ const UserSchema = new mongoose.Schema(
       trim: true,
     },
     avatar: {
+      type: String,
+    },
+    avatarPublicId: {
       type: String,
     },
     password: {
