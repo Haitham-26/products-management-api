@@ -17,6 +17,7 @@ import { UserPermissionsMiddleware } from "../middlewares/UserPermissionsMiddlew
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { BulkManageProductStatusValidator } from "../validators/product/bulk-manage-product-status.validator";
+import upload from "../middlewares/UploadImageMiddleware";
 
 const productRouter = express.Router();
 
@@ -55,6 +56,10 @@ productRouter.post(
   UserPermissionsMiddleware(PermissionEntities.products, [
     CRUDPermissions.CREATE,
     CRUDPermissions.READ,
+  ]),
+  upload.fields([
+    { name: "mainImage", maxCount: 1 },
+    { name: "galleryImages", maxCount: 5 },
   ]),
   OrgScopeMiddleware,
   CreateProductValidator,

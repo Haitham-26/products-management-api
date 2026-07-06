@@ -41,6 +41,22 @@ export const CreateProductValidator = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
+    ["discount", "tags"].forEach((key: string) => {
+      if (req.body[key]) {
+        req.body[key] = JSON.parse(req.body[key]);
+      }
+
+      if (key === "discount" && req.body?.dicsount?.value) {
+        req.body.discount.value = Number(req.body.discount.value);
+      }
+    });
+
+    ["price", "quantity", "minStock"].forEach((key: string) => {
+      if (req.body[key]) {
+        req.body[key] = Number(req.body[key]);
+      }
+    });
+
     const body = createProductSchema.parse(req.body);
     req.body = body;
 

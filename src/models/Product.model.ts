@@ -2,6 +2,7 @@ import mongoose, { model, Types } from "mongoose";
 import { ProductDiscount } from "../types/product/types/ProductDiscount";
 import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
 import { ProductStatus } from "../types/product/types/ProductStatus.enum";
+import { CloudinaryImage } from "../types/shared/types/CloudinaryImage";
 
 export interface Product extends mongoose.Document {
   _id: Types.ObjectId;
@@ -17,6 +18,8 @@ export interface Product extends mongoose.Document {
   priceAfterDiscount?: number;
   categoryId?: Types.ObjectId | null;
   tags?: Types.ObjectId[];
+  mainImage?: CloudinaryImage;
+  galleryImages?: CloudinaryImage[];
   isDeleted: boolean;
   deletedAt?: Date | null;
   createdAt: string;
@@ -81,6 +84,20 @@ const ProductSchema = new mongoose.Schema(
       {
         type: Types.ObjectId,
         ref: "Tag",
+      },
+    ],
+    mainImage: {
+      type: {
+        publicId: String,
+        secureUrl: String,
+      },
+    },
+    galleryImages: [
+      {
+        type: {
+          publicId: String,
+          secureUrl: String,
+        },
       },
     ],
     isDeleted: {

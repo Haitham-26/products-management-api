@@ -21,6 +21,9 @@ import { escapeSpecialChars } from "../utils/String";
 import { ProductStatus } from "../types/product/types/ProductStatus.enum";
 import isNull from "lodash/isNull";
 import { QueryOptions } from "mongoose";
+import { RequestHandler } from "express-serve-static-core";
+import { UploadService } from "../services/upload.service";
+import { CloudinaryImage } from "../types/shared/types/CloudinaryImage";
 
 export class ProductService {
   constructor() {}
@@ -45,8 +48,13 @@ export class ProductService {
   }
 }
 
-const createProduct = async (req: express.Request, res: express.Response) => {
+const createProduct: RequestHandler = async (req, res) => {
   try {
+    const files = req.files as unknown as {
+      mainImage?: Express.Multer.File[];
+      galleryImages?: Express.Multer.File[];
+    };
+
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const {
@@ -61,6 +69,40 @@ const createProduct = async (req: express.Request, res: express.Response) => {
     } = req.body;
 
     await withTransaction(async (session) => {
+      const mainImageFile = files?.mainImage?.[0];
+      const galleryImageFiles = files?.galleryImages || [];
+
+      let mainImage: CloudinaryImage | undefined = undefined;
+      let galleryImages: CloudinaryImage[] = [];
+
+      if (mainImageFile) {
+        const image = await UploadService.uploadImage(
+          mainImageFile,
+          "products/main",
+        );
+
+        mainImage = {
+          publicId: image.public_id,
+          secureUrl: image.secure_url,
+        };
+      }
+
+      if (galleryImageFiles?.length) {
+        galleryImages = await Promise.all(
+          galleryImageFiles.map(async (file) => {
+            const image = await UploadService.uploadImage(
+              file,
+              "products/gallery",
+            );
+
+            return {
+              publicId: image.public_id,
+              secureUrl: image.secure_url,
+            };
+          }),
+        );
+      }
+
       const identifier = await generateIdentifier(
         req,
         CounterKeys.PRODUCT,
@@ -88,6 +130,8 @@ const createProduct = async (req: express.Request, res: express.Response) => {
               ?.filter((tagId: string) => Types.ObjectId.isValid(tagId))
               ?.map((tagId: string) => new Types.ObjectId(tagId)),
             minStock: isNumber(minStock) ? Number(minStock) : undefined,
+            mainImage,
+            galleryImages: galleryImages.length ? galleryImages : undefined,
           },
         ],
         { session },
@@ -122,7 +166,7 @@ const createProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const getProducts = async (req: express.Request, res: express.Response) => {
+const getProducts: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -271,7 +315,7 @@ const getProducts = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const deleteProduct = async (req: express.Request, res: express.Response) => {
+const deleteProduct: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -307,10 +351,7 @@ const deleteProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const deleteBulkProducts = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const deleteBulkProducts: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
     const { productIds } = req.body;
@@ -365,7 +406,7 @@ const deleteBulkProducts = async (
   }
 };
 
-const updateProduct = async (req: express.Request, res: express.Response) => {
+const updateProduct: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -518,10 +559,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const bulkManageProductStatus = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const bulkManageProductStatus: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -539,10 +577,7 @@ const bulkManageProductStatus = async (
   }
 };
 
-const manageProductStock = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const manageProductStock: RequestHandler = async (req, res) => {
   try {
     const { productId } = req.body;
 

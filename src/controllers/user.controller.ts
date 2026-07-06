@@ -37,7 +37,7 @@ const updateUser = async (req: express.Request, res: express.Response) => {
     let avatarPublicId: string | null | undefined = user.avatarPublicId;
 
     if (req.file) {
-      const uploaded = await UploadService.uploadImage(req.file);
+      const uploaded = await UploadService.uploadImage(req.file, "avatars");
       avatarUrl = uploaded.secure_url;
       avatarPublicId = uploaded.public_id;
     } else if (avatar === "null" || (!avatar?.length && !isUndefined(avatar))) {
