@@ -546,7 +546,9 @@ const updateProduct: RequestHandler = async (req, res) => {
       // If it's an array, then it will be an empty array or an array of
       // secure urls (existing images) that we will not touch them
       if (isArray(bodyGalleryImages)) {
-        // If it's an empty array, then we will delete all existing images
+        //  If it's an empty array, then we will delete all existing images
+        //  if the user has existing images, the bodyGalleryImages will not even be an empty array
+        //  it will be an array of secure urls
         if (!bodyGalleryImages?.length && product.galleryImages?.length) {
           await Promise.all(
             product.galleryImages.map((image) =>
