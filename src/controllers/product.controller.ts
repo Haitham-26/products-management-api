@@ -513,15 +513,17 @@ const updateProduct: RequestHandler = async (req, res) => {
         );
       }
 
-      // Upload / remove images
       const mainImageFile = files?.mainImage?.[0];
       const galleryImageFiles = files?.galleryImages || [];
 
-      let mainImageToUpload: CloudinaryImage | undefined = undefined;
-      let galleryImagesToUpload: CloudinaryImage[] = [];
+      let mainImageToUpload: CloudinaryImage | null | undefined = undefined;
+      let newGalleryImagesToUpload: CloudinaryImage[] = [];
+      let galleryImagesToDeletePublicIds: string[] = [];
 
-      if (isNil(req.body.mainImage) && product.mainImage?.publicId) {
+      if (isNull(req.body.mainImage) && product.mainImage?.publicId) {
         await UploadService.deleteImage(product.mainImage.publicId);
+
+        mainImageToUpload = null;
       } else if (mainImageFile) {
         if (product.mainImage?.publicId) {
           await UploadService.deleteImage(product.mainImage.publicId);
@@ -536,47 +538,65 @@ const updateProduct: RequestHandler = async (req, res) => {
       }
 
       // These will be array of secure urls
-      const bodyGalleryImages = req.body.galleryImages as string[];
+      const bodyGalleryImages: string[] = req.body.galleryImages;
 
-      if (isArray(bodyGalleryImages) && !bodyGalleryImages?.length) {
-        if (product.galleryImages?.length) {
+      if (isArray(bodyGalleryImages)) {
+        if (!bodyGalleryImages?.length && product.galleryImages?.length) {
           await Promise.all(
             product.galleryImages.map((image) =>
               UploadService.deleteImage(image.publicId),
             ),
           );
+
+          product.galleryImages?.forEach((image) => {
+            galleryImagesToDeletePublicIds.push(image.publicId);
+          });
+        }
+
+        const imagesToDelete = product.galleryImages?.filter(
+          (image) => !bodyGalleryImages?.includes(image.secureUrl),
+        );
+
+        if (imagesToDelete?.length) {
+          await Promise.all(
+            imagesToDelete.map((image) =>
+              UploadService.deleteImage(image.publicId),
+            ),
+          );
+
+          imagesToDelete.forEach((image) => {
+            galleryImagesToDeletePublicIds.push(image.publicId);
+          });
         }
       }
 
       if (galleryImageFiles?.length) {
-        if (isArray(bodyGalleryImages) && bodyGalleryImages?.length) {
-          const imagesToDelete = product.galleryImages?.filter(
-            (image) => !bodyGalleryImages?.includes(image.secureUrl),
-          );
-
-          if (imagesToDelete?.length) {
-            await Promise.all(
-              imagesToDelete.map((image) =>
-                UploadService.deleteImage(image.publicId),
-              ),
-            );
-          }
-        }
-
         const uploadedImages = await Promise.all(
           galleryImageFiles.map((file) =>
             UploadService.uploadImage(file, "products/gallery"),
           ),
         );
 
-        galleryImagesToUpload = uploadedImages.map((image) => ({
+        newGalleryImagesToUpload = uploadedImages.map((image) => ({
           publicId: image.public_id,
           secureUrl: image.secure_url,
         }));
       }
 
       updateDto.mainImage = mainImageToUpload;
-      updateDto.galleryImages = galleryImagesToUpload;
+
+      updateDto.galleryImages = [
+        ...(product?.galleryImages?.length
+          ? product.galleryImages.filter((image) => {
+              if (galleryImagesToDeletePublicIds.length) {
+                return !galleryImagesToDeletePublicIds.includes(image.publicId);
+              }
+
+              return true;
+            })
+          : []),
+        ...newGalleryImagesToUpload,
+      ];
 
       await ProductModel.findOneAndUpdate(
         { _id: productId, userId: scopeId },

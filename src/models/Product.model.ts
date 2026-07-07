@@ -18,7 +18,7 @@ export interface Product extends mongoose.Document {
   priceAfterDiscount?: number;
   categoryId?: Types.ObjectId | null;
   tags?: Types.ObjectId[];
-  mainImage?: CloudinaryImage;
+  mainImage?: CloudinaryImage | null;
   galleryImages?: CloudinaryImage[];
   isDeleted: boolean;
   deletedAt?: Date | null;

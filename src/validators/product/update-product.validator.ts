@@ -10,6 +10,7 @@ import { RequestContext } from "../../utils/RequestContext";
 import { ProductDiscountTypes } from "../../types/product/types/ProductDiscountTypes.enum";
 import { ProductStatus } from "../../types/product/types/ProductStatus.enum";
 import { normalizeMultipartBody } from "../../utils/normalizeMultipartBody";
+import isArray from "lodash/isArray";
 
 const updateProductSchema = z
   .object({
@@ -36,7 +37,7 @@ const updateProductSchema = z
     categoryId: z.string().nullable().optional(),
     tags: z.array(z.string()).optional(),
     mainImage: z.string().nullable().optional(),
-    images: z.array(z.string()).optional(),
+    galleryImages: z.array(z.string()).optional(),
   })
   .loose();
 
@@ -47,6 +48,10 @@ export const UpdateProductValidator: RequestHandler = async (
 ) => {
   try {
     req.body = normalizeMultipartBody(req.body);
+
+    if (req.body?.galleryImages && !isArray(req.body.galleryImages)) {
+      req.body.galleryImages = [req.body.galleryImages];
+    }
 
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
