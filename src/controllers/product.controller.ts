@@ -1,4 +1,3 @@
-import express from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import ProductModel, { Product } from "../models/Product.model";
@@ -24,6 +23,7 @@ import { QueryOptions } from "mongoose";
 import { RequestHandler } from "express-serve-static-core";
 import { UploadService } from "../services/upload.service";
 import { CloudinaryImage } from "../types/shared/types/CloudinaryImage";
+import isArray from "lodash/isArray";
 
 export class ProductService {
   constructor() {}
@@ -410,7 +410,7 @@ const updateProduct: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { productId } = req.body;
+    const { productId, mainImage, galleryImages } = req.body;
 
     const {
       name,
@@ -476,6 +476,11 @@ const updateProduct: RequestHandler = async (req, res) => {
     }
 
     await withTransaction(async (session) => {
+      const files = req.files as unknown as {
+        mainImage?: Express.Multer.File[];
+        galleryImages?: Express.Multer.File[];
+      };
+
       const oldCategoryId = product?.categoryId || null;
 
       let newCategoryId: Types.ObjectId | null = null;
@@ -507,6 +512,71 @@ const updateProduct: RequestHandler = async (req, res) => {
           (newTag) => !oldTags.some((oldTag) => oldTag.equals(newTag)),
         );
       }
+
+      // Upload / remove images
+      const mainImageFile = files?.mainImage?.[0];
+      const galleryImageFiles = files?.galleryImages || [];
+
+      let mainImageToUpload: CloudinaryImage | undefined = undefined;
+      let galleryImagesToUpload: CloudinaryImage[] = [];
+
+      if (isNil(req.body.mainImage) && product.mainImage?.publicId) {
+        await UploadService.deleteImage(product.mainImage.publicId);
+      } else if (mainImageFile) {
+        if (product.mainImage?.publicId) {
+          await UploadService.deleteImage(product.mainImage.publicId);
+        }
+
+        const uploadedImage = await UploadService.uploadImage(mainImageFile);
+
+        mainImageToUpload = {
+          publicId: uploadedImage.public_id,
+          secureUrl: uploadedImage.secure_url,
+        };
+      }
+
+      // These will be array of secure urls
+      const bodyGalleryImages = req.body.galleryImages as string[];
+
+      if (isArray(bodyGalleryImages) && !bodyGalleryImages?.length) {
+        if (product.galleryImages?.length) {
+          await Promise.all(
+            product.galleryImages.map((image) =>
+              UploadService.deleteImage(image.publicId),
+            ),
+          );
+        }
+      }
+
+      if (galleryImageFiles?.length) {
+        if (isArray(bodyGalleryImages) && bodyGalleryImages?.length) {
+          const imagesToDelete = product.galleryImages?.filter(
+            (image) => !bodyGalleryImages?.includes(image.secureUrl),
+          );
+
+          if (imagesToDelete?.length) {
+            await Promise.all(
+              imagesToDelete.map((image) =>
+                UploadService.deleteImage(image.publicId),
+              ),
+            );
+          }
+        }
+
+        const uploadedImages = await Promise.all(
+          galleryImageFiles.map((file) =>
+            UploadService.uploadImage(file, "products/gallery"),
+          ),
+        );
+
+        galleryImagesToUpload = uploadedImages.map((image) => ({
+          publicId: image.public_id,
+          secureUrl: image.secure_url,
+        }));
+      }
+
+      updateDto.mainImage = mainImageToUpload;
+      updateDto.galleryImages = galleryImagesToUpload;
 
       await ProductModel.findOneAndUpdate(
         { _id: productId, userId: scopeId },

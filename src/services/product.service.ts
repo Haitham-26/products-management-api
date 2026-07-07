@@ -73,6 +73,10 @@ productRouter.patch(
     CRUDPermissions.UPDATE,
     CRUDPermissions.READ,
   ]),
+  upload.fields([
+    { name: "mainImage", maxCount: 1 },
+    { name: "galleryImages", maxCount: 5 },
+  ]),
   OrgScopeMiddleware,
   UpdateProductValidator,
   updateProduct,

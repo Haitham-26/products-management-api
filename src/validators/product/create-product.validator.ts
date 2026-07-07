@@ -7,6 +7,7 @@ import CategoryModel from "../../models/Category.model";
 import TagModel from "../../models/Tag.model";
 import { ProductDiscountTypes } from "../../types/product/types/ProductDiscountTypes.enum";
 import { RequestContext } from "../../utils/RequestContext";
+import { normalizeMultipartBody } from "../../utils/normalizeMultipartBody";
 
 const createProductSchema = z
   .object({
@@ -39,6 +40,8 @@ export const CreateProductValidator = async (
   next: express.NextFunction,
 ): Promise<void> => {
   try {
+    req.body = normalizeMultipartBody(req.body);
+
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     ["discount", "tags"].forEach((key: string) => {
