@@ -1,4 +1,4 @@
-import express from "express";
+import express, { RequestHandler } from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
@@ -53,7 +53,7 @@ export class OrderService {
   }
 }
 
-const createOrder = async (req: express.Request, res: express.Response) => {
+const createOrder: RequestHandler = async (req, res) => {
   try {
     const { scopeId, products } = RequestContext<{
       scopeId: string;
@@ -72,6 +72,10 @@ const createOrder = async (req: express.Request, res: express.Response) => {
         return {
           productId: product._id,
           productName: product.name,
+          productMainImage: product?.mainImage?.secureUrl,
+          productGalleryImages: product?.galleryImages?.map(
+            (image) => image.secureUrl,
+          ),
           quantity: item.quantity,
           priceAtPurchase: product.price || 0,
           discountAtPurchase: product?.discount,
@@ -128,7 +132,7 @@ const createOrder = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const getOrders = async (req: express.Request, res: express.Response) => {
+const getOrders: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -208,7 +212,7 @@ const getOrders = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const updateOrder = async (req: express.Request, res: express.Response) => {
+const updateOrder: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -248,10 +252,7 @@ const updateOrder = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const bulkManageOrderVisibility = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const bulkManageOrderVisibility: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -275,10 +276,7 @@ const bulkManageOrderVisibility = async (
   }
 };
 
-const manageOrderStatus = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const manageOrderStatus: RequestHandler = async (req, res) => {
   try {
     const { orderId, status } = req.body;
 
@@ -328,10 +326,7 @@ const manageOrderStatus = async (
   }
 };
 
-const bulkManageOrderStatus = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const bulkManageOrderStatus: RequestHandler = async (req, res) => {
   try {
     const { orderIds, status: newStatus } = req.body;
 

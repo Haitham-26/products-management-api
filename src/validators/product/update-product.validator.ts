@@ -1,5 +1,5 @@
 import z from "zod";
-import express from "express";
+import { RequestHandler } from "express";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import ProductModel from "../../models/Product.model";
@@ -9,6 +9,8 @@ import TagModel from "../../models/Tag.model";
 import { RequestContext } from "../../utils/RequestContext";
 import { ProductDiscountTypes } from "../../types/product/types/ProductDiscountTypes.enum";
 import { ProductStatus } from "../../types/product/types/ProductStatus.enum";
+import { normalizeMultipartBody } from "../../utils/normalizeMultipartBody";
+import isArray from "lodash/isArray";
 
 const updateProductSchema = z
   .object({
@@ -34,18 +36,42 @@ const updateProductSchema = z
       .optional(),
     categoryId: z.string().nullable().optional(),
     tags: z.array(z.string()).optional(),
+    mainImage: z.string().nullable().optional(),
+    galleryImages: z.array(z.string()).optional(),
   })
   .loose();
 
-export const UpdateProductValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const UpdateProductValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
+    req.body = normalizeMultipartBody(req.body);
+
+    if (req.body?.galleryImages && !isArray(req.body.galleryImages)) {
+      req.body.galleryImages = [req.body.galleryImages];
+    }
+
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const { productId } = req.body;
+
+    ["discount", "tags"].forEach((key: string) => {
+      if (req.body[key]) {
+        req.body[key] = JSON.parse(req.body[key]);
+      }
+
+      if (key === "discount" && req.body?.dicsount?.value) {
+        req.body.discount.value = Number(req.body.discount.value);
+      }
+    });
+
+    ["price", "quantity", "minStock"].forEach((key: string) => {
+      if (req.body[key]) {
+        req.body[key] = Number(req.body[key]);
+      }
+    });
 
     const product = await ProductModel.findOne({
       _id: productId,

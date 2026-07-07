@@ -1,4 +1,3 @@
-import express from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import ProductModel, { Product } from "../models/Product.model";
@@ -21,6 +20,10 @@ import { escapeSpecialChars } from "../utils/String";
 import { ProductStatus } from "../types/product/types/ProductStatus.enum";
 import isNull from "lodash/isNull";
 import { QueryOptions } from "mongoose";
+import { RequestHandler } from "express-serve-static-core";
+import { UploadService } from "../services/upload.service";
+import { CloudinaryImage } from "../types/shared/types/CloudinaryImage";
+import isArray from "lodash/isArray";
 
 export class ProductService {
   constructor() {}
@@ -45,10 +48,8 @@ export class ProductService {
   }
 }
 
-const createProduct = async (req: express.Request, res: express.Response) => {
+const createProduct: RequestHandler = async (req, res) => {
   try {
-    const { scopeId } = RequestContext<{ scopeId: string }>(req);
-
     const {
       name,
       description,
@@ -60,60 +61,125 @@ const createProduct = async (req: express.Request, res: express.Response) => {
       minStock,
     } = req.body;
 
-    await withTransaction(async (session) => {
-      const identifier = await generateIdentifier(
-        req,
-        CounterKeys.PRODUCT,
-        session,
+    const files = req.files as unknown as {
+      mainImage?: Express.Multer.File[];
+      galleryImages?: Express.Multer.File[];
+    };
+
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+
+    const mainImageFile = files?.mainImage?.[0];
+    const galleryImageFiles = files?.galleryImages || [];
+
+    let mainImageToUpload: CloudinaryImage | undefined = undefined;
+    let galleryImagesToUpload: CloudinaryImage[] = [];
+
+    if (mainImageFile) {
+      const image = await UploadService.uploadImage(
+        mainImageFile,
+        "products/main",
       );
 
-      await ProductModel.create(
-        [
-          {
-            identifier,
-            name,
-            description,
-            price,
-            quantity,
-            discount,
-            priceAfterDiscount: ProductService.calculatePriceAfterDiscount(
+      mainImageToUpload = {
+        publicId: image.public_id,
+        secureUrl: image.secure_url,
+      };
+    }
+
+    if (galleryImageFiles?.length) {
+      const images = await Promise.all(
+        galleryImageFiles.map((file) =>
+          UploadService.uploadImage(file, "products/gallery"),
+        ),
+      );
+
+      images.forEach((image) => {
+        galleryImagesToUpload.push({
+          publicId: image.public_id,
+          secureUrl: image.secure_url,
+        });
+      });
+    }
+
+    try {
+      await withTransaction(async (session) => {
+        const identifier = await generateIdentifier(
+          req,
+          CounterKeys.PRODUCT,
+          session,
+        );
+
+        await ProductModel.create(
+          [
+            {
+              identifier,
+              name,
+              description,
               price,
+              quantity,
               discount,
-            ),
-            userId: scopeId,
-            categoryId: categoryId
-              ? new Types.ObjectId(categoryId as string)
-              : undefined,
-            tags: tags
-              ?.filter((tagId: string) => Types.ObjectId.isValid(tagId))
-              ?.map((tagId: string) => new Types.ObjectId(tagId)),
-            minStock: isNumber(minStock) ? Number(minStock) : undefined,
-          },
-        ],
-        { session },
+              priceAfterDiscount: ProductService.calculatePriceAfterDiscount(
+                price,
+                discount,
+              ),
+              userId: scopeId,
+              categoryId: categoryId
+                ? new Types.ObjectId(categoryId as string)
+                : undefined,
+              tags: tags
+                ?.filter((tagId: string) => Types.ObjectId.isValid(tagId))
+                ?.map((tagId: string) => new Types.ObjectId(tagId)),
+              minStock: isNumber(minStock) ? Number(minStock) : undefined,
+              mainImage: mainImageToUpload,
+              galleryImages: galleryImagesToUpload.length
+                ? galleryImagesToUpload
+                : undefined,
+            },
+          ],
+          { session },
+        );
+
+        if (categoryId) {
+          await CategoryModel.updateOne(
+            { _id: new Types.ObjectId(categoryId as string), userId: scopeId },
+            { $inc: { childrenCount: 1 } },
+            { session },
+          );
+        }
+
+        if (tags?.length) {
+          await TagModel.updateMany(
+            {
+              userId: scopeId,
+              _id: {
+                $in: tags.map((tagId: string) => new Types.ObjectId(tagId)),
+              },
+            },
+            { $inc: { usageCount: 1 } },
+            { session },
+          );
+        }
+      });
+    } catch (txError) {
+      // Clean up anything we already
+      // uploaded to Cloudinary before the DB write, so we don't leak assets
+      // that no product document ever ends up referencing.
+
+      const uploadedPublicIdsForCleanup = [
+        ...(mainImageToUpload?.publicId ? [mainImageToUpload.publicId] : []),
+        ...(galleryImagesToUpload?.length
+          ? galleryImagesToUpload.map((image) => image.publicId)
+          : []),
+      ];
+
+      await Promise.all(
+        uploadedPublicIdsForCleanup.map((publicId) =>
+          UploadService.deleteImage(publicId),
+        ),
       );
 
-      if (categoryId) {
-        await CategoryModel.updateOne(
-          { _id: new Types.ObjectId(categoryId as string), userId: scopeId },
-          { $inc: { childrenCount: 1 } },
-          { session },
-        );
-      }
-
-      if (tags?.length) {
-        await TagModel.updateMany(
-          {
-            userId: scopeId,
-            _id: {
-              $in: tags.map((tagId: string) => new Types.ObjectId(tagId)),
-            },
-          },
-          { $inc: { usageCount: 1 } },
-          { session },
-        );
-      }
-    });
+      throw txError;
+    }
 
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -122,7 +188,7 @@ const createProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const getProducts = async (req: express.Request, res: express.Response) => {
+const getProducts: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -271,7 +337,7 @@ const getProducts = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const deleteProduct = async (req: express.Request, res: express.Response) => {
+const deleteProduct: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -307,10 +373,7 @@ const deleteProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const deleteBulkProducts = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const deleteBulkProducts: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
     const { productIds } = req.body;
@@ -365,11 +428,11 @@ const deleteBulkProducts = async (
   }
 };
 
-const updateProduct = async (req: express.Request, res: express.Response) => {
+const updateProduct: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { productId } = req.body;
+    const { productId, mainImage, galleryImages } = req.body;
 
     const {
       name,
@@ -423,93 +486,193 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
     }
 
     if (!isUndefined(categoryId)) {
-      if (categoryId) {
-        updateDto.categoryId = new Types.ObjectId(categoryId as string);
-      } else {
-        updateDto.categoryId = null;
-      }
+      updateDto.categoryId = categoryId
+        ? new Types.ObjectId(categoryId as string)
+        : null;
     }
 
     if (Array.isArray(tags)) {
       updateDto.tags = tags.map((tag) => new Types.ObjectId(tag));
     }
 
-    await withTransaction(async (session) => {
-      const oldCategoryId = product?.categoryId || null;
+    const files = req.files as unknown as {
+      mainImage?: Express.Multer.File[];
+      galleryImages?: Express.Multer.File[];
+    };
 
-      let newCategoryId: Types.ObjectId | null = null;
+    const mainImageFile = files?.mainImage?.[0];
+    const galleryImageFiles = files?.galleryImages || [];
 
-      if (!isUndefined(categoryId)) {
-        if (categoryId) {
-          newCategoryId = new Types.ObjectId(categoryId as string);
-        } else {
-          newCategoryId = null;
-        }
-      } else {
-        newCategoryId = oldCategoryId;
-      }
+    // ---- 1. Do all Cloudinary UPLOADS up front (outside the transaction) ----
+    // We need the resulting publicId/secureUrl to write into updateDto, so
+    // these have to happen before the DB write.
 
-      const oldTags: Types.ObjectId[] =
-        product?.tags?.map((tag) => tag._id) || [];
+    let mainImageToUpload: CloudinaryImage | null | undefined = undefined;
+    const uploadedPublicIdsForCleanup: string[] = [];
 
-      let addedTags: Types.ObjectId[] = [];
-      let removedTags: Types.ObjectId[] = [];
+    if (isNull(mainImage)) {
+      // User explicitly removed the main image — no upload needed here,
+      // just mark it for deletion later.
+      mainImageToUpload = null;
+    } else if (mainImageFile) {
+      const uploadedImage = await UploadService.uploadImage(mainImageFile);
+      mainImageToUpload = {
+        publicId: uploadedImage.public_id,
+        secureUrl: uploadedImage.secure_url,
+      };
+      uploadedPublicIdsForCleanup.push(uploadedImage.public_id);
+    }
 
-      if (Array.isArray(tags)) {
-        const newTags = tags.map((tag: string) => new Types.ObjectId(tag));
-
-        removedTags = oldTags.filter(
-          (oldTag) => !newTags.some((newTag) => newTag.equals(oldTag)),
-        );
-
-        addedTags = newTags.filter(
-          (newTag) => !oldTags.some((oldTag) => oldTag.equals(newTag)),
-        );
-      }
-
-      await ProductModel.findOneAndUpdate(
-        { _id: productId, userId: scopeId },
-        { $set: updateDto },
-        { session },
+    let newGalleryImagesToUpload: CloudinaryImage[] = [];
+    if (galleryImageFiles.length) {
+      const uploadedImages = await Promise.all(
+        galleryImageFiles.map((file) =>
+          UploadService.uploadImage(file, "products/gallery"),
+        ),
       );
 
-      if (
-        !oldCategoryId?.equals(newCategoryId as any) &&
-        !(!oldCategoryId && !newCategoryId)
-      ) {
-        if (oldCategoryId) {
-          await CategoryModel.updateOne(
-            { _id: oldCategoryId, userId: scopeId },
-            { $inc: { childrenCount: -1 } },
+      newGalleryImagesToUpload = uploadedImages.map((image) => ({
+        publicId: image.public_id,
+        secureUrl: image.secure_url,
+      }));
+      uploadedPublicIdsForCleanup.push(
+        ...newGalleryImagesToUpload.map((i) => i.publicId),
+      );
+    }
+
+    // ---- 2. Figure out which OLD images need deleting (but don't delete yet) ----
+
+    const bodyGalleryImages: string[] = galleryImages;
+    const galleryPublicIdsToDeleteAfterCommit: string[] = [];
+
+    if (product.mainImage?.publicId && mainImageToUpload !== undefined) {
+      // Either replaced or explicitly removed -> old one is going away
+      galleryPublicIdsToDeleteAfterCommit.push(product.mainImage.publicId);
+      // (kept in a separate concept below; see mainImagePublicIdToDeleteAfterCommit)
+    }
+
+    const mainImagePublicIdToDeleteAfterCommit =
+      mainImageToUpload !== undefined && product.mainImage?.publicId
+        ? product.mainImage.publicId
+        : null;
+
+    if (isArray(bodyGalleryImages)) {
+      const imagesToDelete = product.galleryImages?.filter(
+        (image) => !bodyGalleryImages?.includes(image.secureUrl),
+      );
+
+      if (imagesToDelete?.length) {
+        galleryPublicIdsToDeleteAfterCommit.push(
+          ...imagesToDelete.map((image) => image.publicId),
+        );
+      }
+    }
+
+    updateDto.mainImage = mainImageToUpload;
+    updateDto.galleryImages = [
+      ...(product?.galleryImages?.length
+        ? product.galleryImages.filter(
+            (image) =>
+              !galleryPublicIdsToDeleteAfterCommit.includes(image.publicId),
+          )
+        : []),
+      ...newGalleryImagesToUpload,
+    ];
+
+    try {
+      await withTransaction(async (session) => {
+        const oldCategoryId = product?.categoryId || null;
+
+        let newCategoryId: Types.ObjectId | null = oldCategoryId;
+        if (!isUndefined(categoryId)) {
+          newCategoryId = categoryId
+            ? new Types.ObjectId(categoryId as string)
+            : null;
+        }
+
+        const oldTags: Types.ObjectId[] =
+          product?.tags?.map((tag) => tag._id) || [];
+        let addedTags: Types.ObjectId[] = [];
+        let removedTags: Types.ObjectId[] = [];
+
+        if (Array.isArray(tags)) {
+          const newTags = tags.map((tag: string) => new Types.ObjectId(tag));
+          removedTags = oldTags.filter(
+            (oldTag) => !newTags.some((newTag) => newTag.equals(oldTag)),
+          );
+          addedTags = newTags.filter(
+            (newTag) => !oldTags.some((oldTag) => oldTag.equals(newTag)),
+          );
+        }
+
+        await ProductModel.findOneAndUpdate(
+          { _id: productId, userId: scopeId },
+          { $set: updateDto },
+          { session },
+        );
+
+        if (
+          !oldCategoryId?.equals(newCategoryId as any) &&
+          !(!oldCategoryId && !newCategoryId)
+        ) {
+          if (oldCategoryId) {
+            await CategoryModel.updateOne(
+              { _id: oldCategoryId, userId: scopeId },
+              { $inc: { childrenCount: -1 } },
+              { session },
+            );
+          }
+          if (newCategoryId) {
+            await CategoryModel.updateOne(
+              { _id: newCategoryId, userId: scopeId },
+              { $inc: { childrenCount: 1 } },
+              { session },
+            );
+          }
+        }
+
+        if (removedTags.length) {
+          await TagModel.updateMany(
+            { _id: { $in: removedTags }, userId: scopeId },
+            { $inc: { usageCount: -1 } },
             { session },
           );
         }
 
-        if (newCategoryId) {
-          await CategoryModel.updateOne(
-            { _id: newCategoryId, userId: scopeId },
-            { $inc: { childrenCount: 1 } },
+        if (addedTags.length) {
+          await TagModel.updateMany(
+            { _id: { $in: addedTags }, userId: scopeId },
+            { $inc: { usageCount: 1 } },
             { session },
           );
         }
-      }
+      });
+    } catch (txError) {
+      // Clean up anything we already
+      // uploaded to Cloudinary before the DB write, so we don't leak assets
+      // that no product document ever ends up referencing.
+      await Promise.all(
+        uploadedPublicIdsForCleanup.map((publicId) =>
+          UploadService.deleteImage(publicId).catch(() => {}),
+        ),
+      );
+      throw txError;
+    }
 
-      if (removedTags.length) {
-        await TagModel.updateMany(
-          { _id: { $in: removedTags }, userId: scopeId },
-          { $inc: { usageCount: -1 } },
-          { session },
-        );
-      }
+    const publicIdsToDelete = [
+      ...(mainImagePublicIdToDeleteAfterCommit
+        ? [mainImagePublicIdToDeleteAfterCommit]
+        : []),
+      ...galleryPublicIdsToDeleteAfterCommit,
+    ];
 
-      if (addedTags.length) {
-        await TagModel.updateMany(
-          { _id: { $in: addedTags }, userId: scopeId },
-          { $inc: { usageCount: 1 } },
-          { session },
-        );
-      }
-    });
+    if (publicIdsToDelete.length) {
+      await Promise.all(
+        publicIdsToDelete.map((publicId) =>
+          UploadService.deleteImage(publicId),
+        ),
+      );
+    }
 
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -518,10 +681,7 @@ const updateProduct = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const bulkManageProductStatus = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const bulkManageProductStatus: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -539,10 +699,7 @@ const bulkManageProductStatus = async (
   }
 };
 
-const manageProductStock = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const manageProductStock: RequestHandler = async (req, res) => {
   try {
     const { productId } = req.body;
 

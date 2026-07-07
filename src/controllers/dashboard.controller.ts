@@ -105,7 +105,9 @@ export const getDashboardStats = async (
               localField: "_id",
               foreignField: "_id",
               as: "product",
-              pipeline: [{ $project: { name: 1 } }],
+              pipeline: [
+                { $project: { name: 1, mainImage: { secureUrl: 1 } } },
+              ],
             },
           },
           { $unwind: "$product" },
@@ -114,6 +116,7 @@ export const getDashboardStats = async (
               _id: 0,
               productId: "$_id",
               name: "$product.name",
+              image: "$product.mainImage.secureUrl",
               totalSold: 1,
             },
           },

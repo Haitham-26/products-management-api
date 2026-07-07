@@ -3,12 +3,13 @@ import cloudinary from "../config/cloudinary";
 import streamifier from "streamifier";
 
 export class UploadService {
-  static uploadImage(file: Express.Multer.File) {
+  static uploadImage(file: Express.Multer.File, folderName?: string) {
     const uploadedImage: Promise<UploadApiResponse> = new Promise(
       (resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
-            folder: "uploads",
+            folder: folderName || "uploads",
+            resource_type: "image",
           },
           (error, result) => {
             if (error) {

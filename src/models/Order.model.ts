@@ -48,6 +48,14 @@ const OrderSchema = new mongoose.Schema(
             type: String,
             required: [true, "The product name is required."],
           },
+          productMainImage: {
+            type: String,
+            required: false,
+          },
+          productGalleryImages: {
+            type: [String],
+            required: false,
+          },
           quantity: {
             type: Number,
             required: [true, "The quantity is required."],
