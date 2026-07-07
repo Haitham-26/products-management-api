@@ -520,10 +520,13 @@ const updateProduct: RequestHandler = async (req, res) => {
       let newGalleryImagesToUpload: CloudinaryImage[] = [];
       let galleryImagesToDeletePublicIds: string[] = [];
 
+      // The user removed the main image
       if (isNull(req.body.mainImage) && product.mainImage?.publicId) {
         await UploadService.deleteImage(product.mainImage.publicId);
 
         mainImageToUpload = null;
+
+        // The user uploaded a new main image
       } else if (mainImageFile) {
         if (product.mainImage?.publicId) {
           await UploadService.deleteImage(product.mainImage.publicId);
@@ -540,7 +543,10 @@ const updateProduct: RequestHandler = async (req, res) => {
       // These will be array of secure urls
       const bodyGalleryImages: string[] = req.body.galleryImages;
 
+      // If it's an array, then it will be an empty array or an array of
+      // secure urls (existing images) that we will not touch them
       if (isArray(bodyGalleryImages)) {
+        // If it's an empty array, then we will delete all existing images
         if (!bodyGalleryImages?.length && product.galleryImages?.length) {
           await Promise.all(
             product.galleryImages.map((image) =>
@@ -553,6 +559,7 @@ const updateProduct: RequestHandler = async (req, res) => {
           });
         }
 
+        // If it's not an empty array, then we will delete the existing images that are not in the array
         const imagesToDelete = product.galleryImages?.filter(
           (image) => !bodyGalleryImages?.includes(image.secureUrl),
         );
@@ -570,6 +577,7 @@ const updateProduct: RequestHandler = async (req, res) => {
         }
       }
 
+      // Upload new images
       if (galleryImageFiles?.length) {
         const uploadedImages = await Promise.all(
           galleryImageFiles.map((file) =>
