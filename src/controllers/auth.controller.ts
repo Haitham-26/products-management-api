@@ -9,10 +9,17 @@ import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
 import { withTransaction } from "../utils/withTransaction";
 import SettingsModel from "../models/Settings.model";
 import { RequestContext } from "../utils/RequestContext";
-import { generateJWT } from "../utils/generateJWT";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/generateJWTs";
 import { OAuth2Client } from "google-auth-library";
 
-//Sign Up - Email
+const createAuthTokens = (userId: string, tokenVersion: number) => ({
+  accessToken: generateAccessToken(userId, tokenVersion),
+  refreshToken: generateRefreshToken(userId, tokenVersion),
+});
+
 const signUpEmail: RequestHandler = async (req, res) => {
   try {
     const { email, password, name, company } = req.body as SignUpEmailDto;
@@ -65,7 +72,6 @@ const signUpEmail: RequestHandler = async (req, res) => {
   }
 };
 
-// Sign Up - Token
 const signUpToken: RequestHandler = async (req, res) => {
   try {
     const { email, token } = req.body as SignUpToken;
@@ -126,7 +132,7 @@ const signUpToken: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send({
       user: isEmailExist,
-      token: generateJWT(
+      ...createAuthTokens(
         isEmailExist._id.toString(),
         isEmailExist.tokenVersion || 0,
       ),
@@ -198,10 +204,23 @@ const login: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send({
       user,
-      token: generateJWT(user._id.toString(), user.tokenVersion),
+      ...createAuthTokens(user._id.toString(), user.tokenVersion),
     });
   } catch (e) {
     res.status(StatusCode.INTERNAL_ERROR).send(e);
+  }
+};
+
+const refreshToken: RequestHandler = async (req, res) => {
+  try {
+    const { user } = RequestContext<{ user: User }>(req);
+
+    res.status(StatusCode.OK).send({
+      accessToken: generateAccessToken(user._id.toString(), user.tokenVersion),
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
   }
 };
 
@@ -266,7 +285,7 @@ const googleLogin: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send({
       user,
-      token: generateJWT(user!._id.toString(), user!.tokenVersion),
+      ...createAuthTokens(user!._id.toString(), user!.tokenVersion),
     });
   } catch (e) {
     console.log(e);
@@ -341,6 +360,7 @@ export {
   signUpToken,
   signupResendToken,
   googleLogin,
+  refreshToken,
   forgotPasswordEmail,
   forgotPasswordToken,
   forgotPasswordNew,

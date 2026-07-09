@@ -3,8 +3,7 @@ import jwt from "jsonwebtoken";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import UserModel from "../models/User.model";
-import isNull from "lodash/isNull";
-import { Types } from "mongoose";
+import isNil from "lodash/isNil";
 
 interface AuthRequest extends Request {
   userId?: string;
@@ -16,43 +15,43 @@ export const AuthMiddleware = async (
   next: NextFunction,
 ) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const accessToken = req.headers.authorization?.split(" ")[1];
 
-    if (!token) {
+    if (!accessToken) {
       res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
       return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    const decoded = jwt.verify(
+      accessToken,
+      process.env.ACCESS_TOKEN_SECRET!,
+    ) as {
       userId: string;
       tokenVersion?: number;
+      type?: string;
     };
 
-    if (isNull(decoded.tokenVersion)) {
+    if (decoded.type !== "access" || isNil(decoded.tokenVersion)) {
       res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
       return;
     }
 
-    const userId = new Types.ObjectId(decoded.userId);
-
-    const user = await UserModel.findById(userId);
+    const user = await UserModel.findOne({
+      _id: decoded.userId,
+      tokenVersion: decoded.tokenVersion,
+    });
 
     if (!user) {
       res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
       return;
     }
 
-    if (user.tokenVersion !== decoded.tokenVersion) {
-      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
-      return;
-    }
-
-    RequestContext(req, { userId, user });
+    RequestContext(req, { userId: user._id, user });
 
     next();
   } catch (e) {
     console.error("JWT Verification Error:", e);
-    res.status(StatusCode.UNAUTHORIZED).send("فشلت المصادقة");
+    res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
     return;
   }
 };

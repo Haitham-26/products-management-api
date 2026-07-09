@@ -8,6 +8,7 @@ import {
   forgotPasswordToken,
   forgotPasswordNew,
   signupResendToken,
+  refreshToken,
 } from "../controllers/auth.controller";
 import { SignUpEmailValidator } from "../validators/auth/signup/signup-email.validator";
 import { SignUpTokenValidator } from "../validators/auth/signup/signup-token.validator";
@@ -16,6 +17,7 @@ import { ForgotPasswordEmailValidator } from "../validators/auth/forgot-password
 import { ForgotPasswordTokenValidator } from "../validators/auth/forgot-password/forgot-password-token.validator";
 import { ForgotPasswordNewValidator } from "../validators/auth/forgot-password/forgot-password-new.validator";
 import { SignUpTokenResendValidator } from "../validators/auth/signup/signup-token-resend-validator";
+import { RefreshTokenValidator } from "../validators/auth/shared/refresh-token.validator";
 
 const authRouter = express.Router();
 
@@ -29,6 +31,8 @@ authRouter.post(
 
 authRouter.post("/login", LoginValidator, login);
 authRouter.post("/google-login", googleLogin);
+
+authRouter.post("/refresh-token", RefreshTokenValidator, refreshToken);
 
 // This endpoint is used for resend token too
 authRouter.post(
