@@ -4,7 +4,10 @@ import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import { Types } from "mongoose";
 import bcrypt from "bcrypt";
-import { generateJWT } from "../utils/generateJWT";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/generateJWTs";
 import { UploadService } from "../services/upload.service";
 import isUndefined from "lodash/isUndefined";
 
@@ -94,9 +97,16 @@ const resetPassword = async (req: express.Request, res: express.Response) => {
       { new: true },
     );
 
-    res
-      .status(StatusCode.OK)
-      .send({ token: generateJWT(user!._id.toString(), user!.tokenVersion) });
+    res.status(StatusCode.OK).send({
+      accessToken: generateAccessToken(
+        user!._id.toString(),
+        user!.tokenVersion,
+      ),
+      refreshToken: generateRefreshToken(
+        user!._id.toString(),
+        user!.tokenVersion,
+      ),
+    });
   } catch (e) {
     console.log(e);
   }
