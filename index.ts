@@ -13,10 +13,13 @@ import dashboardRouter from "./src/services/dashboard.service";
 import membersInvitationRouter from "./src/services/member-invitation.service";
 import { startCronJobs } from "./src/cron";
 import { multerErrorHandler } from "./src/utils/multerErrorHandler";
+import { setupSwagger } from "./src/swagger/swagger";
 
 require("dotenv").config();
 
 const app = express();
+
+setupSwagger(app);
 
 app.set("trust proxy", 1);
 
