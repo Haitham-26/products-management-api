@@ -25,6 +25,7 @@ import BulkDeleteTagsRequestSchema from "./schemas/tag/BulkDeleteTagRequestSchem
 import UserSchema from "./schemas/auth/UserSchema";
 import ResetPasswordRequestSchema from "./schemas/user/ResetPasswordRequestSchema";
 import UpdateUserRequestSchema from "./schemas/user/UpdateUserRequestSchema";
+import GetDashboardStatsResponseSchema from "./schemas/dashboard/GetDashboardStatsResponseSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -68,6 +69,8 @@ const options: swaggerJsdoc.Options = {
         //
         ResetPasswordRequestSchema,
         UpdateUserRequestSchema,
+        //
+        GetDashboardStatsResponseSchema,
       },
     },
   },
