@@ -22,6 +22,9 @@ import CreateTagRequestSchema from "./schemas/tag/CreateTagRequestSchema";
 import UpdateTagRequestSchema from "./schemas/tag/UpdateTagRequestSchema";
 import DeleteTagRequestSchema from "./schemas/tag/DeleteTagRequestSchema";
 import BulkDeleteTagsRequestSchema from "./schemas/tag/BulkDeleteTagRequestSchema";
+import UserSchema from "./schemas/auth/UserSchema";
+import ResetPasswordRequestSchema from "./schemas/user/ResetPasswordRequestSchema";
+import UpdateUserRequestSchema from "./schemas/user/UpdateUserRequestSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -38,6 +41,7 @@ const options: swaggerJsdoc.Options = {
     ],
     components: {
       schemas: {
+        UserSchema,
         SignUpEmailRequestSchema,
         SignUpTokenRequestSchema,
         RegisterResponseSchema,
@@ -61,6 +65,9 @@ const options: swaggerJsdoc.Options = {
         UpdateTagRequestSchema,
         DeleteTagRequestSchema,
         BulkDeleteTagsRequestSchema,
+        //
+        ResetPasswordRequestSchema,
+        UpdateUserRequestSchema,
       },
     },
   },
