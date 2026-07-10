@@ -3,6 +3,7 @@ import { CRUDPermissions } from "../../../types/user/types/CRUDPermissions.enum"
 import { PermissionEntities } from "../../../types/user/types/PermissionEntities.enum";
 import { UserRoles } from "../../../types/user/types/UserRoles.enum";
 import { SwaggerTypes } from "../../types/SwggaerTypes";
+import UserPermissionsSchema from "../shared/UserPermissionsSchema";
 
 const UserSchema = {
   type: SwaggerTypes.OBJECT,
@@ -58,26 +59,7 @@ const UserSchema = {
       type: SwaggerTypes.STRING,
       example: "6a9d...",
     },
-    permissions: {
-      type: SwaggerTypes.OBJECT,
-      properties: Object.fromEntries(
-        Object.values(PermissionEntities).map((entity) => [
-          entity,
-          {
-            type: SwaggerTypes.OBJECT,
-            properties: Object.fromEntries(
-              Object.values(CRUDPermissions).map((permission) => [
-                permission,
-                {
-                  type: SwaggerTypes.BOOLEAN,
-                  example: true,
-                },
-              ]),
-            ),
-          },
-        ]),
-      ),
-    },
+    permissions: UserPermissionsSchema,
     tokenVersion: {
       type: SwaggerTypes.INTEGER,
       example: 1,

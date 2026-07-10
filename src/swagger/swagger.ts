@@ -28,6 +28,13 @@ import UpdateUserRequestSchema from "./schemas/user/UpdateUserRequestSchema";
 import GetDashboardStatsResponseSchema from "./schemas/dashboard/GetDashboardStatsResponseSchema";
 import SettingsSchema from "./schemas/settings/SettingsSchema";
 import UpdateSettingsRequestSchema from "./schemas/settings/UpdateSettingsRequestSchema";
+import GetOwnerInvitationsResponseSchema from "./schemas/organization/GetOwnerInvitationsResponseSchema";
+import InviteMembersRequestSchema from "./schemas/organization/InviteMembersRequestSchema";
+import GenericWithInvitationIdRequestSchema from "./schemas/organization/GenericWithInvitationIdRequestSchema";
+import GetOrgMembersResponseSchema from "./schemas/organization/GetOrgMembersResponseSchema";
+import UpdateMembersPermissionsRequestSchema from "./schemas/organization/UpdateMembersPermissionsRequestSchema";
+import RemoveMemberRequestSchema from "./schemas/organization/RemoveMemberRequestSchema";
+import GetJoinOrgInvitationsResponseSchema from "./schemas/organization/GetJoinOrgInvitationsResponseSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -76,6 +83,14 @@ const options: swaggerJsdoc.Options = {
         //
         SettingsSchema,
         UpdateSettingsRequestSchema,
+        //
+        GetOwnerInvitationsResponseSchema,
+        InviteMembersRequestSchema,
+        GenericWithInvitationIdRequestSchema,
+        GetOrgMembersResponseSchema,
+        UpdateMembersPermissionsRequestSchema,
+        RemoveMemberRequestSchema,
+        GetJoinOrgInvitationsResponseSchema,
       },
     },
   },
