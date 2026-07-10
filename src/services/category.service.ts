@@ -20,15 +20,42 @@ const categoryRouter = express.Router();
  * @openapi
  * /categories/:
  *   get:
- *     summary: Get all user's categories
- *     description: Returns all user's categories paginated, sorted and filtered.
+ *     summary: Get all user's tags
+ *     description: Returns all user's tags paginated, sorted and filtered.
  *     tags:
  *       - Categories
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/GetCategoriesRequestSchema'
+ *     parameters:
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *           example: "premium"
+ *       - in: query
+ *         name: minChildrenCount
+ *         schema:
+ *           type: integer
+ *           example: 5
+ *       - in: query
+ *         name: maxChildrenCount
+ *         schema:
+ *           type: integer
+ *           example: 12
+ *       - in: query
+ *         name: creationDate
+ *         schema:
+ *           type: string
+ *           enum: [NEWEST, OLDEST]
+ *           example: NEWEST
+ *       - in: query
+ *         name: meta[page]
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *       - in: query
+ *         name: meta[limit]
+ *         schema:
+ *           type: integer
+ *           example: 10
  *     responses:
  *       200:
  *         description: Categories fetched successfully.
@@ -145,7 +172,7 @@ categoryRouter.delete(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/BulkDeleteCategoryRequestSchema'
+ *             $ref: '#/components/schemas/BulkDeleteCategoriesRequestSchema'
  *     responses:
  *       200:
  *         description: Categories deleted successfully.

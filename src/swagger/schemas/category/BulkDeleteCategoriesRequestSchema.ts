@@ -1,6 +1,6 @@
 import { SwaggerTypes } from "../../types/SwggaerTypes";
 
-const BulkDeleteCategoryRequestSchema = {
+const BulkDeleteCategoriesRequestSchema = {
   type: SwaggerTypes.OBJECT,
   required: ["userId", "categoryIds"],
   properties: {
@@ -18,4 +18,4 @@ const BulkDeleteCategoryRequestSchema = {
   },
 };
 
-export default BulkDeleteCategoryRequestSchema;
+export default BulkDeleteCategoriesRequestSchema;

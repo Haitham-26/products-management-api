@@ -12,12 +12,16 @@ import RefreshTokenResponseSchema from "./schemas/auth/RefreshTokenResponseSchem
 import ForgotPasswordEmailRequestSchema from "./schemas/auth/ForgotPasswordEmailRequestSchema";
 import ForgotPasswordTokenRequestSchema from "./schemas/auth/ForgotPasswordTokenRequestSchema";
 import ForgotPasswordNewRequestSchema from "./schemas/auth/ForgotPasswordNewRequestSchema";
-import GetCategoriesRequestSchema from "./schemas/category/GetCategoriesRequestSchema";
 import GetCategoriesResponseSchema from "./schemas/category/GetCategoriesResponseSchema";
 import CreateCategoryRequestSchema from "./schemas/category/CreateCategoryRequestSchema";
 import UpdateCategoryRequestSchema from "./schemas/category/UpdateCategoryRequestSchema";
 import DeleteCategoryRequestSchema from "./schemas/category/DeleteCategoryRequestSchema";
-import BulkDeleteCategoryRequestSchema from "./schemas/category/BulkDeleteCategoryRequestSchema";
+import BulkDeleteCategoriesRequestSchema from "./schemas/category/BulkDeleteCategoriesRequestSchema";
+import GetTagsResponseSchema from "./schemas/tag/GetTagsResponseSchema";
+import CreateTagRequestSchema from "./schemas/tag/CreateTagRequestSchema";
+import UpdateTagRequestSchema from "./schemas/tag/UpdateTagRequestSchema";
+import DeleteTagRequestSchema from "./schemas/tag/DeleteTagRequestSchema";
+import BulkDeleteTagsRequestSchema from "./schemas/tag/BulkDeleteTagRequestSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -45,12 +49,18 @@ const options: swaggerJsdoc.Options = {
         ForgotPasswordEmailRequestSchema,
         ForgotPasswordTokenRequestSchema,
         ForgotPasswordNewRequestSchema,
-        GetCategoriesRequestSchema,
+        //
         GetCategoriesResponseSchema,
         CreateCategoryRequestSchema,
         UpdateCategoryRequestSchema,
         DeleteCategoryRequestSchema,
-        BulkDeleteCategoryRequestSchema,
+        BulkDeleteCategoriesRequestSchema,
+        //
+        GetTagsResponseSchema,
+        CreateTagRequestSchema,
+        UpdateTagRequestSchema,
+        DeleteTagRequestSchema,
+        BulkDeleteTagsRequestSchema,
       },
     },
   },
