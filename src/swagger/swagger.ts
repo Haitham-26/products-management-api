@@ -42,6 +42,13 @@ import BulkManageOrdersVisibilityRequestSchema from "./schemas/order/BulkManageO
 import ManageOrderVisibilityRequestSchema from "./schemas/order/ManageOrderVisibilityRequestSchema";
 import BulkManageOrdersStatusRequestSchema from "./schemas/order/BulkManageOrdersStatusRequestSchema";
 import ManageOrderStatusRequestSchema from "./schemas/order/ManageOrderStatusRequestSchema";
+import GetProductsResponseSchema from "./schemas/product/GetProductsResponseSchema";
+import DeleteProductRequestSchema from "./schemas/product/DeleteProductRequestSchema";
+import BulkDeleteProductsRequestSchema from "./schemas/product/BulkDeleteProductsRequestSchema copy";
+import CreateProductRequestSchema from "./schemas/product/CreateProductRequestSchema";
+import UpdateProductRequestSchema from "./schemas/product/UpdateProductRequestSchema";
+import BulkManageProductsStatusRequestSchema from "./schemas/product/BulkManageProductsStatusRequestSchema";
+import ManageProductStockRequestSchema from "./schemas/product/ManageProductStockRequestSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -106,6 +113,14 @@ const options: swaggerJsdoc.Options = {
         BulkManageOrdersVisibilityRequestSchema,
         ManageOrderStatusRequestSchema,
         BulkManageOrdersStatusRequestSchema,
+        //
+        GetProductsResponseSchema,
+        DeleteProductRequestSchema,
+        BulkDeleteProductsRequestSchema,
+        CreateProductRequestSchema,
+        UpdateProductRequestSchema,
+        BulkManageProductsStatusRequestSchema,
+        ManageProductStockRequestSchema,
       },
     },
   },

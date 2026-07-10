@@ -73,7 +73,7 @@ const orderRouter = express.Router();
  *           example: 10
  *     responses:
  *       200:
- *         description: Tags fetched successfully.
+ *         description: Orders fetched successfully.
  *         content:
  *           application/json:
  *             schema:
