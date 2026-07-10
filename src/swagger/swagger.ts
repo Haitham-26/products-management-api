@@ -12,6 +12,12 @@ import RefreshTokenResponseSchema from "./schemas/auth/RefreshTokenResponseSchem
 import ForgotPasswordEmailRequestSchema from "./schemas/auth/ForgotPasswordEmailRequestSchema";
 import ForgotPasswordTokenRequestSchema from "./schemas/auth/ForgotPasswordTokenRequestSchema";
 import ForgotPasswordNewRequestSchema from "./schemas/auth/ForgotPasswordNewRequestSchema";
+import GetCategoriesRequestSchema from "./schemas/category/GetCategoriesRequestSchema";
+import GetCategoriesResponseSchema from "./schemas/category/GetCategoriesResponseSchema";
+import CreateCategoryRequestSchema from "./schemas/category/CreateCategoryRequestSchema";
+import UpdateCategoryRequestSchema from "./schemas/category/UpdateCategoryRequestSchema";
+import DeleteCategoryRequestSchema from "./schemas/category/DeleteCategoryRequestSchema";
+import BulkDeleteCategoryRequestSchema from "./schemas/category/BulkDeleteCategoryRequestSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -39,6 +45,12 @@ const options: swaggerJsdoc.Options = {
         ForgotPasswordEmailRequestSchema,
         ForgotPasswordTokenRequestSchema,
         ForgotPasswordNewRequestSchema,
+        GetCategoriesRequestSchema,
+        GetCategoriesResponseSchema,
+        CreateCategoryRequestSchema,
+        UpdateCategoryRequestSchema,
+        DeleteCategoryRequestSchema,
+        BulkDeleteCategoryRequestSchema,
       },
     },
   },

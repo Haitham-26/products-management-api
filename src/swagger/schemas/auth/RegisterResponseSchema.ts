@@ -1,11 +1,10 @@
 import { SwaggerTypes } from "../../types/SwggaerTypes";
+import UserSchema from "./UserSchema";
 
 const RegisterResponseSchema = {
   type: SwaggerTypes.OBJECT,
   properties: {
-    user: {
-      type: SwaggerTypes.OBJECT,
-    },
+    user: UserSchema,
     accessToken: {
       type: SwaggerTypes.STRING,
     },
