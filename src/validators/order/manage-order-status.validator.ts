@@ -56,7 +56,7 @@ export const ManageOrderStatusValidator = async (
     }
 
     if (
-      order.status === OrderStatus.CANCELLED &&
+      order.status === OrderStatus.CANCELED &&
       body.status === OrderStatus.CONFIRMED
     ) {
       res.status(StatusCode.BAD_REQUEST).send({

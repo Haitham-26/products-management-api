@@ -35,6 +35,13 @@ import GetOrgMembersResponseSchema from "./schemas/organization/GetOrgMembersRes
 import UpdateMembersPermissionsRequestSchema from "./schemas/organization/UpdateMembersPermissionsRequestSchema";
 import RemoveMemberRequestSchema from "./schemas/organization/RemoveMemberRequestSchema";
 import GetJoinOrgInvitationsResponseSchema from "./schemas/organization/GetJoinOrgInvitationsResponseSchema";
+import GetOrdersResponseSchema from "./schemas/order/GetOrdersResponseSchema";
+import CreateOrderRequestSchema from "./schemas/order/CreateOrderRequestSchema";
+import UpdateOrderRequestSchema from "./schemas/order/UpdateOrderRequestSchema";
+import BulkManageOrdersVisibilityRequestSchema from "./schemas/order/BulkManageOrdersVisibilityRequestSchema";
+import ManageOrderVisibilityRequestSchema from "./schemas/order/ManageOrderVisibilityRequestSchema";
+import BulkManageOrdersStatusRequestSchema from "./schemas/order/BulkManageOrdersStatusRequestSchema";
+import ManageOrderStatusRequestSchema from "./schemas/order/ManageOrderStatusRequestSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -91,6 +98,14 @@ const options: swaggerJsdoc.Options = {
         UpdateMembersPermissionsRequestSchema,
         RemoveMemberRequestSchema,
         GetJoinOrgInvitationsResponseSchema,
+        //
+        GetOrdersResponseSchema,
+        CreateOrderRequestSchema,
+        UpdateOrderRequestSchema,
+        ManageOrderVisibilityRequestSchema,
+        BulkManageOrdersVisibilityRequestSchema,
+        ManageOrderStatusRequestSchema,
+        BulkManageOrdersStatusRequestSchema,
       },
     },
   },
