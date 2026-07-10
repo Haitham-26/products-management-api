@@ -26,6 +26,8 @@ import UserSchema from "./schemas/auth/UserSchema";
 import ResetPasswordRequestSchema from "./schemas/user/ResetPasswordRequestSchema";
 import UpdateUserRequestSchema from "./schemas/user/UpdateUserRequestSchema";
 import GetDashboardStatsResponseSchema from "./schemas/dashboard/GetDashboardStatsResponseSchema";
+import SettingsSchema from "./schemas/settings/SettingsSchema";
+import UpdateSettingsRequestSchema from "./schemas/settings/UpdateSettingsRequestSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -71,6 +73,9 @@ const options: swaggerJsdoc.Options = {
         UpdateUserRequestSchema,
         //
         GetDashboardStatsResponseSchema,
+        //
+        SettingsSchema,
+        UpdateSettingsRequestSchema,
       },
     },
   },
