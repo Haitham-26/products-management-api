@@ -19,71 +19,71 @@ import { DeclineInvitationValidator } from "../validators/users-permissions/decl
 import { AcceptInvitationValidator } from "../validators/users-permissions/accept-invitation.validator";
 import { ManageMembersPermissionsValidator } from "../validators/users-permissions/manage-members-permissions.validator";
 
-const membersInvitationRouter = express.Router();
+const organizationRouter = express.Router();
 
-membersInvitationRouter.patch(
-  "/update",
-  AuthMiddleware,
-  NonOrgMemberMiddleware,
-  ManageMembersPermissionsValidator,
-  manageMembersPermissions,
-);
-
-membersInvitationRouter.post(
-  "/owner-invitations",
+organizationRouter.get(
+  "/owner/invitations",
   AuthMiddleware,
   NonOrgMemberMiddleware,
   getOwnerInvitations,
 );
 
-membersInvitationRouter.post(
-  "/join-org-invitations",
-  AuthMiddleware,
-  NonOrgMemberMiddleware,
-  getJoinOrgInvitations,
-);
-
-membersInvitationRouter.post(
-  "/invite-members",
+organizationRouter.post(
+  "/owner/invite-members",
   AuthMiddleware,
   NonOrgMemberMiddleware,
   InviteMembersValidator,
   inviteMembers,
 );
 
-membersInvitationRouter.post(
-  "/cancel-invitation",
+organizationRouter.post(
+  "/owner/invitation/cancel",
   AuthMiddleware,
   NonOrgMemberMiddleware,
   CancelInvitationValidator,
   cancelInvitation,
 );
 
-membersInvitationRouter.post(
-  "/decline-invitation",
+organizationRouter.get("/owner/members", AuthMiddleware, getOrgMembers);
+
+organizationRouter.patch(
+  "/owner/members/manage",
+  AuthMiddleware,
+  NonOrgMemberMiddleware,
+  ManageMembersPermissionsValidator,
+  manageMembersPermissions,
+);
+
+organizationRouter.post(
+  "/owner/members/remove",
+  AuthMiddleware,
+  NonOrgMemberMiddleware,
+  removeMember,
+);
+
+organizationRouter.get(
+  "/member/invitations",
+  AuthMiddleware,
+  NonOrgMemberMiddleware,
+  getJoinOrgInvitations,
+);
+
+organizationRouter.post(
+  "/member/invitation/decline",
   AuthMiddleware,
   NonOrgMemberMiddleware,
   DeclineInvitationValidator,
   declineInvitation,
 );
 
-membersInvitationRouter.post(
-  "/accept-invitation",
+organizationRouter.post(
+  "/member/invitation/accept",
   AuthMiddleware,
   NonOrgMemberMiddleware,
   AcceptInvitationValidator,
   acceptInvitation,
 );
 
-membersInvitationRouter.post("/members", AuthMiddleware, getOrgMembers);
+organizationRouter.post("/member/leave", AuthMiddleware, leaveOrg);
 
-membersInvitationRouter.post(
-  "/members/remove",
-  AuthMiddleware,
-  NonOrgMemberMiddleware,
-  removeMember,
-);
-
-membersInvitationRouter.post("/organization/leave", AuthMiddleware, leaveOrg);
-
-export default membersInvitationRouter;
+export default organizationRouter;

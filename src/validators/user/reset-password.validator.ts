@@ -1,5 +1,5 @@
 import z from "zod";
-import express from "express";
+import { RequestHandler } from "express";
 import bcrypt from "bcrypt";
 import { Regexes } from "../../utils/String";
 import { RequestContext } from "../../utils/RequestContext";
@@ -25,11 +25,11 @@ const resetPasswordNewSchema = z
   })
   .loose();
 
-export const ResetPasswordValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const ResetPasswordValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 

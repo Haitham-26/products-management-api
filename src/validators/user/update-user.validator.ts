@@ -1,7 +1,7 @@
 import z from "zod";
-import express from "express";
 import { Regexes } from "../../utils/String";
 import { ThrowZodError } from "../../utils/ThrowZodError";
+import { RequestHandler } from "express";
 
 const userUpdateSchema = z
   .object({
@@ -21,11 +21,7 @@ const userUpdateSchema = z
   })
   .partial();
 
-export const UserUpdateValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const UserUpdateValidator: RequestHandler = async (req, res, next) => {
   try {
     const body = userUpdateSchema.parse(req.body);
     req.body = body;
