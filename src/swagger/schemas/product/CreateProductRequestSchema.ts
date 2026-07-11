@@ -30,7 +30,7 @@ const CreateProductRequestSchema = {
           example: ProductDiscountTypes.PERCENTAGE,
         },
         value: {
-          type: SwaggerTypes.INTEGER,
+          type: SwaggerTypes.NUMBER,
           example: 10,
         },
       },

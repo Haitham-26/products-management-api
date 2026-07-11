@@ -1,6 +1,4 @@
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
-import { CRUDPermissions } from "../../../types/user/types/CRUDPermissions.enum";
-import { PermissionEntities } from "../../../types/user/types/PermissionEntities.enum";
 import { UserRoles } from "../../../types/user/types/UserRoles.enum";
 import { SwaggerTypes } from "../../types/SwaggerTypes";
 import UserPermissionsSchema from "../shared/UserPermissionsSchema";
@@ -29,10 +27,6 @@ const UserSchema = {
       type: SwaggerTypes.BOOLEAN,
       example: true,
     },
-    password: {
-      type: SwaggerTypes.STRING,
-      example: "password123",
-    },
     signUpMethod: {
       type: SwaggerTypes.STRING,
       enum: Object.values(SignUpMethods),
@@ -43,10 +37,6 @@ const UserSchema = {
     },
     avatarPublicId: {
       type: SwaggerTypes.STRING,
-    },
-    optCode: {
-      type: SwaggerTypes.STRING,
-      example: "123456",
     },
     roles: {
       type: SwaggerTypes.ARRAY,
@@ -60,23 +50,6 @@ const UserSchema = {
       example: "6a9d...",
     },
     permissions: UserPermissionsSchema,
-    tokenVersion: {
-      type: SwaggerTypes.INTEGER,
-      example: 1,
-    },
-    forgotPasswordCode: {
-      type: SwaggerTypes.OBJECT,
-      properties: {
-        code: {
-          type: SwaggerTypes.STRING,
-          example: "123456",
-        },
-        createdAt: {
-          type: SwaggerTypes.STRING,
-          format: "date-time",
-        },
-      },
-    },
     createdAt: {
       type: SwaggerTypes.STRING,
       format: "date-time",

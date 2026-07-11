@@ -162,7 +162,7 @@ productRouter.delete(
  * /products/delete/bulk:
  *   delete:
  *     summary: Deletes multiple products
- *     description: Deletes multiple products (soft delete) and decrements the associated category's ch;idren count, and tags' usage count.
+ *     description: Deletes multiple products (soft delete) and decrements the associated category's chlidren count, and tags' usage count.
  *     tags:
  *       - Products
  *     requestBody:

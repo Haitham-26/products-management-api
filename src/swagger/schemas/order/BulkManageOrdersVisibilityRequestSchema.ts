@@ -13,7 +13,7 @@ const BulkManageOrdersVisibilityRequestSchema = {
       },
     },
     visibility: {
-      type: SwaggerTypes.BOOLEAN,
+      type: SwaggerTypes.STRING,
       enum: Object.values(OrderVisibility),
       example: OrderVisibility.ACTIVE,
     },

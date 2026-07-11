@@ -26,7 +26,7 @@ const GetOrgMembersResponseSchema = {
       },
       avatar: {
         type: SwaggerTypes.STRING,
-        format: "binary",
+        example: "https://example.com/avatar.jpg",
       },
       roles: {
         type: SwaggerTypes.ARRAY,

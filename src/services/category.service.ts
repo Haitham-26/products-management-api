@@ -20,8 +20,8 @@ const categoryRouter = express.Router();
  * @openapi
  * /categories/:
  *   get:
- *     summary: Get all user's tags
- *     description: Returns all user's tags paginated, sorted and filtered.
+ *     summary: Get all user's categories
+ *     description: Returns all user's categories paginated, sorted and filtered.
  *     tags:
  *       - Categories
  *     parameters:

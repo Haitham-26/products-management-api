@@ -65,7 +65,7 @@ const GetOrdersResponseSchema = {
                   example: 1,
                 },
                 priceAtPurchase: {
-                  type: SwaggerTypes.INTEGER,
+                  type: SwaggerTypes.NUMBER,
                   example: 1000,
                 },
                 discountAtPurchase: {
@@ -77,13 +77,13 @@ const GetOrdersResponseSchema = {
                       example: ProductDiscountTypes.PERCENTAGE,
                     },
                     value: {
-                      type: SwaggerTypes.INTEGER,
+                      type: SwaggerTypes.NUMBER,
                       example: 10,
                     },
                   },
                 },
                 finalPrice: {
-                  type: SwaggerTypes.INTEGER,
+                  type: SwaggerTypes.NUMBER,
                   example: 900,
                 },
               },
@@ -100,7 +100,7 @@ const GetOrdersResponseSchema = {
             example: OrderStatus.PENDING,
           },
           totalPriceAtPurchase: {
-            type: SwaggerTypes.INTEGER,
+            type: SwaggerTypes.NUMBER,
             example: 900,
           },
           isArchived: {

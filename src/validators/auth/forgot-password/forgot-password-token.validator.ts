@@ -25,6 +25,13 @@ export const ForgotPasswordTokenValidator = async (
 
     const user = await UserModel.findOne({ email: req.body.email });
 
+    if (!user?.emailVerified) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "This account is not verified.",
+      });
+      return;
+    }
+
     if (
       !user?.forgotPasswordCode ||
       !user.forgotPasswordCode?.code ||

@@ -120,11 +120,10 @@ const GetProductsResponseSchema = {
             type: SwaggerTypes.STRING,
             format: "date-time",
           },
-
-          meta: ResponseMetaSchema,
         },
       },
     },
+    meta: ResponseMetaSchema,
   },
 };
 

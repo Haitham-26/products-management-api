@@ -39,16 +39,16 @@ import GetOrdersResponseSchema from "./schemas/order/GetOrdersResponseSchema";
 import CreateOrderRequestSchema from "./schemas/order/CreateOrderRequestSchema";
 import UpdateOrderRequestSchema from "./schemas/order/UpdateOrderRequestSchema";
 import BulkManageOrdersVisibilityRequestSchema from "./schemas/order/BulkManageOrdersVisibilityRequestSchema";
-import ManageOrderVisibilityRequestSchema from "./schemas/order/ManageOrderVisibilityRequestSchema";
 import BulkManageOrdersStatusRequestSchema from "./schemas/order/BulkManageOrdersStatusRequestSchema";
 import ManageOrderStatusRequestSchema from "./schemas/order/ManageOrderStatusRequestSchema";
 import GetProductsResponseSchema from "./schemas/product/GetProductsResponseSchema";
 import DeleteProductRequestSchema from "./schemas/product/DeleteProductRequestSchema";
-import BulkDeleteProductsRequestSchema from "./schemas/product/BulkDeleteProductsRequestSchema copy";
 import CreateProductRequestSchema from "./schemas/product/CreateProductRequestSchema";
 import UpdateProductRequestSchema from "./schemas/product/UpdateProductRequestSchema";
 import BulkManageProductsStatusRequestSchema from "./schemas/product/BulkManageProductsStatusRequestSchema";
 import ManageProductStockRequestSchema from "./schemas/product/ManageProductStockRequestSchema";
+import BulkDeleteProductsRequestSchema from "./schemas/product/BulkDeleteProductsRequestSchema";
+import UserPermissionsSchema from "./schemas/shared/UserPermissionsSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -66,6 +66,8 @@ const options: swaggerJsdoc.Options = {
     components: {
       schemas: {
         UserSchema,
+        UserPermissionsSchema,
+        //
         SignUpEmailRequestSchema,
         SignUpTokenRequestSchema,
         RegisterResponseSchema,
@@ -109,7 +111,6 @@ const options: swaggerJsdoc.Options = {
         GetOrdersResponseSchema,
         CreateOrderRequestSchema,
         UpdateOrderRequestSchema,
-        ManageOrderVisibilityRequestSchema,
         BulkManageOrdersVisibilityRequestSchema,
         ManageOrderStatusRequestSchema,
         BulkManageOrdersStatusRequestSchema,

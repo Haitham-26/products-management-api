@@ -14,6 +14,7 @@ import {
   generateRefreshToken,
 } from "../utils/generateJWTs";
 import { OAuth2Client } from "google-auth-library";
+import { Types } from "mongoose";
 
 const createAuthTokens = (userId: string, tokenVersion: number) => ({
   accessToken: generateAccessToken(userId, tokenVersion),
@@ -130,8 +131,10 @@ const signUpToken: RequestHandler = async (req, res) => {
       );
     });
 
+    const { password, tokenVersion, optCode, ...safeUser } = isEmailExist;
+
     res.status(StatusCode.OK).send({
-      user: isEmailExist,
+      user: safeUser,
       ...createAuthTokens(
         isEmailExist._id.toString(),
         isEmailExist.tokenVersion || 0,
@@ -173,7 +176,9 @@ const login: RequestHandler = async (req, res) => {
   try {
     const { email, password } = req.body as LoginDto;
 
-    const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email }).select(
+      "-forgotPasswordCode",
+    );
 
     if (!user) {
       res.status(StatusCode.NOT_FOUND).send({
@@ -202,8 +207,10 @@ const login: RequestHandler = async (req, res) => {
       return;
     }
 
+    const { password: _password, tokenVersion, ...safeUser } = user;
+
     res.status(StatusCode.OK).send({
-      user,
+      user: safeUser,
       ...createAuthTokens(user._id.toString(), user.tokenVersion),
     });
   } catch (e) {
@@ -252,7 +259,9 @@ const googleLogin: RequestHandler = async (req, res) => {
       return;
     }
 
-    let user = await UserModel.findOne({ email });
+    let user = await UserModel.findOne({ email }).select(
+      "-password -optCode -forgotPasswordCode",
+    );
 
     if (user && user?.signUpMethod !== SignUpMethods.GOOGLE) {
       res.status(StatusCode.BAD_REQUEST).send({
@@ -283,8 +292,11 @@ const googleLogin: RequestHandler = async (req, res) => {
       });
     }
 
+    const { password, forgotPasswordCode, tokenVersion, optCode, ...safeUser } =
+      user!.toObject();
+
     res.status(StatusCode.OK).send({
-      user,
+      user: safeUser,
       ...createAuthTokens(user!._id.toString(), user!.tokenVersion),
     });
   } catch (e) {

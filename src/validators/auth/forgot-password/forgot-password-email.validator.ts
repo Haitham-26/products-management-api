@@ -30,6 +30,13 @@ export const ForgotPasswordEmailValidator = async (
       return;
     }
 
+    if (!user.emailVerified) {
+      res.status(StatusCode.BAD_REQUEST).send({
+        message: "This account is not verified.",
+      });
+      return;
+    }
+
     if (user.signUpMethod !== SignUpMethods.EMAIL) {
       res.status(StatusCode.BAD_REQUEST).send({
         message:

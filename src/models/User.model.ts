@@ -4,7 +4,7 @@ import { UserRoles } from "../types/user/types/UserRoles.enum";
 import { UserPermissions } from "../types/user/types/UserPermissions";
 
 export interface User extends mongoose.Document {
-  _id: string;
+  _id: Types.ObjectId;
   name: string;
   email: string;
   company?: string;
@@ -15,7 +15,7 @@ export interface User extends mongoose.Document {
   avatarPublicId?: string;
   optCode?: string;
   roles: UserRoles[];
-  organizationId?: string;
+  organizationId?: Types.ObjectId;
   permissions?: UserPermissions;
   tokenVersion: number;
   forgotPasswordCode?: {
