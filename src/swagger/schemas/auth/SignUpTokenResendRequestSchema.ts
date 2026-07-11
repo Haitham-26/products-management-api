@@ -1,4 +1,4 @@
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const SignUpTokenResendRequestSchema = {
   type: SwaggerTypes.OBJECT,

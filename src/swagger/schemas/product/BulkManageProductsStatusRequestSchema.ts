@@ -1,5 +1,5 @@
 import { ProductStatus } from "../../../types/product/types/ProductStatus.enum";
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const BulkManageProductsStatusRequestSchema = {
   type: SwaggerTypes.OBJECT,

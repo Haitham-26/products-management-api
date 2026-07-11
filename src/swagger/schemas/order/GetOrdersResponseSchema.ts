@@ -1,6 +1,6 @@
 import { OrderStatus } from "../../../types/order/types/OrderStatus.enum";
 import { ProductDiscountTypes } from "../../../types/product/types/ProductDiscountTypes.enum";
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 import ResponseMetaSchema from "../shared/ResponseMetaSchema";
 
 const GetOrdersResponseSchema = {

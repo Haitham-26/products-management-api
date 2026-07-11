@@ -1,5 +1,5 @@
 import { ProductDiscountTypes } from "../../../types/product/types/ProductDiscountTypes.enum";
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const UpdateProductRequestSchema = {
   type: SwaggerTypes.OBJECT,

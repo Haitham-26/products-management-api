@@ -1,5 +1,5 @@
 import { OrderVisibility } from "../../../types/order/types/OrderVisibility.enum";
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const ManageOrderVisibilityRequestSchema = {
   type: SwaggerTypes.OBJECT,

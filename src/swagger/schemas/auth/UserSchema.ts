@@ -2,7 +2,7 @@ import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
 import { CRUDPermissions } from "../../../types/user/types/CRUDPermissions.enum";
 import { PermissionEntities } from "../../../types/user/types/PermissionEntities.enum";
 import { UserRoles } from "../../../types/user/types/UserRoles.enum";
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 import UserPermissionsSchema from "../shared/UserPermissionsSchema";
 
 const UserSchema = {

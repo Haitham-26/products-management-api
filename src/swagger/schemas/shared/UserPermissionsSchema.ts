@@ -1,6 +1,6 @@
 import { CRUDPermissions } from "../../../types/user/types/CRUDPermissions.enum";
 import { PermissionEntities } from "../../../types/user/types/PermissionEntities.enum";
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const UserPermissionsSchema = {
   type: SwaggerTypes.OBJECT,

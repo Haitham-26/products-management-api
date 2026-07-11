@@ -1,5 +1,5 @@
 import { InvitationStatus } from "../../../types/users-permissions/types/InvitationStatus.enum";
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const GetOwnerInvitationsResponseSchema = {
   type: SwaggerTypes.OBJECT,

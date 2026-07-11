@@ -1,5 +1,5 @@
 import { UserRoles } from "../../../types/user/types/UserRoles.enum";
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 import UserPermissionsSchema from "../shared/UserPermissionsSchema";
 
 const GetOrgMembersResponseSchema = {

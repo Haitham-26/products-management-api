@@ -1,5 +1,5 @@
 import { OrderStatus } from "../../../types/order/types/OrderStatus.enum";
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const ManageOrderStatusRequestSchema = {
   type: SwaggerTypes.OBJECT,

@@ -1,4 +1,4 @@
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 import currencyCodes from "currency-codes";
 
 const SettingsSchema = {

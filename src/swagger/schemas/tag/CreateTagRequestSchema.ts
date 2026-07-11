@@ -1,4 +1,4 @@
-import { SwaggerTypes } from "../../types/SwggaerTypes";
+import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const CreateTagRequestSchema = {
   type: SwaggerTypes.OBJECT,
