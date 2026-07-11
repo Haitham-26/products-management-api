@@ -1,4 +1,4 @@
-import express from "express";
+import express, { RequestHandler } from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import MemberInvitationModel from "../models/Member-invitation.model";
@@ -11,10 +11,7 @@ import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { withTransaction } from "../utils/withTransaction";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 
-const getOwnerInvitations = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const getOwnerInvitations: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -28,10 +25,7 @@ const getOwnerInvitations = async (
   }
 };
 
-const getJoinOrgInvitations = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const getJoinOrgInvitations: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -80,7 +74,7 @@ const getJoinOrgInvitations = async (
   }
 };
 
-const inviteMembers = async (req: express.Request, res: express.Response) => {
+const inviteMembers: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -120,10 +114,7 @@ const inviteMembers = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const cancelInvitation = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const cancelInvitation: RequestHandler = async (req, res) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
@@ -147,10 +138,7 @@ const cancelInvitation = async (
   }
 };
 
-const declineInvitation = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const declineInvitation: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -174,10 +162,7 @@ const declineInvitation = async (
   }
 };
 
-const acceptInvitation = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const acceptInvitation: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -259,7 +244,7 @@ const acceptInvitation = async (
   }
 };
 
-const removeMember = async (req: express.Request, res: express.Response) => {
+const removeMember: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
     const { memberId } = req.body;
@@ -303,7 +288,7 @@ const removeMember = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const getOrgMembers = async (req: express.Request, res: express.Response) => {
+const getOrgMembers: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -364,7 +349,7 @@ const getOrgMembers = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const leaveOrg = async (req: express.Request, res: express.Response) => {
+const leaveOrg: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -409,10 +394,7 @@ const leaveOrg = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const manageMembersPermissions = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const manageMembersPermissions: RequestHandler = async (req, res) => {
   try {
     const { members } = req.body;
 

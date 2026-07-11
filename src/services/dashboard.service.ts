@@ -5,11 +5,22 @@ import { OrgScopeMiddleware } from "../middlewares/OrgScopeMiddleware";
 
 const dashboardRouter = express.Router();
 
-dashboardRouter.post(
-  "/",
-  AuthMiddleware,
-  OrgScopeMiddleware,
-  getDashboardStats,
-);
+/**
+ * @openapi
+ * /dashboard/:
+ *   get:
+ *     summary: Gets dashboard stats
+ *     description: Gets dashboard stats.
+ *     tags:
+ *       - Dashboard
+ *     responses:
+ *       200:
+ *         description: Dashboard stats fetched successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/GetDashboardStatsResponseSchema'
+ */
+dashboardRouter.get("/", AuthMiddleware, OrgScopeMiddleware, getDashboardStats);
 
 export default dashboardRouter;

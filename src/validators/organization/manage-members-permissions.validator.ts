@@ -1,4 +1,4 @@
-import express from "express";
+import { RequestHandler } from "express";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import z from "zod";
 import { Types } from "mongoose";
@@ -40,11 +40,11 @@ const manageMembersPermissionsSchema = z.object({
     }),
 });
 
-export const ManageMembersPermissionsValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const ManageMembersPermissionsValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const body = manageMembersPermissionsSchema.parse(req.body);
     req.body = body;

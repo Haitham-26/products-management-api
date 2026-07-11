@@ -25,6 +25,7 @@ const CategorySchema = new mongoose.Schema(
     childrenCount: {
       type: Number,
       default: 0,
+      min: [0, "Children count must be at least 0."],
     },
     userId: {
       type: Types.ObjectId,

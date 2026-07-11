@@ -25,6 +25,7 @@ const TagSchema = new mongoose.Schema(
     usageCount: {
       type: Number,
       default: 0,
+      min: [0, "Usage count must be at least 0."],
     },
     isDeleted: {
       type: Boolean,

@@ -1,4 +1,4 @@
-import express from "express";
+import { RequestHandler } from "express";
 import { RequestContext } from "../../utils/RequestContext";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { ThrowZodError } from "../../utils/ThrowZodError";
@@ -7,11 +7,11 @@ import MemberInvitationModel from "../../models/Member-invitation.model";
 import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
 import { Types } from "mongoose";
 
-export const DeclineInvitationValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const DeclineInvitationValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 

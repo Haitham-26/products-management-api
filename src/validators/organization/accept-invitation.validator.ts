@@ -1,4 +1,4 @@
-import express from "express";
+import { RequestHandler } from "express";
 import { RequestContext } from "../../utils/RequestContext";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { ThrowZodError } from "../../utils/ThrowZodError";
@@ -7,11 +7,11 @@ import MemberInvitationModel from "../../models/Member-invitation.model";
 import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
 import { Types } from "mongoose";
 
-export const CancelInvitationValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const AcceptInvitationValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -26,7 +26,7 @@ export const CancelInvitationValidator = async (
 
     const invitation = await MemberInvitationModel.findOne({
       _id: new Types.ObjectId(invitationId as string),
-      inviterId: user._id,
+      inviteeEmail: user.email,
     });
 
     if (!invitation) {
@@ -38,7 +38,7 @@ export const CancelInvitationValidator = async (
 
     if (invitation.status !== InvitationStatus.PENDING) {
       res.status(StatusCode.BAD_REQUEST).send({
-        message: "Cannot cancel an invitation that is not pending",
+        message: "Cannot accept an invitation that is not pending",
       });
       return;
     }

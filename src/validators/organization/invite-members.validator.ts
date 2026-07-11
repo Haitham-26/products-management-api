@@ -1,4 +1,3 @@
-import express from "express";
 import { RequestContext } from "../../utils/RequestContext";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { ThrowZodError } from "../../utils/ThrowZodError";
@@ -7,6 +6,7 @@ import UserModel, { User } from "../../models/User.model";
 import { UserRoles } from "../../types/user/types/UserRoles.enum";
 import MemberInvitationModel from "../../models/Member-invitation.model";
 import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
+import { RequestHandler } from "express";
 
 const inviteMembersSchema = z
   .object({
@@ -20,11 +20,11 @@ const inviteMembersSchema = z
   })
   .loose();
 
-export const InviteMembersValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const InviteMembersValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 

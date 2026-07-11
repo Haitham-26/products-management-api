@@ -37,13 +37,13 @@ export class OrderService {
 
     if (
       currentStatus === OrderStatus.PENDING &&
-      newStatus === OrderStatus.CANCELLED
+      newStatus === OrderStatus.CANCELED
     ) {
       return orderItem.quantity;
     }
 
     if (
-      currentStatus === OrderStatus.CANCELLED &&
+      currentStatus === OrderStatus.CANCELED &&
       newStatus === OrderStatus.PENDING
     ) {
       return -orderItem.quantity;
@@ -348,7 +348,7 @@ const bulkManageOrderStatus: RequestHandler = async (req, res) => {
         .filter((order) => {
           // Cancelled orders' status cannot be directly changed to CONFIRMED
           if (
-            order.status === OrderStatus.CANCELLED &&
+            order.status === OrderStatus.CANCELED &&
             newStatus === OrderStatus.CONFIRMED
           ) {
             return false;
@@ -388,7 +388,7 @@ const bulkManageOrderStatus: RequestHandler = async (req, res) => {
           ...(newStatus === OrderStatus.CONFIRMED
             ? {
                 status: {
-                  $nin: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+                  $nin: [OrderStatus.CONFIRMED, OrderStatus.CANCELED],
                 },
               }
             : {}),

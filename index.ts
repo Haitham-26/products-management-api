@@ -10,13 +10,16 @@ import tagRouter from "./src/services/tag.service";
 import orderRouter from "./src/services/order.service";
 import settingsRouter from "./src/services/settings.service";
 import dashboardRouter from "./src/services/dashboard.service";
-import membersInvitationRouter from "./src/services/member-invitation.service";
+import organizationRouter from "./src/services/organization.service";
 import { startCronJobs } from "./src/cron";
 import { multerErrorHandler } from "./src/utils/multerErrorHandler";
+import { setupSwagger } from "./src/swagger/swagger";
 
 require("dotenv").config();
 
 const app = express();
+
+setupSwagger(app);
 
 app.set("trust proxy", 1);
 
@@ -40,7 +43,7 @@ app.use("/api/categories", categoryRouter);
 app.use("/api/tags", tagRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/dashboard", dashboardRouter);
-app.use("/api/users-permissions", membersInvitationRouter);
+app.use("/api/organization", organizationRouter);
 
 app.use(multerErrorHandler);
 
