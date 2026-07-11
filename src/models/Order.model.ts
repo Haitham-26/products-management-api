@@ -59,10 +59,12 @@ const OrderSchema = new mongoose.Schema(
           quantity: {
             type: Number,
             required: [true, "The quantity is required."],
+            min: [1, "Quantity must be at least 1."],
           },
           priceAtPurchase: {
             type: Number,
             required: [true, "The price at purchase is required."],
+            min: [0, "Price at purchase must be at least 0."],
           },
           discountAtPurchase: {
             type: {
@@ -71,11 +73,13 @@ const OrderSchema = new mongoose.Schema(
             },
             value: {
               type: Number,
+              min: [0, "Discount value must be at least 0."],
             },
           },
           finalPrice: {
             type: Number,
             required: false,
+            min: [0, "Final price must be at least 0."],
           },
         },
       ],
@@ -94,6 +98,7 @@ const OrderSchema = new mongoose.Schema(
     totalPriceAtPurchase: {
       type: Number,
       required: [true, "The total price at purchase is required."],
+      min: [0, "Total price at purchase must be at least 0."],
     },
     isArchived: {
       type: Boolean,

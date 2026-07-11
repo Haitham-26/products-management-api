@@ -20,7 +20,7 @@ const CounterSchema = new Schema<Counter>({
     index: true,
     unique: true,
   },
-  seq: { type: Number, default: 0 },
+  seq: { type: Number, default: 0, min: [0, "Sequence must be at least 0."] },
 });
 
 export const CounterModel = mongoose.model<Counter>("Counter", CounterSchema);

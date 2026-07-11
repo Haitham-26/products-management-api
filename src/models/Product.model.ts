@@ -49,15 +49,18 @@ const ProductSchema = new mongoose.Schema(
     price: {
       type: Number,
       required: [true, "The price is required."],
+      min: [0, "Price must be at least 0."],
     },
     quantity: {
       type: Number,
       required: [true, "The quantity is required."],
+      min: [1, "Quantity must be at least 1."],
     },
     minStock: {
       type: Number,
       required: false,
       default: 10,
+      min: [1, "Minimum stock must be at least 1."],
     },
     discount: {
       type: {
@@ -66,10 +69,12 @@ const ProductSchema = new mongoose.Schema(
       },
       value: {
         type: Number,
+        min: [0, "Discount value must be at least 0."],
       },
     },
     priceAfterDiscount: {
       type: Number,
+      min: [0, "Price after discount must be at least 0."],
     },
     userId: {
       type: Types.ObjectId,

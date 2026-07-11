@@ -4,15 +4,11 @@ import { User } from "./User.model";
 
 export interface MemberInvitation extends mongoose.Document {
   _id: Types.ObjectId;
-
   inviter: Partial<User>;
   inviterId: Types.ObjectId;
-
   inviteeEmail: string;
   status: InvitationStatus;
-
   sentAt: Date;
-
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,19 +21,16 @@ const MemberInvitationSchema = new mongoose.Schema(
       required: [true, "The inviter id is required."],
       index: true,
     },
-
     inviteeEmail: {
       type: String,
       required: [true, "The invitee email is required."],
       index: true,
     },
-
     status: {
       type: String,
       enum: Object.values(InvitationStatus),
       default: InvitationStatus.PENDING,
     },
-
     sentAt: {
       type: Date,
       default: Date.now(),
