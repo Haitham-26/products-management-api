@@ -32,15 +32,15 @@ app.use(
 );
 app.use(globalLimiter);
 
-app.use("/auth", authRouter);
-app.use("/user", userRouter);
-app.use("/settings", settingsRouter);
-app.use("/products", productRouter);
-app.use("/categories", categoryRouter);
-app.use("/tags", tagRouter);
-app.use("/orders", orderRouter);
-app.use("/dashboard", dashboardRouter);
-app.use("/users-permissions", membersInvitationRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
+app.use("/api/settings", settingsRouter);
+app.use("/api/products", productRouter);
+app.use("/api/categories", categoryRouter);
+app.use("/api/tags", tagRouter);
+app.use("/api/orders", orderRouter);
+app.use("/api/dashboard", dashboardRouter);
+app.use("/api/users-permissions", membersInvitationRouter);
 
 app.use(multerErrorHandler);
 
