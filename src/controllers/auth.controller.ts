@@ -14,7 +14,6 @@ import {
   generateRefreshToken,
 } from "../utils/generateJWTs";
 import { OAuth2Client } from "google-auth-library";
-import { Types } from "mongoose";
 
 const createAuthTokens = (userId: string, tokenVersion: number) => ({
   accessToken: generateAccessToken(userId, tokenVersion),
@@ -77,19 +76,21 @@ const signUpToken: RequestHandler = async (req, res) => {
   try {
     const { email, token } = req.body as SignUpToken;
 
-    const isEmailExist = await UserModel.findOne({
-      email,
-      emailVerified: false,
-    });
+    const user = (
+      await UserModel.findOne({
+        email,
+        emailVerified: false,
+      })
+    )?.toObject();
 
-    if (!isEmailExist) {
+    if (!user) {
       res.status(StatusCode.BAD_REQUEST).send({
         message: "This email does not exist",
       });
       return;
     }
 
-    if (isEmailExist.optCode !== token) {
+    if (user.optCode !== token) {
       res.status(StatusCode.BAD_REQUEST).send({
         message: "Incorrect verification code",
       });
@@ -99,7 +100,7 @@ const signUpToken: RequestHandler = async (req, res) => {
     // Token expires in 5 minutes
     const signUpTokenExpiryMs = 5 * 60 * 1000;
 
-    if (Date.now() - isEmailExist.createdAt.getTime() >= signUpTokenExpiryMs) {
+    if (Date.now() - user.createdAt.getTime() >= signUpTokenExpiryMs) {
       res.status(StatusCode.BAD_REQUEST).send({
         message: "The verification code has expired",
       });
@@ -108,7 +109,7 @@ const signUpToken: RequestHandler = async (req, res) => {
 
     await withTransaction(async (session) => {
       await UserModel.updateOne(
-        { _id: isEmailExist._id },
+        { _id: user._id },
         {
           emailVerified: true,
           $unset: {
@@ -124,21 +125,18 @@ const signUpToken: RequestHandler = async (req, res) => {
       await SettingsModel.create(
         [
           {
-            userId: isEmailExist._id,
+            userId: user._id,
           },
         ],
         { session },
       );
     });
 
-    const { password, tokenVersion, optCode, ...safeUser } = isEmailExist;
+    const { password, tokenVersion, optCode, ...safeUser } = user;
 
     res.status(StatusCode.OK).send({
       user: safeUser,
-      ...createAuthTokens(
-        isEmailExist._id.toString(),
-        isEmailExist.tokenVersion || 0,
-      ),
+      ...createAuthTokens(user._id.toString(), user.tokenVersion || 0),
     });
   } catch (e) {
     console.log(e);
@@ -171,14 +169,13 @@ const signupResendToken: RequestHandler = async (req, res) => {
   }
 };
 
-//Login
 const login: RequestHandler = async (req, res) => {
   try {
     const { email, password } = req.body as LoginDto;
 
-    const user = await UserModel.findOne({ email }).select(
-      "-forgotPasswordCode",
-    );
+    const user = (
+      await UserModel.findOne({ email }).select("-forgotPasswordCode")
+    )?.toObject();
 
     if (!user) {
       res.status(StatusCode.NOT_FOUND).send({
