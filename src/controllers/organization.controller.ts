@@ -86,7 +86,7 @@ const inviteMembers: RequestHandler = async (req, res) => {
           filter: {
             inviteeEmail: email,
             status: {
-              $in: [InvitationStatus.DECLINED, InvitationStatus.CANCELLED],
+              $in: [InvitationStatus.DECLINED, InvitationStatus.CANCELED],
             },
             inviterId: user._id,
           },
@@ -127,7 +127,7 @@ const cancelInvitation: RequestHandler = async (req, res) => {
       },
       {
         $set: {
-          status: InvitationStatus.CANCELLED,
+          status: InvitationStatus.CANCELED,
         },
       },
     );
@@ -355,7 +355,7 @@ const leaveOrg: RequestHandler = async (req, res) => {
 
     const isMember =
       user.roles.includes(UserRoles.MEMBER) &&
-      Types.ObjectId.isValid(user.organizationId as string);
+      Types.ObjectId.isValid(user.organizationId as Types.ObjectId);
 
     if (!isMember) {
       res
