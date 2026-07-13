@@ -33,7 +33,7 @@ const getCategories = async (req: express.Request, res: express.Response) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { keyword, meta, minChildrenCount, maxChildrenCount, creationDate } =
+    const { keyword, meta, minUsageCount, maxUsageCount, creationDate } =
       req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
@@ -56,15 +56,15 @@ const getCategories = async (req: express.Request, res: express.Response) => {
       ];
     }
 
-    if (!isNil(minChildrenCount) || !isNil(maxChildrenCount)) {
-      query.childrenCount = {};
+    if (!isNil(minUsageCount) || !isNil(maxUsageCount)) {
+      query.usageCount = {};
 
-      if (minChildrenCount) {
-        query.childrenCount.$gte = Number(minChildrenCount);
+      if (minUsageCount) {
+        query.usageCount.$gte = Number(minUsageCount);
       }
 
-      if (maxChildrenCount) {
-        query.childrenCount.$lte = Number(maxChildrenCount);
+      if (maxUsageCount) {
+        query.usageCount.$lte = Number(maxUsageCount);
       }
     }
 
@@ -73,7 +73,7 @@ const getCategories = async (req: express.Request, res: express.Response) => {
         name: 1,
         description: 1,
         createdAt: 1,
-        childrenCount: 1,
+        usageCount: 1,
       })
         .sort({
           createdAt: getCreatedAtSort(creationDate as CreationDateFilters),

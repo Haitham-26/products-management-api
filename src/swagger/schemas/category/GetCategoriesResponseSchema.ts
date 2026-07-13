@@ -18,7 +18,7 @@ const GetCategoriesResponseSchema = {
           description: {
             type: SwaggerTypes.STRING,
           },
-          childrenCount: {
+          usageCount: {
             type: SwaggerTypes.INTEGER,
           },
           createdAt: {

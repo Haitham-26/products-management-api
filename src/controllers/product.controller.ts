@@ -142,7 +142,7 @@ const createProduct: RequestHandler = async (req, res) => {
         if (categoryId) {
           await CategoryModel.updateOne(
             { _id: new Types.ObjectId(categoryId as string), userId: scopeId },
-            { $inc: { childrenCount: 1 } },
+            { $inc: { usageCount: 1 } },
             { session },
           );
         }
@@ -353,7 +353,7 @@ const deleteProduct: RequestHandler = async (req, res) => {
       if (product?.categoryId) {
         await CategoryModel.updateOne(
           { _id: product.categoryId, userId: scopeId },
-          { $inc: { childrenCount: -1 } },
+          { $inc: { usageCount: -1 } },
           { session },
         );
       }
@@ -397,7 +397,7 @@ const deleteBulkProducts: RequestHandler = async (req, res) => {
         .map((product) => ({
           updateOne: {
             filter: { _id: product.categoryId, userId: scopeId },
-            update: { $inc: { childrenCount: -1 } },
+            update: { $inc: { usageCount: -1 } },
           },
         }));
 
@@ -618,14 +618,14 @@ const updateProduct: RequestHandler = async (req, res) => {
           if (oldCategoryId) {
             await CategoryModel.updateOne(
               { _id: oldCategoryId, userId: scopeId },
-              { $inc: { childrenCount: -1 } },
+              { $inc: { usageCount: -1 } },
               { session },
             );
           }
           if (newCategoryId) {
             await CategoryModel.updateOne(
               { _id: newCategoryId, userId: scopeId },
-              { $inc: { childrenCount: 1 } },
+              { $inc: { usageCount: 1 } },
               { session },
             );
           }

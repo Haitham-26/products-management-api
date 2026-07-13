@@ -134,7 +134,7 @@ productRouter.get(
  * /products/delete:
  *   delete:
  *     summary: Deletes a product
- *     description: Deletes a product (soft delete) and decrements the associated category's children count, and tags' usage count.
+ *     description: Deletes a product (soft delete) and decrements the associated category's usage count, and tags' usage count.
  *     tags:
  *       - Products
  *     requestBody:
@@ -190,7 +190,7 @@ productRouter.delete(
  * /products/create:
  *   post:
  *     summary: Creates a product
- *     description: Creates a product and increments the associated category's children count, and tags' usage count.
+ *     description: Creates a product and increments the associated category's usage count, and tags' usage count.
  *     tags:
  *       - Products
  *     requestBody:
@@ -223,7 +223,7 @@ productRouter.post(
  * /products/update:
  *   patch:
  *     summary: Updates a product
- *     description: Updates a product and increments/decrements the associated category's children count, and tags' usage count.
+ *     description: Updates a product and increments/decrements the associated category's usage count, and tags' usage count.
  *     tags:
  *       - Products
  *     requestBody:

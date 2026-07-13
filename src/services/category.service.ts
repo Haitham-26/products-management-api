@@ -31,12 +31,12 @@ const categoryRouter = express.Router();
  *           type: string
  *           example: "premium"
  *       - in: query
- *         name: minChildrenCount
+ *         name: minUsageCount
  *         schema:
  *           type: integer
  *           example: 5
  *       - in: query
- *         name: maxChildrenCount
+ *         name: maxUsageCount
  *         schema:
  *           type: integer
  *           example: 12
