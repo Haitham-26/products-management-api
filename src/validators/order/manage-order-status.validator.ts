@@ -60,7 +60,7 @@ export const ManageOrderStatusValidator = async (
       body.status === OrderStatus.CONFIRMED
     ) {
       res.status(StatusCode.BAD_REQUEST).send({
-        message: "Cancelled order's status cannot be changed to confirmed. ",
+        message: "Canceled order's status cannot be changed to confirmed. ",
       });
       return;
     }

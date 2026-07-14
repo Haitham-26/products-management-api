@@ -1,4 +1,4 @@
-import express from "express";
+import { RequestHandler } from "express";
 import { RequestContext } from "../../utils/RequestContext";
 import SettingsModel from "../../models/Settings.model";
 import { Types } from "mongoose";
@@ -6,6 +6,7 @@ import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { ThrowZodError } from "../../utils/ThrowZodError";
 import z from "zod";
 import currencyCodes from "currency-codes";
+import { AppLangs } from "../../types/settings/types/AppLangs.enum";
 
 const updateSettingsSchema = z
   .object({
@@ -24,14 +25,17 @@ const updateSettingsSchema = z
         message: "Unsupported currency code",
       })
       .optional(),
+    lang: z
+      .enum(Object.values(AppLangs), "Language is not supported")
+      .optional(),
   })
   .loose();
 
-export const UpdateSettingsValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const UpdateSettingsValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 

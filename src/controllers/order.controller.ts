@@ -346,7 +346,7 @@ const bulkManageOrderStatus: RequestHandler = async (req, res) => {
 
       const productBulkOps = orders
         .filter((order) => {
-          // Cancelled orders' status cannot be directly changed to CONFIRMED
+          // Canceled orders' status cannot be directly changed to CONFIRMED
           if (
             order.status === OrderStatus.CANCELED &&
             newStatus === OrderStatus.CONFIRMED
