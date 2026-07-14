@@ -1,5 +1,6 @@
 import mongoose, { model, Types } from "mongoose";
 import { codes as currencyCodes } from "currency-codes";
+import { AppLangs } from "../types/settings/types/AppLangs.enum";
 
 export interface Settings extends mongoose.Document {
   _id: Types.ObjectId;
@@ -8,6 +9,7 @@ export interface Settings extends mongoose.Document {
     defaultMinStock: number;
   };
   currency: string;
+  lang: AppLangs;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +33,11 @@ const SettingsSchema = new mongoose.Schema(
       type: String,
       enum: currencyCodes(),
       default: "USD",
+    },
+    lang: {
+      type: String,
+      enum: Object.values(AppLangs),
+      default: AppLangs.EN,
     },
   },
   {

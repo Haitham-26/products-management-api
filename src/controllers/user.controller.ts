@@ -15,8 +15,8 @@ const getUserById = async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const user = await UserModel.findById(
-      userId,
+    const user = await UserModel.findOne(
+      { _id: userId },
       "-password -tokenVersion -optCode -forgotPasswordCode",
     );
 

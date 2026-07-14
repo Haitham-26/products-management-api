@@ -1,6 +1,6 @@
 export enum InvitationStatus {
   PENDING = "PENDING",
-  CANCELLED = "CANCELLED",
+  CANCELED = "CANCELED",
   ACCEPTED = "ACCEPTED",
   DECLINED = "DECLINED",
 }

@@ -13,7 +13,7 @@ export interface Order extends mongoose.Document {
   items: OrderItem[];
   note?: string;
   status: OrderStatus;
-  totalPriceAtPurchase: number;
+  totalAmount: number;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -95,7 +95,7 @@ const OrderSchema = new mongoose.Schema(
       enum: Object.values(OrderStatus),
       default: OrderStatus.PENDING,
     },
-    totalPriceAtPurchase: {
+    totalAmount: {
       type: Number,
       required: [true, "The total price at purchase is required."],
       min: [0, "Total price at purchase must be at least 0."],

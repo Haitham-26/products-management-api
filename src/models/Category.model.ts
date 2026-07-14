@@ -5,7 +5,7 @@ export interface Category extends mongoose.Document {
   userId: Types.ObjectId;
   name: string;
   description?: string;
-  childrenCount: number;
+  usageCount: number;
   isDeleted: boolean;
   deletedAt?: Date | null;
   createdAt: string;
@@ -22,10 +22,10 @@ const CategorySchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-    childrenCount: {
+    usageCount: {
       type: Number,
       default: 0,
-      min: [0, "Children count must be at least 0."],
+      min: [0, "Usage count must be at least 0."],
     },
     userId: {
       type: Types.ObjectId,
