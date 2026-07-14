@@ -115,7 +115,7 @@ const createOrder: RequestHandler = async (req, res) => {
             items: orderItems,
             note,
             status: OrderStatus.PENDING,
-            totalPriceAtPurchase: orderItems.reduce(
+            totalAmount: orderItems.reduce(
               (total, item) => total + item.finalPrice * item.quantity,
               0,
             ),
@@ -177,14 +177,14 @@ const getOrders: RequestHandler = async (req, res) => {
     }
 
     if (!isNil(minTotalPrice) || !isNil(maxTotalPrice)) {
-      query.totalPriceAtPurchase = {};
+      query.totalAmount = {};
 
       if (minTotalPrice) {
-        query.totalPriceAtPurchase.$gte = Number(minTotalPrice);
+        query.totalAmount.$gte = Number(minTotalPrice);
       }
 
       if (maxTotalPrice) {
-        query.totalPriceAtPurchase.$lte = Number(maxTotalPrice);
+        query.totalAmount.$lte = Number(maxTotalPrice);
       }
     }
 

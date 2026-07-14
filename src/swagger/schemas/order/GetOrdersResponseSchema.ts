@@ -99,7 +99,7 @@ const GetOrdersResponseSchema = {
             enum: Object.values(OrderStatus),
             example: OrderStatus.PENDING,
           },
-          totalPriceAtPurchase: {
+          totalAmount: {
             type: SwaggerTypes.NUMBER,
             example: 900,
           },
