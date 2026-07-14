@@ -1,3 +1,4 @@
+import { AppLangs } from "../../../types/settings/types/AppLangs.enum";
 import { SwaggerTypes } from "../../types/SwaggerTypes";
 import currencyCodes from "currency-codes";
 
@@ -22,6 +23,11 @@ const UpdateSettingsRequestSchema = {
       type: SwaggerTypes.STRING,
       enum: currencyCodes.codes(),
       example: "USD",
+    },
+    lang: {
+      type: SwaggerTypes.STRING,
+      enum: Object.values(AppLangs),
+      example: AppLangs.EN,
     },
   },
 };
