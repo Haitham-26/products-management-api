@@ -27,6 +27,7 @@ const generateTokenTemplate = async (
   dir: "rtl" | "ltr",
 ) => {
   const templatePath = path.join(__dirname, "./templates/template-token.html");
+  const logoUrl = `${process.env.BASE_URL}/images/logo.png`;
 
   const content = {
     [AppLangs.EN]: {
@@ -47,6 +48,7 @@ const generateTokenTemplate = async (
   let html = await fs.readFile(templatePath, "utf-8");
 
   html = html
+    .replace(/{{logoUrl}}/g, logoUrl)
     .replace(/{{lang}}/g, lang)
     .replace(/{{dir}}/g, dir)
     .replaceAll(/{{title}}/g, title)
@@ -69,6 +71,7 @@ const generateLinkTemplate = async (
   dir: "rtl" | "ltr",
 ) => {
   const templatePath = path.join(__dirname, "./templates/template-link.html");
+  const logoUrl = `${process.env.BASE_URL}/images/logo.png`;
 
   const content = {
     [AppLangs.EN]: {
@@ -89,6 +92,7 @@ const generateLinkTemplate = async (
   let html = await fs.readFile(templatePath, "utf-8");
 
   html = html
+    .replace(/{{logoUrl}}/g, logoUrl)
     .replace(/{{lang}}/g, lang)
     .replace(/{{dir}}/g, dir)
     .replaceAll(/{{title}}/g, title)
@@ -105,20 +109,11 @@ const generateLinkTemplate = async (
 
 const sendEmail = async (to: string, subject: string, html: string) => {
   try {
-    const logoPath = path.resolve("public/images/logo.png");
-
     await transporter.sendMail({
       from: `"Inventix" <${process.env.MAIL_USER}>`,
       to,
       subject,
       html,
-      attachments: [
-        {
-          filename: "logo.png",
-          path: logoPath,
-          cid: "logo",
-        },
-      ],
     });
   } catch (e) {
     console.log("Email error:", e);
