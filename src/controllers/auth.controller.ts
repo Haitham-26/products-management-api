@@ -13,9 +13,9 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/generateJWTs";
-import { OAuth2Client } from "google-auth-library";
 import { AppLangs } from "../types/settings/types/AppLangs.enum";
 import { SignUpEmailDto } from "../types/auth/signup/SignUpEmailDto";
+import { errorHandler } from "../errors/errorHandler";
 
 const createAuthTokens = (userId: string, tokenVersion: number) => ({
   accessToken: generateAccessToken(userId, tokenVersion),
@@ -256,43 +256,16 @@ const refreshToken: RequestHandler = async (req, res) => {
 };
 
 const googleLogin: RequestHandler = async (req, res) => {
-  const { idToken } = req.body;
-
-  const client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-  );
-
   try {
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    // these come from GoogleLoginValidator
+    const { user, name, picture, email } = RequestContext<{
+      user: User | null;
+      name: string;
+      picture: string;
+      email: string;
+    }>(req);
 
-    const payload = ticket.getPayload();
-
-    if (!payload) {
-      res.status(400).send({ message: "Invalid Google token" });
-      return;
-    }
-
-    const { email, name, picture, email_verified } = payload;
-
-    if (!email || !email_verified) {
-      res.status(400).send({ message: "Your google account is not verified" });
-      return;
-    }
-
-    let user = await UserModel.findOne({ email }).select(
-      "-password -optCode -forgotPasswordCode",
-    );
-
-    if (user && user?.signUpMethod !== SignUpMethods.GOOGLE) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "This account was not created with a google account.",
-      });
-      return;
-    }
+    let _user = user;
 
     if (!user) {
       await withTransaction(async (session) => {
@@ -310,24 +283,21 @@ const googleLogin: RequestHandler = async (req, res) => {
           { session },
         );
 
-        user = newUser;
+        _user = newUser as unknown as User;
 
-        await SettingsModel.create([{ userId: user._id }], { session });
+        await SettingsModel.create([{ userId: _user!._id }], { session });
       });
     }
 
     const { password, forgotPasswordCode, tokenVersion, optCode, ...safeUser } =
-      user!.toObject();
+      _user!.toObject();
 
     res.status(StatusCode.OK).send({
       user: safeUser,
-      ...createAuthTokens(user!._id.toString(), user!.tokenVersion),
+      ...createAuthTokens(_user!._id.toString(), _user!.tokenVersion),
     });
   } catch (e) {
-    console.log(e);
-    res.status(StatusCode.INTERNAL_ERROR).send({
-      message: "Something went wrong",
-    });
+    errorHandler(e, res);
   }
 };
 

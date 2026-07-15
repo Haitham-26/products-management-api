@@ -1,13 +1,12 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
-import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../utils/RequestContext";
 import OrderModel from "../../models/Order.model";
 import { OrderStatus } from "../../types/order/types/OrderStatus.enum";
 import { parsePhoneNumber } from "awesome-phonenumber";
 import has from "lodash/has";
+import { errorHandler } from "../../errors/errorHandler";
 
 const updateOrderSchema = z
   .object({
@@ -91,6 +90,6 @@ export const UpdateOrderValidator = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

@@ -1,10 +1,10 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
 import UserModel from "../../../models/User.model";
 import { RequestContext } from "../../../utils/RequestContext";
+import { errorHandler } from "../../../errors/errorHandler";
 
 const forgotPasswordEmailSchema = z
   .object({
@@ -49,6 +49,6 @@ export const ForgotPasswordEmailValidator = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

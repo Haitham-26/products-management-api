@@ -1,6 +1,5 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import CategoryModel from "../../models/Category.model";
@@ -8,6 +7,7 @@ import TagModel from "../../models/Tag.model";
 import { ProductDiscountTypes } from "../../types/product/types/ProductDiscountTypes.enum";
 import { RequestContext } from "../../utils/RequestContext";
 import { normalizeMultipartBody } from "../../utils/normalizeMultipartBody";
+import { errorHandler } from "../../errors/errorHandler";
 
 const createProductSchema = z
   .object({
@@ -114,6 +114,6 @@ export const CreateProductValidator = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

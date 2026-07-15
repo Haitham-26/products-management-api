@@ -1,11 +1,11 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../utils/RequestContext";
 import OrderModel from "../../models/Order.model";
 import { OrderVisibility } from "../../types/order/types/OrderVisibility.enum";
+import { errorHandler } from "../../errors/errorHandler";
 
 const bulkManageOrderVisibilitySchema = z
   .object({
@@ -47,6 +47,6 @@ export const BulkManageOrderVisibilityValidator = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

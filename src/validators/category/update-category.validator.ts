@@ -1,10 +1,10 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import CategoryModel from "../../models/Category.model";
 import { RequestContext } from "../../utils/RequestContext";
 import { Types } from "mongoose";
+import { errorHandler } from "../../errors/errorHandler";
 
 const updateCategorySchema = z
   .object({
@@ -45,6 +45,6 @@ export const UpdateCategoryValidator = async (
     req.body = body;
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

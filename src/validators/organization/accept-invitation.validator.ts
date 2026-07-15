@@ -1,11 +1,11 @@
 import { RequestHandler } from "express";
 import { RequestContext } from "../../utils/RequestContext";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { User } from "../../models/User.model";
 import MemberInvitationModel from "../../models/Member-invitation.model";
 import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
 import { Types } from "mongoose";
+import { errorHandler } from "../../errors/errorHandler";
 
 export const AcceptInvitationValidator: RequestHandler = async (
   req,
@@ -57,6 +57,6 @@ export const AcceptInvitationValidator: RequestHandler = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

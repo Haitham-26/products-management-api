@@ -1,6 +1,5 @@
 import z from "zod";
 import { RequestHandler } from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import ProductModel from "../../models/Product.model";
 import { Types } from "mongoose";
@@ -11,6 +10,7 @@ import { ProductDiscountTypes } from "../../types/product/types/ProductDiscountT
 import { ProductStatus } from "../../types/product/types/ProductStatus.enum";
 import { normalizeMultipartBody } from "../../utils/normalizeMultipartBody";
 import isArray from "lodash/isArray";
+import { errorHandler } from "../../errors/errorHandler";
 
 const updateProductSchema = z
   .object({
@@ -139,6 +139,6 @@ export const UpdateProductValidator: RequestHandler = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

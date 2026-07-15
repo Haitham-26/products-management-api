@@ -29,18 +29,20 @@ const generateTokenTemplate = async (
   const templatePath = path.join(__dirname, "./templates/template-token.html");
   const logoUrl = `${process.env.BASE_URL}/images/logo.png`;
 
+  const year = new Date().getFullYear();
+
   const content = {
     [AppLangs.EN]: {
       info: "This verification code expires in 5 minutes.",
       warning:
         "If you think this email was sent to you by mistake, you can safely ignore this email.",
-      rights: "© 2026 Inventix. All rights reserved.",
+      rights: `© ${year} Inventix. All rights reserved.`,
       dontReply: "This is an automated email. Please do not reply.",
     },
     [AppLangs.AR]: {
       info: "صلاحية رمز التحقق 5 دقائق.",
       warning: "إذا كنت تظن أن هذا البريد أرسل لك عن طريق الخطأ يمكنك تجاهله.",
-      rights: "© 2026 Inventix. ججميع الحقوق محفوظة.",
+      rights: `© ${year} Inventix. ججميع الحقوق محفوظة.`,
       dontReply: "هذا بريد تلقائي. يرجى عدم الرد عليه.",
     },
   };
@@ -73,18 +75,20 @@ const generateLinkTemplate = async (
   const templatePath = path.join(__dirname, "./templates/template-link.html");
   const logoUrl = `${process.env.BASE_URL}/images/logo.png`;
 
+  const year = new Date().getFullYear();
+
   const content = {
     [AppLangs.EN]: {
       backupLinkText: "If the button doesn’t work, copy and open this link:",
       warning:
         "If you think this email was sent to you by mistake, you can safely ignore this email.",
-      rights: "© 2026 Inventix. All rights reserved.",
+      rights: `© ${year} Inventix. All rights reserved.`,
       dontReply: "This is an automated email. Please do not reply.",
     },
     [AppLangs.AR]: {
       backupLinkText: "اذا لم يعمل الزر، قم بنسخ وفتح هذا الرابط:",
       warning: "إذا كنت تظن أن هذا البريد أرسل لك عن طريق الخطأ يمكنك تجاهله.",
-      rights: "© 2026 Inventix. جميع الحقوق محفوظة.",
+      rights: `© ${year} Inventix. جميع الحقوق محفوظة.`,
       dontReply: "هذا بريد تلقائي. يرجى عدم الرد عليه.",
     },
   };

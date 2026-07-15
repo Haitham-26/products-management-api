@@ -1,6 +1,6 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
+import { errorHandler } from "../../errors/errorHandler";
 
 const createTagSchema = z
   .object({
@@ -27,6 +27,6 @@ export const CreateTagValidator = async (
     req.body = body;
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

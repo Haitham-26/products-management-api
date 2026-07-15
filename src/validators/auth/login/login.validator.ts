@@ -1,40 +1,37 @@
 import z from "zod";
 import { Regexes } from "../../../utils/String";
-import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
+import { RequestHandler } from "express";
 import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
+import { errorHandler } from "../../../errors/errorHandler";
+import { ApiError } from "../../../errors/APIError";
 
 const loginSchema = z.object({
-  email: z.email("Please enter a valid email"),
+  email: z.email("serverErrors.login.email.invalid"),
   password: z
-    .string()
-    .min(6, "The password must be at least 6 characters long")
-    .max(64, "The password must be at most 64 characters long")
-    .regex(Regexes.PASSWORD, "The password contains invalid characters"),
+    .string("serverErrors.login.password.invalid")
+    .min(8, "serverErrors.login.password.short")
+    .max(64, "serverErrors.login.password.long")
+    .regex(Regexes.PASSWORD, "serverErrors.login.password.regex"),
 });
 
-export const LoginValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-) => {
-  const user = await UserModel.findOne({ email: req.body.email });
-
+export const LoginValidator: RequestHandler = async (req, res, next) => {
   try {
-    if (user && user.signUpMethod !== SignUpMethods.EMAIL) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message:
-          "This account was created with google, please sign in with google",
-      });
-      return;
-    }
-
     const body = loginSchema.parse(req.body);
     req.body = body;
+
+    const user = await UserModel.findOne({ email: req.body.email });
+
+    if (user && user.signUpMethod !== SignUpMethods.EMAIL) {
+      throw new ApiError({
+        message: "serverErrors.login.differentMethod",
+        status: StatusCode.BAD_REQUEST,
+      });
+    }
+
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

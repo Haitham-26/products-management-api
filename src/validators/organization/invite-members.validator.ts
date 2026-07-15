@@ -1,12 +1,12 @@
 import { RequestContext } from "../../utils/RequestContext";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import z from "zod";
 import UserModel, { User } from "../../models/User.model";
 import { UserRoles } from "../../types/user/types/UserRoles.enum";
 import MemberInvitationModel from "../../models/Member-invitation.model";
 import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
 import { RequestHandler } from "express";
+import { errorHandler } from "../../errors/errorHandler";
 
 const inviteMembersSchema = z
   .object({
@@ -69,6 +69,6 @@ export const InviteMembersValidator: RequestHandler = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

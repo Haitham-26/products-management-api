@@ -1,18 +1,18 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
 import { Regexes } from "../../../utils/String";
 import { RequestContext } from "../../../utils/RequestContext";
 import { User } from "../../../models/User.model";
 import bcrypt from "bcrypt";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
+import { errorHandler } from "../../../errors/errorHandler";
 
 const forgotPasswordNewSchema = z
   .object({
     newPassword: z
       .string()
       .trim()
-      .min(6, "The password must be at least 6 characters long")
+      .min(8, "The password must be at least 8 characters long")
       .max(64, "The password must be at most 64 characters long")
       .regex(Regexes.PASSWORD, "The password contains invalid characters"),
   })
@@ -43,6 +43,6 @@ export const ForgotPasswordNewValidator = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

@@ -4,22 +4,22 @@ import bcrypt from "bcrypt";
 import { Regexes } from "../../utils/String";
 import { RequestContext } from "../../utils/RequestContext";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { User } from "../../models/User.model";
 import { SignUpMethods } from "../../types/auth/shared/SignUpMethods";
+import { errorHandler } from "../../errors/errorHandler";
 
 const resetPasswordNewSchema = z
   .object({
     currentPassword: z
       .string()
       .trim()
-      .min(6, "The password must be at least 6 characters long")
+      .min(8, "The password must be at least 8 characters long")
       .max(64, "The password must be at most 64 characters long")
       .regex(Regexes.PASSWORD, "The password contains invalid characters"),
     newPassword: z
       .string()
       .trim()
-      .min(6, "The password must be at least 6 characters long")
+      .min(8, "The password must be at least 8 characters long")
       .max(64, "The password must be at most 64 characters long")
       .regex(Regexes.PASSWORD, "The password contains invalid characters"),
   })
@@ -70,6 +70,6 @@ export const ResetPasswordValidator: RequestHandler = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

@@ -1,9 +1,9 @@
 import z from "zod";
 import { RequestHandler } from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
 import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../../utils/RequestContext";
+import { errorHandler } from "../../../errors/errorHandler";
 
 const signUpResendTokenSchema = z
   .object({
@@ -42,6 +42,6 @@ export const SignUpTokenResendValidator: RequestHandler = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

@@ -1,9 +1,9 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import TagModel from "../../models/Tag.model";
 import { RequestContext } from "../../utils/RequestContext";
+import { errorHandler } from "../../errors/errorHandler";
 
 const updateTagSchema = z
   .object({
@@ -41,6 +41,6 @@ export const UpdateTagValidator = async (
     req.body = body;
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

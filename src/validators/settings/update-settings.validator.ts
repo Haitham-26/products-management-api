@@ -3,10 +3,10 @@ import { RequestContext } from "../../utils/RequestContext";
 import SettingsModel from "../../models/Settings.model";
 import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import z from "zod";
 import currencyCodes from "currency-codes";
 import { AppLangs } from "../../types/settings/types/AppLangs.enum";
+import { errorHandler } from "../../errors/errorHandler";
 
 const updateSettingsSchema = z
   .object({
@@ -53,6 +53,6 @@ export const UpdateSettingsValidator: RequestHandler = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

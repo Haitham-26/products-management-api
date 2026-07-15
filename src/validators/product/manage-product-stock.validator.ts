@@ -1,9 +1,9 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import ProductModel from "../../models/Product.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../utils/RequestContext";
+import { errorHandler } from "../../errors/errorHandler";
 
 const manageProductStockSchema = z
   .object({
@@ -50,6 +50,6 @@ export const ManageProductStockValidator = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

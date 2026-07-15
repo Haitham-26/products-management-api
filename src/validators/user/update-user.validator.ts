@@ -1,7 +1,7 @@
 import z from "zod";
 import { Regexes } from "../../utils/String";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { RequestHandler } from "express";
+import { errorHandler } from "../../errors/errorHandler";
 
 const userUpdateSchema = z
   .object({
@@ -28,6 +28,6 @@ export const UserUpdateValidator: RequestHandler = async (req, res, next) => {
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

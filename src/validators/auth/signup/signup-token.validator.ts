@@ -1,6 +1,6 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
+import { errorHandler } from "../../../errors/errorHandler";
 
 const signUpTokenSchema = z.object({
   token: z
@@ -20,6 +20,6 @@ export const SignUpTokenValidator = (
     req.body = body;
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

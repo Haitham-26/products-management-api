@@ -1,11 +1,11 @@
 import z from "zod";
 import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import ProductModel from "../../models/Product.model";
 import { Types } from "mongoose";
 import { RequestContext } from "../../utils/RequestContext";
 import { ProductStatus } from "../../types/product/types/ProductStatus.enum";
+import { errorHandler } from "../../errors/errorHandler";
 
 const bulkManageProductStatusSchema = z
   .object({
@@ -45,6 +45,6 @@ export const BulkManageProductStatusValidator = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

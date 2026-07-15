@@ -1,5 +1,4 @@
 import { RequestHandler } from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import z from "zod";
 import { Types } from "mongoose";
 import { PermissionEntities } from "../../types/user/types/PermissionEntities.enum";
@@ -7,6 +6,7 @@ import { CRUDPermissions } from "../../types/user/types/CRUDPermissions.enum";
 import { RequestContext } from "../../utils/RequestContext";
 import UserModel from "../../models/User.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
+import { errorHandler } from "../../errors/errorHandler";
 
 const manageMembersPermissionsSchema = z.object({
   userId: z.string().refine((val) => Types.ObjectId.isValid(val), {
@@ -74,6 +74,6 @@ export const ManageMembersPermissionsValidator: RequestHandler = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

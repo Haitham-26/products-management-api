@@ -1,8 +1,7 @@
 import z from "zod";
 import { Regexes } from "../../../utils/String";
 import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
-import { AppLangs } from "../../../types/settings/types/AppLangs.enum";
+import { errorHandler } from "../../../errors/errorHandler";
 
 const signUpEmailSchema = z
   .object({
@@ -22,7 +21,7 @@ const signUpEmailSchema = z
     password: z
       .string()
       .trim()
-      .min(6, "The password must be at least 6 characters long")
+      .min(8, "The password must be at least 8 characters long")
       .max(64, "The password must be at most 64 characters long")
       .regex(Regexes.PASSWORD, "The password contains invalid characters"),
   })
@@ -36,8 +35,9 @@ export const SignUpEmailValidator = (
   try {
     const body = signUpEmailSchema.parse(req.body);
     req.body = body;
+
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

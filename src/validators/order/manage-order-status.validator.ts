@@ -2,7 +2,6 @@ import express from "express";
 import { Types } from "mongoose";
 import z from "zod";
 import { OrderStatus } from "../../types/order/types/OrderStatus.enum";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import { RequestContext } from "../../utils/RequestContext";
 import OrderModel, { Order } from "../../models/Order.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
@@ -10,6 +9,7 @@ import {
   buildInsufficientStockMessage,
   checkOrderProductsStockAvailability,
 } from "../../utils/orderProductsStockValidation";
+import { errorHandler } from "../../errors/errorHandler";
 
 const manageOrderStatusSchema = z
   .object({
@@ -90,6 +90,6 @@ export const ManageOrderStatusValidator = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

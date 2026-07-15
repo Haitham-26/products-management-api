@@ -1,8 +1,8 @@
 import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
 import z from "zod";
 import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
+import { errorHandler } from "../../../errors/errorHandler";
 
 const forgotPasswordTokenSchema = z
   .object({
@@ -63,6 +63,6 @@ export const ForgotPasswordTokenValidator = async (
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };
