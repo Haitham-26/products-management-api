@@ -14,15 +14,34 @@ import {
   generateRefreshToken,
 } from "../utils/generateJWTs";
 import { OAuth2Client } from "google-auth-library";
+import { AppLangs } from "../types/settings/types/AppLangs.enum";
+import { SignUpEmailDto } from "../types/auth/signup/SignUpEmailDto";
 
 const createAuthTokens = (userId: string, tokenVersion: number) => ({
   accessToken: generateAccessToken(userId, tokenVersion),
   refreshToken: generateRefreshToken(userId, tokenVersion),
 });
 
+const getEmailLang = (lang: string) => {
+  if (Object.values(AppLangs).includes(lang as AppLangs)) {
+    return lang as AppLangs;
+  }
+
+  return AppLangs.EN;
+};
+
+const getEmailDir = (dir: string): "rtl" | "ltr" => {
+  if (["rtl", "ltr"].includes(dir)) {
+    return dir as "rtl" | "ltr";
+  }
+
+  return "ltr";
+};
+
 const signUpEmail: RequestHandler = async (req, res) => {
   try {
-    const { email, password, name, company } = req.body as SignUpEmailDto;
+    const { email, password, name, company, lang, dir } =
+      req.body as SignUpEmailDto;
 
     const isEmailExist = await UserModel.findOne({ email });
 
@@ -61,7 +80,10 @@ const signUpEmail: RequestHandler = async (req, res) => {
       signUpMethod: SignUpMethods.EMAIL,
     });
 
-    await sendSignUpTokenEmail(email, token);
+    const emailLang = getEmailLang(lang);
+    const emailDir = getEmailDir(dir);
+
+    await sendSignUpTokenEmail(email, token, emailLang, emailDir);
 
     res
       .status(StatusCode.OK)
@@ -146,6 +168,8 @@ const signUpToken: RequestHandler = async (req, res) => {
 
 const signupResendToken: RequestHandler = async (req, res) => {
   try {
+    const { lang, dir } = req.body;
+
     const { user } = RequestContext<{ user: User }>(req);
 
     const newToken = generateVerificationToken();
@@ -159,7 +183,10 @@ const signupResendToken: RequestHandler = async (req, res) => {
       },
     );
 
-    await sendSignUpTokenEmail(user.email, newToken);
+    const emailLang = getEmailLang(lang);
+    const emailDir = getEmailDir(dir);
+
+    await sendSignUpTokenEmail(user.email, newToken, emailLang, emailDir);
 
     res.status(StatusCode.OK).send({
       message: "The verification code has been sent to your email",
@@ -306,6 +333,8 @@ const googleLogin: RequestHandler = async (req, res) => {
 
 const forgotPasswordEmail: RequestHandler = async (req, res) => {
   try {
+    const { lang, dir } = req.body;
+
     const { user } = RequestContext<{ user: User }>(req);
 
     const token = generateVerificationToken();
@@ -322,7 +351,10 @@ const forgotPasswordEmail: RequestHandler = async (req, res) => {
       },
     );
 
-    await sendForgotPasswordTokenEmail(user.email, token);
+    const emailLang = getEmailLang(lang);
+    const emailDir = getEmailDir(dir);
+
+    await sendForgotPasswordTokenEmail(user.email, token, emailLang, emailDir);
 
     res.status(StatusCode.OK).send();
   } catch (e) {

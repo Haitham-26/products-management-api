@@ -1,3 +1,4 @@
+import { AppLangs } from "../../../types/settings/types/AppLangs.enum";
 import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const ForgotPasswordEmailRequestSchema = {
@@ -8,6 +9,16 @@ const ForgotPasswordEmailRequestSchema = {
       type: SwaggerTypes.STRING,
       format: "email",
       example: "john@example.com",
+    },
+    lang: {
+      type: SwaggerTypes.STRING,
+      enum: Object.values(AppLangs),
+      example: AppLangs.EN,
+    },
+    dir: {
+      type: SwaggerTypes.STRING,
+      enum: ["rtl", "ltr"],
+      example: "rtl",
     },
   },
 };

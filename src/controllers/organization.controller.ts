@@ -10,6 +10,8 @@ import { UserRoles } from "../types/user/types/UserRoles.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { withTransaction } from "../utils/withTransaction";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
+import SettingsModel from "../models/Settings.model";
+import { AppLangs } from "../types/settings/types/AppLangs.enum";
 
 const getOwnerInvitations: RequestHandler = async (req, res) => {
   try {
@@ -78,6 +80,13 @@ const inviteMembers: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
+    const settings = await SettingsModel.findOne(
+      { userId: user._id },
+      {
+        lang: 1,
+      },
+    );
+
     const { emails } = req.body;
 
     await MemberInvitationModel.bulkWrite(
@@ -102,9 +111,12 @@ const inviteMembers: RequestHandler = async (req, res) => {
       })),
     );
 
+    const lang = settings?.lang || AppLangs.EN;
+    const dir = lang === AppLangs.AR ? "rtl" : "ltr";
+
     await Promise.allSettled(
       emails.map((email: string) =>
-        sendMemberInvitationEmail(email, user?.company || user.name),
+        sendMemberInvitationEmail(email, user?.company || user.name, lang, dir),
       ),
     );
 

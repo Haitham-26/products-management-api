@@ -1,18 +1,20 @@
 import z from "zod";
-import express from "express";
+import { RequestHandler } from "express";
 import { ThrowZodError } from "../../../utils/ThrowZodError";
 import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../../utils/RequestContext";
 
-const signUpResendTokenSchema = z.object({
-  email: z.email("Please enter a valid email address"),
-});
+const signUpResendTokenSchema = z
+  .object({
+    email: z.email("Please enter a valid email address"),
+  })
+  .loose();
 
-export const SignUpTokenResendValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
+export const SignUpTokenResendValidator: RequestHandler = async (
+  req,
+  res,
+  next,
 ): Promise<void> => {
   try {
     const body = signUpResendTokenSchema.parse(req.body);

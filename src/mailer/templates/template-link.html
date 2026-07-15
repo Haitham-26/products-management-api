@@ -1,12 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title></title>
+    <title>{{title}}</title>
   </head>
 
   <body
+    lang="{{lang}}"
+    dir="{{dir}}"
     style="
       margin: 0;
       padding: 0;
@@ -117,7 +119,7 @@
                     line-height: 1.6;
                   "
                 >
-                  If the button doesn’t work, copy and open this link:<br />
+                  {{backupLinkText}}<br />
                   <span style="color: #4da3ff; word-break: break-all">
                     {{link}}
                   </span>
@@ -138,8 +140,7 @@
                         text-align: center;
                       "
                     >
-                      If you didn't request this, you can safely ignore this
-                      email.
+                      {{warning}}
                     </td>
                   </tr>
                 </table>
@@ -156,9 +157,9 @@
                   font-size: 12px;
                 "
               >
-                © 2026 Inventix. All rights reserved.
+                {{rights}}
                 <br />
-                This is an automated email. Please do not reply.
+                {{dontReply}}
               </td>
             </tr>
           </table>
