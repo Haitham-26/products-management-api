@@ -3,6 +3,7 @@ import { ApiError } from "./APIError";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import express from "express";
 import { ZodError } from "zod";
+import { APIErrorKeys } from "./APIError-keys";
 
 export const errorHandler = (e: unknown, res: express.Response) => {
   console.log(e);
@@ -35,7 +36,7 @@ export const errorHandler = (e: unknown, res: express.Response) => {
   }
 
   res.status(StatusCode.INTERNAL_ERROR).json({
-    message: "serverErrors.internal",
+    message: APIErrorKeys.internal,
   });
   return;
 };

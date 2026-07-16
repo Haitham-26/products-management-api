@@ -2,121 +2,93 @@ type KeyTree<T> = {
   [K in keyof T]: T[K] extends string ? string : KeyTree<T[K]>;
 };
 
-const createKeys = (prefix = "") => {
-  return new Proxy(
-    {},
-    {
-      get(_, prop: string) {
-        const path = prefix ? `${prefix}.${prop}` : prop;
+const LEAF = "" as const;
 
-        return createKeys(path);
-      },
-    },
-  );
+const buildKeys = <T extends Record<string, any>>(
+  schema: T,
+  prefix = "",
+): KeyTree<T> => {
+  const result = {} as any;
+
+  for (const key of Object.keys(schema)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    const value = schema[key];
+
+    result[key] = value === LEAF ? path : buildKeys(value, path);
+  }
+
+  return result;
 };
 
-type APIErrorKeyShape = {
-  internal: string;
-  unauthorized: string;
+const APIErrorKeySchema = {
+  internal: LEAF,
+  unauthorized: LEAF,
 
   login: {
     email: {
-      invalid: string;
-    };
+      invalid: LEAF,
+    },
     password: {
-      invalid: string;
-      short: string;
-      long: string;
-      regex: string;
-      incorrect: string;
-    };
-    differentMethod: string;
-    notFound: string;
-    notVerified: string;
-  };
+      invalid: LEAF,
+      short: LEAF,
+      long: LEAF,
+      regex: LEAF,
+      incorrect: LEAF,
+    },
+    differentMethod: LEAF,
+    notFound: LEAF,
+    notVerified: LEAF,
+  },
 
   "google-login": {
-    differentMethod: string;
-    notVerified: string;
-  };
+    differentMethod: LEAF,
+    notVerified: LEAF,
+  },
 
   signup: {
     email: {
-      name: {
-        invalid: string;
-        short: string;
-        long: string;
-        regex: string;
-      };
-      company: {
-        invalid: string;
-        long: string;
-      };
-      email: {
-        invalid: string;
-      };
-      password: {
-        invalid: string;
-        short: string;
-        long: string;
-        regex: string;
-      };
-      userExists: string;
-      notVerifiedExists: string;
-    };
-
+      name: { invalid: LEAF, short: LEAF, long: LEAF, regex: LEAF },
+      company: { invalid: LEAF, long: LEAF },
+      email: { invalid: LEAF },
+      password: { invalid: LEAF, short: LEAF, long: LEAF, regex: LEAF },
+      userExists: LEAF,
+      notVerifiedExists: LEAF,
+    },
     token: {
-      token: {
-        invalid: string;
-        length: string;
-        incorrect: string;
-        expired: string;
-      };
-      email: {
-        invalid: string;
-      };
-      notFound: string;
-    };
-  };
+      token: { invalid: LEAF, length: LEAF, incorrect: LEAF, expired: LEAF },
+      email: { invalid: LEAF },
+      notFound: LEAF,
+    },
+  },
 
   refreshToken: {
-    token: {
-      invalid: string;
-    };
-  };
+    token: { invalid: LEAF },
+  },
 
   forgotPassword: {
     email: {
-      email: {
-        invalid: string;
-      };
-      notFound: string;
-      notVerified: string;
-      differentMethod: string;
-    };
-
+      email: { invalid: LEAF },
+      notFound: LEAF,
+      notVerified: LEAF,
+      differentMethod: LEAF,
+    },
     token: {
       token: {
-        invalid: string;
-        length: string;
-        incorrect: string;
-        expired: string;
-        missing: string;
-      };
-    };
-
+        invalid: LEAF,
+        length: LEAF,
+        incorrect: LEAF,
+        expired: LEAF,
+        missing: LEAF,
+      },
+    },
     new: {
-      newPassword: {
-        invalid: string;
-        short: string;
-        long: string;
-        regex: string;
-      };
-      samePassword: string;
-    };
-  };
-};
+      newPassword: { invalid: LEAF, short: LEAF, long: LEAF, regex: LEAF },
+      samePassword: LEAF,
+    },
+  },
+} as const;
 
-export const APIErrorKeys = createKeys(
+export const APIErrorKeys = buildKeys(
+  APIErrorKeySchema,
   "serverErrors",
-) as KeyTree<APIErrorKeyShape>;
+) as KeyTree<typeof APIErrorKeySchema>;
