@@ -1,46 +1,52 @@
 import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
+import { errorHandler } from "../errors/errorHandler";
+import { ApiError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
 export const multerErrorHandler = (
   err: any,
   req: Request,
   res: Response,
   next: NextFunction,
-): void => {
+) => {
   if (err instanceof multer.MulterError) {
     switch (err.code) {
       case "LIMIT_FILE_SIZE":
-        res.status(StatusCode.BAD_REQUEST).json({
-          message: "File is too large. Maximum allowed size is 5MB.",
+        throw new ApiError({
+          status: StatusCode.BAD_REQUEST,
+          message: APIErrorKeys.imageUpload.limit.size,
+          params: {
+            maxSizeMB: "5",
+          },
         });
-        return;
 
       case "LIMIT_UNEXPECTED_FILE":
-        res.status(StatusCode.BAD_REQUEST).json({
-          message: "Unexpected file field.",
+        throw new ApiError({
+          status: StatusCode.BAD_REQUEST,
+          message: APIErrorKeys.imageUpload.limit.field,
         });
-        return;
 
       case "LIMIT_FILE_COUNT":
-        res.status(StatusCode.BAD_REQUEST).json({
-          message: "Too many files uploaded.",
+        throw new ApiError({
+          status: StatusCode.BAD_REQUEST,
+          message: APIErrorKeys.imageUpload.limit.count,
+          params: {
+            maxCount: "5",
+          },
         });
-        return;
 
       default:
-        res.status(StatusCode.BAD_REQUEST).json({
+        throw new ApiError({
+          status: StatusCode.BAD_REQUEST,
           message: err.message,
         });
-        return;
     }
   }
 
   if (err) {
-    res.status(StatusCode.BAD_REQUEST).json({
-      message: err?.message || "Upload file error",
-    });
-    return;
+    errorHandler(err, res);
   }
 
   next();

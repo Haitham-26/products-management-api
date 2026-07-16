@@ -1,14 +1,12 @@
 import OrderModel from "../models/Order.model";
 import ProductModel from "../models/Product.model";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
-import express from "express";
+import { RequestHandler } from "express";
 import { RequestContext } from "../utils/RequestContext";
 import SettingsModel from "../models/Settings.model";
+import { errorHandler } from "../errors/errorHandler";
 
-export const getDashboardStats = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+export const getDashboardStats: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -149,9 +147,6 @@ export const getDashboardStats = async (
       mostSoldProducts,
     });
   } catch (e) {
-    console.error(e);
-    res.status(StatusCode.INTERNAL_ERROR).json({
-      message: "Failed to load dashboard stats",
-    });
+    errorHandler(e, res);
   }
 };

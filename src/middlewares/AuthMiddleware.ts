@@ -4,6 +4,9 @@ import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import UserModel from "../models/User.model";
 import isNil from "lodash/isNil";
+import { ApiError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
+import { errorHandler } from "../errors/errorHandler";
 
 interface AuthRequest extends Request {
   userId?: string;
@@ -18,8 +21,10 @@ export const AuthMiddleware = async (
     const accessToken = req.headers.authorization?.split(" ")[1];
 
     if (!accessToken) {
-      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
-      return;
+      throw new ApiError({
+        status: StatusCode.UNAUTHORIZED,
+        message: APIErrorKeys.unauthorized,
+      });
     }
 
     const decoded = jwt.verify(
@@ -32,8 +37,10 @@ export const AuthMiddleware = async (
     };
 
     if (decoded.type !== "access" || isNil(decoded.tokenVersion)) {
-      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
-      return;
+      throw new ApiError({
+        status: StatusCode.UNAUTHORIZED,
+        message: APIErrorKeys.unauthorized,
+      });
     }
 
     const user = await UserModel.findOne({
@@ -42,16 +49,16 @@ export const AuthMiddleware = async (
     });
 
     if (!user) {
-      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
-      return;
+      throw new ApiError({
+        status: StatusCode.UNAUTHORIZED,
+        message: APIErrorKeys.unauthorized,
+      });
     }
 
     RequestContext(req, { userId: user._id, user });
 
     next();
   } catch (e) {
-    console.error("JWT Verification Error:", e);
-    res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
-    return;
+    errorHandler(e, res);
   }
 };

@@ -2,22 +2,28 @@ import z from "zod";
 import { Regexes } from "../../utils/String";
 import { RequestHandler } from "express";
 import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.user.update;
 
 const userUpdateSchema = z
   .object({
     name: z
-      .string()
+      .string(APIErrorKeys.signup.email.name.invalid)
       .trim()
-      .min(3, "Name must be at least 3 characters long")
-      .max(30, "Name must be at most 30 characters long")
-      .regex(Regexes.NAME, "Name contains invalid characters"),
+      .min(3, APIErrorKeys.signup.email.name.short)
+      .max(30, APIErrorKeys.signup.email.name.long)
+      .regex(Regexes.NAME, APIErrorKeys.signup.email.name.regex),
     company: z
       .string()
       .trim()
-      .max(50, "Company name must be at most 50 characters long")
+      .max(50, APIErrorKeys.signup.email.company.long)
       .optional()
       .or(z.literal("")),
-    avatar: z.string().optional().or(z.literal("")),
+    avatar: z
+      .string(TRANSLATION_KEY_PREFIX.avatar.invalid)
+      .optional()
+      .or(z.literal("")),
   })
   .partial();
 

@@ -4,6 +4,9 @@ import { RequestContext } from "../utils/RequestContext";
 import { User } from "../models/User.model";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
+import { APIErrorKeys } from "../errors/APIError-keys";
+import { ApiError } from "../errors/APIError";
+import { errorHandler } from "../errors/errorHandler";
 
 export const UserPermissionsMiddleware = (
   entity: PermissionEntities,
@@ -20,12 +23,10 @@ export const UserPermissionsMiddleware = (
       }
 
       if (!user.permissions) {
-        res.status(StatusCode.FORBIDDEN).send({
-          message:
-            "You do not have the required permissions to perform this action",
+        throw new ApiError({
+          status: StatusCode.FORBIDDEN,
+          message: APIErrorKeys.permissions.orgOnly,
         });
-
-        return;
       }
 
       const hasPermissions = permissions.every((permission) => {
@@ -33,21 +34,15 @@ export const UserPermissionsMiddleware = (
       });
 
       if (!hasPermissions) {
-        res.status(StatusCode.FORBIDDEN).send({
-          message:
-            "You do not have the required permissions to perform this action",
+        throw new ApiError({
+          status: StatusCode.FORBIDDEN,
+          message: APIErrorKeys.permissions.orgOnly,
         });
-
-        return;
       }
 
       next();
     } catch (e) {
-      console.error("UserPermissionsMiddleware error:", e);
-
-      res.status(StatusCode.INTERNAL_ERROR).send({
-        message: "Something went wrong",
-      });
+      errorHandler(e, res);
     }
   };
 };

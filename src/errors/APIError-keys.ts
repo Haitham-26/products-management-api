@@ -23,7 +23,38 @@ const buildKeys = <T extends Record<string, any>>(
 const APIErrorKeySchema = {
   internal: LEAF,
   unauthorized: LEAF,
-
+  rateLimit: {
+    global: LEAF,
+  },
+  imageUpload: {
+    invalidType: LEAF,
+    limit: {
+      size: LEAF,
+      field: LEAF,
+      count: LEAF,
+    },
+  },
+  permissions: {
+    orgOnly: LEAF,
+    hasNoPermission: LEAF,
+  },
+  user: {
+    get: {
+      notFound: LEAF,
+    },
+    update: {
+      avatar: {
+        invalid: LEAF,
+      },
+    },
+    changePassword: {
+      differentMethod: LEAF,
+      currentPassword: {
+        incorrect: LEAF,
+      },
+      samePassword: LEAF,
+    },
+  },
   login: {
     email: {
       invalid: LEAF,

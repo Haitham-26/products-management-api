@@ -10,6 +10,9 @@ import {
 } from "../utils/generateJWTs";
 import { UploadService } from "../services/upload.service";
 import isUndefined from "lodash/isUndefined";
+import { ApiError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
+import { errorHandler } from "../errors/errorHandler";
 
 const getUserById = async (req: express.Request, res: express.Response) => {
   try {
@@ -21,13 +24,15 @@ const getUserById = async (req: express.Request, res: express.Response) => {
     );
 
     if (!user) {
-      res.status(StatusCode.NOT_FOUND).send("User not found");
-      return;
+      throw new ApiError({
+        status: StatusCode.NOT_FOUND,
+        message: APIErrorKeys.user.get.notFound,
+      });
     }
 
     res.status(StatusCode.OK).json(user);
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -74,10 +79,7 @@ const updateUser = async (req: express.Request, res: express.Response) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res
-      .status(StatusCode.INTERNAL_ERROR)
-      .send({ message: "Failed to update user" });
+    errorHandler(e, res);
   }
 };
 
@@ -111,7 +113,7 @@ const resetPassword = async (req: express.Request, res: express.Response) => {
       ),
     });
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 

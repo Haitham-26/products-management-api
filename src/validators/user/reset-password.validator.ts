@@ -7,21 +7,23 @@ import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { User } from "../../models/User.model";
 import { SignUpMethods } from "../../types/auth/shared/SignUpMethods";
 import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { ApiError } from "../../errors/APIError";
 
 const resetPasswordNewSchema = z
   .object({
     currentPassword: z
-      .string()
+      .string(APIErrorKeys.signup.email.password.invalid)
       .trim()
-      .min(8, "The password must be at least 8 characters long")
-      .max(64, "The password must be at most 64 characters long")
-      .regex(Regexes.PASSWORD, "The password contains invalid characters"),
+      .min(8, APIErrorKeys.signup.email.password.short)
+      .max(64, APIErrorKeys.signup.email.password.long)
+      .regex(Regexes.PASSWORD, APIErrorKeys.signup.email.password.regex),
     newPassword: z
-      .string()
+      .string(APIErrorKeys.signup.email.password.invalid)
       .trim()
-      .min(8, "The password must be at least 8 characters long")
-      .max(64, "The password must be at most 64 characters long")
-      .regex(Regexes.PASSWORD, "The password contains invalid characters"),
+      .min(8, APIErrorKeys.signup.email.password.short)
+      .max(64, APIErrorKeys.signup.email.password.long)
+      .regex(Regexes.PASSWORD, APIErrorKeys.signup.email.password.regex),
   })
   .loose();
 
@@ -34,11 +36,10 @@ export const ResetPasswordValidator: RequestHandler = async (
     const { user } = RequestContext<{ user: User }>(req);
 
     if (user.signUpMethod !== SignUpMethods.EMAIL) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message:
-          "You cannot reset this account's password because it was created with google",
+      throw new ApiError({
+        message: APIErrorKeys.user.changePassword.differentMethod,
+        status: StatusCode.BAD_REQUEST,
       });
-      return;
     }
 
     const body = resetPasswordNewSchema.parse(req.body);
@@ -50,10 +51,10 @@ export const ResetPasswordValidator: RequestHandler = async (
     );
 
     if (!isCorrectCurrentPassword) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Incorrect current password",
+      throw new ApiError({
+        message: APIErrorKeys.user.changePassword.currentPassword.incorrect,
+        status: StatusCode.BAD_REQUEST,
       });
-      return;
     }
 
     const isCurrentPassword = await bcrypt.compare(
@@ -62,10 +63,10 @@ export const ResetPasswordValidator: RequestHandler = async (
     );
 
     if (isCurrentPassword) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "The new password must be different from the current password",
+      throw new ApiError({
+        message: APIErrorKeys.user.changePassword.samePassword,
+        status: StatusCode.BAD_REQUEST,
       });
-      return;
     }
 
     next();
