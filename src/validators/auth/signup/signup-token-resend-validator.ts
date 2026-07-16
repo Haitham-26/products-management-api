@@ -4,10 +4,14 @@ import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../../utils/RequestContext";
 import { errorHandler } from "../../../errors/errorHandler";
+import { ApiError } from "../../../errors/APIError";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.signup.token;
 
 const signUpResendTokenSchema = z
   .object({
-    email: z.email("Please enter a valid email address"),
+    email: z.email(TRANSLATION_KEY_PREFIX.email.invalid),
   })
   .loose();
 
@@ -15,27 +19,20 @@ export const SignUpTokenResendValidator: RequestHandler = async (
   req,
   res,
   next,
-): Promise<void> => {
+) => {
   try {
     const body = signUpResendTokenSchema.parse(req.body);
     req.body = body;
 
     const { email } = req.body;
 
-    const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email, emailVerified: false });
 
     if (!user) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message: "A user with this email does not exist",
+      throw new ApiError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.notFound,
       });
-      return;
-    }
-
-    if (user.emailVerified) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "This email is already verified, please sign in instead.",
-      });
-      return;
     }
 
     RequestContext(req, { user });

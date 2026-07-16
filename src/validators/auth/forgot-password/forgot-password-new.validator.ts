@@ -1,28 +1,32 @@
 import z from "zod";
-import express from "express";
 import { Regexes } from "../../../utils/String";
 import { RequestContext } from "../../../utils/RequestContext";
 import { User } from "../../../models/User.model";
 import bcrypt from "bcrypt";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { errorHandler } from "../../../errors/errorHandler";
+import { RequestHandler } from "express-serve-static-core";
+import { ApiError } from "../../../errors/APIError";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.forgotPassword.new;
 
 const forgotPasswordNewSchema = z
   .object({
     newPassword: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.newPassword.invalid)
       .trim()
-      .min(8, "The password must be at least 8 characters long")
-      .max(64, "The password must be at most 64 characters long")
-      .regex(Regexes.PASSWORD, "The password contains invalid characters"),
+      .min(8, TRANSLATION_KEY_PREFIX.newPassword.short)
+      .max(64, TRANSLATION_KEY_PREFIX.newPassword.long)
+      .regex(Regexes.PASSWORD, TRANSLATION_KEY_PREFIX.newPassword.regex),
   })
   .loose();
 
-export const ForgotPasswordNewValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const ForgotPasswordNewValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
 
@@ -35,10 +39,10 @@ export const ForgotPasswordNewValidator = async (
     );
 
     if (isCurrentPassword) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "The new password must be different from the current password",
+      throw new ApiError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.samePassword,
       });
-      return;
     }
 
     next();

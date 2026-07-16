@@ -7,9 +7,10 @@ import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import UserModel from "../../../models/User.model";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
 import { RequestContext } from "../../../utils/RequestContext";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
 
 const googleLoginSchema = z.object({
-  idToken: z.string("serverErrors.internal"),
+  idToken: z.string(APIErrorKeys.internal),
 });
 
 export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
@@ -39,10 +40,10 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
     const { email, name, picture, email_verified } = payload;
 
     if (!email || !email_verified) {
-      res
-        .status(StatusCode.BAD_REQUEST)
-        .send({ message: "Your google account is not verified" });
-      return;
+      throw new ApiError({
+        message: APIErrorKeys["google-login"].notVerified,
+        status: StatusCode.BAD_REQUEST,
+      });
     }
 
     let user = await UserModel.findOne({ email }).select(
@@ -51,7 +52,7 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
 
     if (user && user?.signUpMethod !== SignUpMethods.GOOGLE) {
       throw new ApiError({
-        message: "serverErrors.google-login.differentMethod",
+        message: APIErrorKeys["google-login"].differentMethod,
         status: StatusCode.BAD_REQUEST,
       });
     }

@@ -4,17 +4,21 @@ import UserModel from "../../../models/User.model";
 import jwt from "jsonwebtoken";
 import isNil from "lodash/isNil";
 import { RequestContext } from "../../../utils/RequestContext";
+import z from "zod";
+import { errorHandler } from "../../../errors/errorHandler";
+import { ApiError } from "../../../errors/APIError";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
+
+const refreshTokenSchema = z.object({
+  refreshToken: z.string(APIErrorKeys.refreshToken.token.invalid),
+});
 
 export const RefreshTokenValidator: RequestHandler = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
-    if (!refreshToken) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Refresh token is required",
-      });
-      return;
-    }
+    const body = refreshTokenSchema.parse(req.body);
+    req.body = body;
 
     const decoded = jwt.verify(
       refreshToken,
@@ -26,8 +30,10 @@ export const RefreshTokenValidator: RequestHandler = async (req, res, next) => {
     };
 
     if (decoded.type !== "refresh" || isNil(decoded.tokenVersion)) {
-      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
-      return;
+      throw new ApiError({
+        status: StatusCode.UNAUTHORIZED,
+        message: APIErrorKeys.unauthorized,
+      });
     }
 
     const user = await UserModel.findOne({
@@ -36,15 +42,16 @@ export const RefreshTokenValidator: RequestHandler = async (req, res, next) => {
     });
 
     if (!user) {
-      res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
-      return;
+      throw new ApiError({
+        status: StatusCode.UNAUTHORIZED,
+        message: APIErrorKeys.unauthorized,
+      });
     }
 
     RequestContext(req, { user });
 
     next();
   } catch (e) {
-    console.log(e);
-    res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
+    errorHandler(e, res);
   }
 };

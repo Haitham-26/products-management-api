@@ -1,22 +1,26 @@
 import z from "zod";
-import express from "express";
+import { RequestHandler } from "express";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
 import UserModel from "../../../models/User.model";
 import { RequestContext } from "../../../utils/RequestContext";
 import { errorHandler } from "../../../errors/errorHandler";
+import { ApiError } from "../../../errors/APIError";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.forgotPassword.email;
 
 const forgotPasswordEmailSchema = z
   .object({
-    email: z.email("Please enter a valid email address"),
+    email: z.email(TRANSLATION_KEY_PREFIX.email.invalid),
   })
   .loose();
 
-export const ForgotPasswordEmailValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const ForgotPasswordEmailValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const body = forgotPasswordEmailSchema.parse(req.body);
     req.body = body;
@@ -24,25 +28,24 @@ export const ForgotPasswordEmailValidator = async (
     const user = await UserModel.findOne({ email: req.body.email });
 
     if (!user) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message: "A user with this email does not exist",
+      throw new ApiError({
+        message: TRANSLATION_KEY_PREFIX.notFound,
+        status: StatusCode.BAD_REQUEST,
       });
-      return;
     }
 
     if (!user.emailVerified) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "This account is not verified.",
+      throw new ApiError({
+        message: TRANSLATION_KEY_PREFIX.notVerified,
+        status: StatusCode.BAD_REQUEST,
       });
-      return;
     }
 
     if (user.signUpMethod !== SignUpMethods.EMAIL) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message:
-          "This account was created with google, please sign in with google",
+      throw new ApiError({
+        message: TRANSLATION_KEY_PREFIX.differentMethod,
+        status: StatusCode.BAD_REQUEST,
       });
-      return;
     }
 
     RequestContext(req, { user });

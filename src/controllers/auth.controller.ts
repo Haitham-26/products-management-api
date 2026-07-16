@@ -2,7 +2,6 @@ import { RequestHandler } from "express";
 import bcrypt from "bcrypt";
 import UserModel, { User } from "../models/User.model";
 import { generateVerificationToken } from "../utils/generateVerificationToken";
-import { SignUpToken } from "../types/auth/signup/SignUpToken";
 import { sendSignUpTokenEmail, sendForgotPasswordTokenEmail } from "../mailer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
@@ -43,29 +42,6 @@ const signUpEmail: RequestHandler = async (req, res) => {
     const { email, password, name, company, lang, dir } =
       req.body as SignUpEmailDto;
 
-    const isEmailExist = await UserModel.findOne({ email });
-
-    const tokenExpiryMs = 5 * 60 * 1000;
-
-    if (
-      isEmailExist &&
-      !isEmailExist.emailVerified &&
-      Date.now() - isEmailExist.createdAt.getTime() >= tokenExpiryMs
-    ) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message:
-          "We already sent you a verification code. Please check your email or try again in 5 minutes",
-      });
-      return;
-    }
-
-    if (isEmailExist) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "An account with this email already exists",
-      });
-      return;
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const token = generateVerificationToken();
@@ -85,49 +61,16 @@ const signUpEmail: RequestHandler = async (req, res) => {
 
     await sendSignUpTokenEmail(email, token, emailLang, emailDir);
 
-    res
-      .status(StatusCode.OK)
-      .send({ message: "The verification code has been sent to your email" });
+    res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.sendStatus(StatusCode.INTERNAL_ERROR);
+    errorHandler(e, res);
   }
 };
 
 const signUpToken: RequestHandler = async (req, res) => {
   try {
-    const { email, token } = req.body as SignUpToken;
-
-    const user = (
-      await UserModel.findOne({
-        email,
-        emailVerified: false,
-      })
-    )?.toObject();
-
-    if (!user) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "This email does not exist",
-      });
-      return;
-    }
-
-    if (user.optCode !== token) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Incorrect verification code",
-      });
-      return;
-    }
-
-    // Token expires in 5 minutes
-    const signUpTokenExpiryMs = 5 * 60 * 1000;
-
-    if (Date.now() - user.createdAt.getTime() >= signUpTokenExpiryMs) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "The verification code has expired",
-      });
-      return;
-    }
+    // This comes from SignUpTokenValidator
+    const { user } = RequestContext<{ user: User }>(req);
 
     await withTransaction(async (session) => {
       await UserModel.updateOne(
@@ -161,8 +104,7 @@ const signUpToken: RequestHandler = async (req, res) => {
       ...createAuthTokens(user._id.toString(), user.tokenVersion || 0),
     });
   } catch (e) {
-    console.log(e);
-    res.status(StatusCode.INTERNAL_ERROR).send(e);
+    errorHandler(e, res);
   }
 };
 
@@ -188,48 +130,16 @@ const signupResendToken: RequestHandler = async (req, res) => {
 
     await sendSignUpTokenEmail(user.email, newToken, emailLang, emailDir);
 
-    res.status(StatusCode.OK).send({
-      message: "The verification code has been sent to your email",
-    });
+    res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
 const login: RequestHandler = async (req, res) => {
   try {
-    const { email, password } = req.body as LoginDto;
-
-    const user = (
-      await UserModel.findOne({ email }).select("-forgotPasswordCode")
-    )?.toObject();
-
-    if (!user) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message:
-          "An account with this email does not exist. Please sign up first.",
-      });
-      return;
-    }
-
-    const isPasswordCorrect = await bcrypt.compare(
-      password,
-      user.password as string,
-    );
-
-    if (!isPasswordCorrect) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Incorrect email or password",
-      });
-      return;
-    }
-
-    if (!user.emailVerified) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Please verify your email first",
-      });
-      return;
-    }
+    // This comes from LoginValidator
+    const { user } = RequestContext<{ user: User }>(req);
 
     const { password: _password, tokenVersion, ...safeUser } = user;
 
@@ -250,8 +160,7 @@ const refreshToken: RequestHandler = async (req, res) => {
       accessToken: generateAccessToken(user._id.toString(), user.tokenVersion),
     });
   } catch (e) {
-    console.log(e);
-    res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
+    errorHandler(e, res);
   }
 };
 
@@ -328,7 +237,7 @@ const forgotPasswordEmail: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -336,7 +245,7 @@ const forgotPasswordToken: RequestHandler = async (req, res) => {
   try {
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -361,7 +270,7 @@ const forgotPasswordNew: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 

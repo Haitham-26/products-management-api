@@ -1,40 +1,58 @@
 import z from "zod";
 import { Regexes } from "../../../utils/String";
-import express from "express";
+import { RequestHandler } from "express";
 import { errorHandler } from "../../../errors/errorHandler";
+import UserModel from "../../../models/User.model";
+import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
+import { ApiError } from "../../../errors/APIError";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.signup.email;
 
 const signUpEmailSchema = z
   .object({
     name: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.name.invalid)
       .trim()
-      .min(3, "The name must be at least 3 characters long")
-      .max(30, "The name must be at most 30 characters long")
-      .regex(Regexes.NAME, "The name contains invalid characters"),
+      .min(3, TRANSLATION_KEY_PREFIX.name.short)
+      .max(30, TRANSLATION_KEY_PREFIX.name.long)
+      .regex(Regexes.NAME, TRANSLATION_KEY_PREFIX.name.regex),
     company: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.company.invalid)
       .trim()
-      .max(50, "Company name must be at most 50 characters long")
+      .max(50, TRANSLATION_KEY_PREFIX.company.long)
       .optional()
       .or(z.literal("")),
-    email: z.email("Please enter a valid email address"),
+    email: z.email(TRANSLATION_KEY_PREFIX.email.invalid),
     password: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.password.invalid)
       .trim()
-      .min(8, "The password must be at least 8 characters long")
-      .max(64, "The password must be at most 64 characters long")
-      .regex(Regexes.PASSWORD, "The password contains invalid characters"),
+      .min(8, TRANSLATION_KEY_PREFIX.password.short)
+      .max(64, TRANSLATION_KEY_PREFIX.password.long)
+      .regex(Regexes.PASSWORD, TRANSLATION_KEY_PREFIX.password.regex),
   })
   .loose();
 
-export const SignUpEmailValidator = (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): void => {
+export const SignUpEmailValidator: RequestHandler = async (req, res, next) => {
   try {
     const body = signUpEmailSchema.parse(req.body);
     req.body = body;
+
+    const isEmailExist = await UserModel.findOne({ email: req.body.email });
+
+    if (isEmailExist) {
+      if (isEmailExist.emailVerified === false) {
+        throw new ApiError({
+          message: TRANSLATION_KEY_PREFIX.notVerifiedExists,
+          status: StatusCode.BAD_REQUEST,
+        });
+      }
+
+      throw new ApiError({
+        message: TRANSLATION_KEY_PREFIX.userExists,
+        status: StatusCode.BAD_REQUEST,
+      });
+    }
 
     next();
   } catch (e) {
