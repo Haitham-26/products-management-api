@@ -1,4 +1,4 @@
-import express from "express";
+import { RequestHandler } from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
@@ -10,8 +10,11 @@ import ProductModel from "../models/Product.model";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { escapeSpecialChars } from "../utils/String";
+import { errorHandler } from "../errors/errorHandler";
+import { ApiError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
-const createCategory = async (req: express.Request, res: express.Response) => {
+const createCategory: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -25,11 +28,11 @@ const createCategory = async (req: express.Request, res: express.Response) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
-const getCategories = async (req: express.Request, res: express.Response) => {
+const getCategories: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -92,12 +95,11 @@ const getCategories = async (req: express.Request, res: express.Response) => {
       },
     });
   } catch (e) {
-    console.log(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 
-const deleteCategory = async (req: express.Request, res: express.Response) => {
+const deleteCategory: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -107,10 +109,14 @@ const deleteCategory = async (req: express.Request, res: express.Response) => {
       const category = await CategoryModel.findOne({
         _id: categoryId,
         userId: scopeId,
+        isDeleted: { $ne: true },
       }).session(session);
 
       if (!category) {
-        return;
+        throw new ApiError({
+          status: StatusCode.NOT_FOUND,
+          message: APIErrorKeys.categories.delete.notFound,
+        });
       }
 
       await ProductModel.updateMany(
@@ -131,14 +137,11 @@ const deleteCategory = async (req: express.Request, res: express.Response) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
-const deleteBulkCategories = async (
-  req: express.Request,
-  res: express.Response,
-) => {
+const deleteBulkCategories: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -148,10 +151,14 @@ const deleteBulkCategories = async (
       const categories = await CategoryModel.find({
         _id: { $in: categoryIds },
         userId: scopeId,
+        isDeleted: { $ne: true },
       }).session(session);
 
       if (!categories.length) {
-        return;
+        throw new ApiError({
+          status: StatusCode.NOT_FOUND,
+          message: APIErrorKeys.categories.bulkDelete.notFound,
+        });
       }
 
       await ProductModel.updateMany(
@@ -172,11 +179,11 @@ const deleteBulkCategories = async (
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
-const updateCategory = async (req: express.Request, res: express.Response) => {
+const updateCategory: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -201,7 +208,7 @@ const updateCategory = async (req: express.Request, res: express.Response) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 

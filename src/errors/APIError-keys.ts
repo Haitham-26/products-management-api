@@ -77,6 +77,28 @@ const APIErrorKeySchema = {
       notFound: LEAF,
     },
   },
+  categories: {
+    create: {
+      name: {
+        invalid: LEAF,
+        short: LEAF,
+        long: LEAF,
+      },
+      description: {
+        invalid: LEAF,
+        long: LEAF,
+      },
+    },
+    update: {
+      notFound: LEAF,
+    },
+    delete: {
+      notFound: LEAF,
+    },
+    bulkDelete: {
+      notFound: LEAF,
+    },
+  },
   user: {
     get: {
       notFound: LEAF,
