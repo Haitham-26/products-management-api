@@ -1,4 +1,4 @@
-import express from "express";
+import express, { RequestHandler } from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
@@ -8,8 +8,11 @@ import isNil from "lodash/isNil";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { escapeSpecialChars } from "../utils/String";
+import { errorHandler } from "../errors/errorHandler";
+import { ApiError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
-const createTag = async (req: express.Request, res: express.Response) => {
+const createTag: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -23,11 +26,11 @@ const createTag = async (req: express.Request, res: express.Response) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
-const getTags = async (req: express.Request, res: express.Response) => {
+const getTags: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -90,8 +93,7 @@ const getTags = async (req: express.Request, res: express.Response) => {
       },
     });
   } catch (e) {
-    console.error(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 
@@ -104,13 +106,14 @@ const deleteTag = async (req: express.Request, res: express.Response) => {
     const tag = await TagModel.findOne({
       _id: tagId,
       userId: scopeId,
+      isDeleted: { $ne: true },
     });
 
     if (!tag) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message: "Tag not found",
+      throw new ApiError({
+        message: APIErrorKeys.tags.delete.notFound,
+        status: StatusCode.NOT_FOUND,
       });
-      return;
     }
 
     if (tag.usageCount > 0) {
@@ -129,8 +132,7 @@ const deleteTag = async (req: express.Request, res: express.Response) => {
 
     res.sendStatus(StatusCode.OK);
   } catch (e) {
-    console.log(e);
-    res.sendStatus(500);
+    errorHandler(e, res);
   }
 };
 
@@ -143,13 +145,14 @@ const deleteBulkTags = async (req: express.Request, res: express.Response) => {
     const tags = await TagModel.find({
       _id: { $in: tagIds },
       userId: scopeId,
+      isDeleted: { $ne: true },
     });
 
     if (!tags.length) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message: "Tags not found",
+      throw new ApiError({
+        message: APIErrorKeys.tags.bulkDelete.notFound,
+        status: StatusCode.NOT_FOUND,
       });
-      return;
     }
 
     await TagModel.bulkWrite(
@@ -180,8 +183,7 @@ const deleteBulkTags = async (req: express.Request, res: express.Response) => {
 
     res.sendStatus(StatusCode.OK);
   } catch (e) {
-    console.log(e);
-    res.sendStatus(500);
+    errorHandler(e, res);
   }
 };
 
@@ -212,7 +214,7 @@ const updateTag = async (req: express.Request, res: express.Response) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 

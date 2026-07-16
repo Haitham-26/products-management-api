@@ -38,6 +38,45 @@ const APIErrorKeySchema = {
     orgOnly: LEAF,
     hasNoPermission: LEAF,
   },
+  settings: {
+    update: {
+      inventory: {
+        defaultMinStock: {
+          invalid: LEAF,
+          min: LEAF,
+        },
+      },
+      currency: {
+        invalid: LEAF,
+      },
+      lang: {
+        invalid: LEAF,
+      },
+      notFound: LEAF,
+    },
+  },
+  tags: {
+    create: {
+      name: {
+        invalid: LEAF,
+        short: LEAF,
+        long: LEAF,
+      },
+      description: {
+        invalid: LEAF,
+        long: LEAF,
+      },
+    },
+    update: {
+      notFound: LEAF,
+    },
+    delete: {
+      notFound: LEAF,
+    },
+    bulkDelete: {
+      notFound: LEAF,
+    },
+  },
   user: {
     get: {
       notFound: LEAF,
