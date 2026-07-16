@@ -349,6 +349,12 @@ const deleteProduct: RequestHandler = async (req, res) => {
     }>(req);
 
     await withTransaction(async (session) => {
+      await ProductModel.updateOne(
+        { _id: product._id, userId: scopeId },
+        { $set: { isDeleted: true, deletedAt: new Date() } },
+        { session },
+      );
+
       if (product.categoryId) {
         await CategoryModel.updateOne(
           { _id: product.categoryId, userId: scopeId },

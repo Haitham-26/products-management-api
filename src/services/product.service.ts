@@ -19,6 +19,7 @@ import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { BulkManageProductStatusValidator } from "../validators/product/bulk-manage-product-status.validator";
 import upload from "../middlewares/UploadImageMiddleware";
 import { DeleteProductValidator } from "../validators/product/delete-product.validator";
+import { BulkDeleteProductsValidator } from "../validators/product/bulk-delete-products.validator";
 
 const productRouter = express.Router();
 /**
@@ -182,6 +183,7 @@ productRouter.delete(
     CRUDPermissions.READ,
   ]),
   OrgScopeMiddleware,
+  BulkDeleteProductsValidator,
   deleteBulkProducts,
 );
 

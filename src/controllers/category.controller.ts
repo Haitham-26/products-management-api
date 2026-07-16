@@ -106,18 +106,18 @@ const deleteCategory: RequestHandler = async (req, res) => {
     const { categoryId } = req.body;
 
     await withTransaction(async (session) => {
+      await CategoryModel.updateOne(
+        { _id: categoryId, userId: scopeId },
+        { $set: { isDeleted: true, deletedAt: new Date() } },
+        { session },
+      );
+
       await ProductModel.updateMany(
         {
           categoryId: new Types.ObjectId(categoryId as string),
           userId: scopeId,
         },
         { $set: { categoryId: null } },
-        { session },
-      );
-
-      await CategoryModel.updateOne(
-        { _id: categoryId, userId: scopeId },
-        { $set: { isDeleted: true, deletedAt: new Date() } },
         { session },
       );
     });
@@ -135,18 +135,18 @@ const deleteBulkCategories: RequestHandler = async (req, res) => {
     const { categoryIds } = req.body;
 
     await withTransaction(async (session) => {
+      await CategoryModel.updateMany(
+        { _id: { $in: categoryIds }, userId: scopeId },
+        { $set: { isDeleted: true, deletedAt: new Date() } },
+        { session },
+      );
+
       await ProductModel.updateMany(
         {
           categoryId: { $in: categoryIds },
           userId: scopeId,
         },
         { $set: { categoryId: null } },
-        { session },
-      );
-
-      await CategoryModel.updateMany(
-        { _id: { $in: categoryIds }, userId: scopeId },
-        { $set: { isDeleted: true, deletedAt: new Date() } },
         { session },
       );
     });

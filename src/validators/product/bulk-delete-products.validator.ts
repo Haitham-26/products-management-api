@@ -50,6 +50,8 @@ export const BulkDeleteProductsValidator: RequestHandler = async (
       });
     }
 
+    RequestContext(req, { products });
+
     next();
   } catch (e) {
     errorHandler(e, res);
