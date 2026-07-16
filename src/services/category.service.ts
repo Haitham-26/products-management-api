@@ -14,7 +14,7 @@ import { UserPermissionsMiddleware } from "../middlewares/UserPermissionsMiddlew
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 import { DeleteCategoryValidator } from "../validators/category/delete-category.validator";
-import { BulkDeleteCategoryValidator } from "../validators/category/bulk-delete-category.validator";
+import { BulkDeleteCategoriesValidator } from "../validators/category/bulk-delete-categories.validator";
 
 const categoryRouter = express.Router();
 
@@ -188,7 +188,7 @@ categoryRouter.delete(
     CRUDPermissions.READ,
   ]),
   OrgScopeMiddleware,
-  BulkDeleteCategoryValidator,
+  BulkDeleteCategoriesValidator,
   deleteBulkCategories,
 );
 

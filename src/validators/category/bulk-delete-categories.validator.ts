@@ -24,7 +24,7 @@ const bulkDeleteCategorySchema = z
   })
   .loose();
 
-export const BulkDeleteCategoryValidator: RequestHandler = async (
+export const BulkDeleteCategoriesValidator: RequestHandler = async (
   req,
   res,
   next,
@@ -46,7 +46,7 @@ export const BulkDeleteCategoryValidator: RequestHandler = async (
     if (categories.length !== categoryIds.length) {
       throw new APIError({
         status: StatusCode.NOT_FOUND,
-        message: APIErrorKeys.categories.bulkDelete.notFound,
+        message: TRANSLATION_KEY_PREFIX.notFound,
       });
     }
 

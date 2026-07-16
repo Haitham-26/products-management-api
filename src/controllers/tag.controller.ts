@@ -97,7 +97,7 @@ const getTags: RequestHandler = async (req, res) => {
   }
 };
 
-const deleteTag = async (req: express.Request, res: express.Response) => {
+const deleteTag: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
 
@@ -136,7 +136,7 @@ const deleteTag = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const deleteBulkTags = async (req: express.Request, res: express.Response) => {
+const deleteBulkTags: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
 
@@ -187,7 +187,7 @@ const deleteBulkTags = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const updateTag = async (req: express.Request, res: express.Response) => {
+const updateTag: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 

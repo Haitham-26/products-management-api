@@ -1,18 +1,18 @@
 import z from "zod";
 import { RequestHandler } from "express";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
-import CategoryModel from "../../models/Category.model";
 import { RequestContext } from "../../utils/RequestContext";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
 import { APIError } from "../../errors/APIError";
 import { Types } from "mongoose";
+import TagModel from "../../models/Tag.model";
 
-const TRANSLATION_KEY_PREFIX = APIErrorKeys.categories.delete;
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.tags.delete;
 
-const deleteCategorySchema = z
+const deleteTagSchema = z
   .object({
-    categoryId: z
+    tagId: z
       .string(TRANSLATION_KEY_PREFIX.invalidId)
       .refine((val) => Types.ObjectId.isValid(val), {
         message: TRANSLATION_KEY_PREFIX.invalidId,
@@ -20,26 +20,22 @@ const deleteCategorySchema = z
   })
   .loose();
 
-export const DeleteCategoryValidator: RequestHandler = async (
-  req,
-  res,
-  next,
-) => {
+export const DeleteTagValidator: RequestHandler = async (req, res, next) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const body = deleteCategorySchema.parse(req.body);
+    const body = deleteTagSchema.parse(req.body);
     req.body = body;
 
-    const { categoryId } = req.body;
+    const { tagId } = req.body;
 
-    const category = await CategoryModel.findOne({
-      _id: categoryId,
+    const tag = await TagModel.findOne({
+      _id: tagId,
       userId: scopeId,
       isDeleted: { $ne: true },
     });
 
-    if (!category) {
+    if (!tag) {
       throw new APIError({
         status: StatusCode.NOT_FOUND,
         message: TRANSLATION_KEY_PREFIX.notFound,

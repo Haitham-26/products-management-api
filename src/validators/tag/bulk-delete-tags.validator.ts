@@ -1,26 +1,30 @@
 import z from "zod";
 import { RequestHandler } from "express";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
-import CategoryModel from "../../models/Category.model";
 import { RequestContext } from "../../utils/RequestContext";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
 import { APIError } from "../../errors/APIError";
 import { Types } from "mongoose";
+import TagModel from "../../models/Tag.model";
 
-const TRANSLATION_KEY_PREFIX = APIErrorKeys.categories.delete;
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.tags.bulkDelete;
 
-const deleteCategorySchema = z
+const bulkDeleteTagsSchema = z
   .object({
-    categoryId: z
-      .string(TRANSLATION_KEY_PREFIX.invalidId)
-      .refine((val) => Types.ObjectId.isValid(val), {
-        message: TRANSLATION_KEY_PREFIX.invalidId,
-      }),
+    tagIds: z
+      .array(
+        z
+          .string(TRANSLATION_KEY_PREFIX.invalidId)
+          .refine((val) => Types.ObjectId.isValid(val), {
+            message: TRANSLATION_KEY_PREFIX.invalidId,
+          }),
+      )
+      .min(1, TRANSLATION_KEY_PREFIX.minLength),
   })
   .loose();
 
-export const DeleteCategoryValidator: RequestHandler = async (
+export const BulkDeleteTagsValidator: RequestHandler = async (
   req,
   res,
   next,
@@ -28,18 +32,18 @@ export const DeleteCategoryValidator: RequestHandler = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const body = deleteCategorySchema.parse(req.body);
+    const body = bulkDeleteTagsSchema.parse(req.body);
     req.body = body;
 
-    const { categoryId } = req.body;
+    const { tagIds } = req.body;
 
-    const category = await CategoryModel.findOne({
-      _id: categoryId,
+    const tags = await TagModel.find({
+      _id: { $in: tagIds },
       userId: scopeId,
       isDeleted: { $ne: true },
     });
 
-    if (!category) {
+    if (tags.length !== tagIds.length) {
       throw new APIError({
         status: StatusCode.NOT_FOUND,
         message: TRANSLATION_KEY_PREFIX.notFound,
