@@ -203,6 +203,18 @@ const APIErrorKeySchema = {
         someNotFound: LEAF,
       },
     },
+    update: {
+      invalidStatus: LEAF,
+      invalidMainImage: LEAF,
+      invalidGalleryImage: LEAF,
+      notFound: LEAF,
+      category: {
+        notFound: LEAF,
+      },
+      tags: {
+        notFound: LEAF,
+      },
+    },
   },
   user: {
     get: {

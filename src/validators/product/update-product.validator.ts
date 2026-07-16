@@ -11,33 +11,69 @@ import { ProductStatus } from "../../types/product/types/ProductStatus.enum";
 import { normalizeMultipartBody } from "../../utils/normalizeMultipartBody";
 import isArray from "lodash/isArray";
 import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { APIError } from "../../errors/APIError";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.products.update;
 
 const updateProductSchema = z
   .object({
     name: z
-      .string()
+      .string(APIErrorKeys.products.create.name.invalid)
       .trim()
-      .min(1, "Name must be at least 1 character")
-      .max(100, "Name must be at most 100 characters")
+      .min(1, APIErrorKeys.products.create.name.short)
+      .max(64, APIErrorKeys.products.create.name.long)
       .optional(),
     description: z
-      .string()
+      .string(APIErrorKeys.products.create.description.invalid)
       .trim()
-      .max(512, "Description must be at most 512 characters")
+      .max(512, APIErrorKeys.products.create.description.long)
       .optional(),
-    status: z.enum(Object.values(ProductStatus)).optional(),
-    price: z.number().min(0, "Price must be at least 0").optional(),
-    quantity: z.number().min(0, "Quantity must be at least 0").optional(),
+    status: z
+      .enum(Object.values(ProductStatus), TRANSLATION_KEY_PREFIX.invalidStatus)
+      .optional(),
+    price: z
+      .number(APIErrorKeys.products.create.price.invalid)
+      .min(0, APIErrorKeys.products.create.price.min)
+      .optional(),
+    quantity: z
+      .number(APIErrorKeys.products.create.quantity.invalid)
+      .min(0, APIErrorKeys.products.create.quantity.min)
+      .optional(),
     discount: z
       .object({
-        type: z.enum(Object.values(ProductDiscountTypes)),
-        value: z.number().min(0, "Value must be at least 0"),
+        type: z.enum(
+          Object.values(ProductDiscountTypes),
+          APIErrorKeys.products.create.discount.type.invalid,
+        ),
+        value: z
+          .number()
+          .min(0, APIErrorKeys.products.create.discount.value.min),
       })
       .optional(),
-    categoryId: z.string().nullable().optional(),
-    tags: z.array(z.string()).optional(),
-    mainImage: z.string().nullable().optional(),
-    galleryImages: z.array(z.string()).optional(),
+    categoryId: z
+      .string(APIErrorKeys.products.create.invalidCategoryId)
+      .refine((val) => Types.ObjectId.isValid(val), {
+        message: APIErrorKeys.products.create.invalidCategoryId,
+      })
+      .nullable()
+      .optional(),
+    tags: z
+      .array(
+        z
+          .string(APIErrorKeys.products.create.invalidTagId)
+          .refine((val) => Types.ObjectId.isValid(val), {
+            message: APIErrorKeys.products.create.invalidTagId,
+          }),
+      )
+      .optional(),
+    mainImage: z
+      .string(TRANSLATION_KEY_PREFIX.invalidMainImage)
+      .nullable()
+      .optional(),
+    galleryImages: z
+      .array(z.string(TRANSLATION_KEY_PREFIX.invalidGalleryImage))
+      .optional(),
   })
   .loose();
 
@@ -73,54 +109,37 @@ export const UpdateProductValidator: RequestHandler = async (
       }
     });
 
+    const body = updateProductSchema.parse(req.body);
+    req.body = body;
+
     const product = await ProductModel.findOne({
       _id: productId,
       userId: scopeId,
     });
 
     if (!product) {
-      res.status(StatusCode.NOT_FOUND).send({ message: "Product not found" });
-      return;
+      throw new APIError({
+        status: StatusCode.NOT_FOUND,
+        message: TRANSLATION_KEY_PREFIX.notFound,
+      });
     }
 
-    const body = updateProductSchema.parse(req.body);
-    req.body = body;
-
     if (req.body?.categoryId) {
-      if (Types.ObjectId.isValid(body.categoryId as string)) {
-        const category = await CategoryModel.findOne({
-          _id: req.body.categoryId,
-          userId: scopeId,
+      const category = await CategoryModel.findOne({
+        _id: req.body.categoryId,
+        userId: scopeId,
+      });
+
+      if (!category) {
+        throw new APIError({
+          status: StatusCode.NOT_FOUND,
+          message: TRANSLATION_KEY_PREFIX.category.notFound,
         });
-
-        if (!category) {
-          res
-            .status(StatusCode.NOT_FOUND)
-            .send({ message: "Category not found" });
-          return;
-        }
-
-        req.body.categoryId = new Types.ObjectId(req.body.categoryId as string);
-      } else {
-        res
-          .status(StatusCode.BAD_REQUEST)
-          .send({ message: "Category ID is not valid" });
-        return;
       }
     }
 
     if (req.body?.tags) {
       const tagIds = [...new Set(req.body.tags)] as string[];
-      const invalidTagId = tagIds.find(
-        (id: string) => !Types.ObjectId.isValid(id),
-      );
-
-      if (invalidTagId) {
-        res
-          .status(StatusCode.BAD_REQUEST)
-          .send({ message: "Tag ID is not valid" });
-        return;
-      }
 
       const tags = await TagModel.find({
         _id: { $in: tagIds },
@@ -128,11 +147,11 @@ export const UpdateProductValidator: RequestHandler = async (
       }).select("_id");
 
       if (tags.length !== tagIds.length) {
-        res.status(StatusCode.NOT_FOUND).send({ message: "Tag not found" });
-        return;
+        throw new APIError({
+          status: StatusCode.NOT_FOUND,
+          message: TRANSLATION_KEY_PREFIX.tags.notFound,
+        });
       }
-
-      req.body.tags = tagIds.map((id: string) => new Types.ObjectId(id));
     }
 
     RequestContext(req, { product });

@@ -660,7 +660,11 @@ const updateProduct: RequestHandler = async (req, res) => {
           UploadService.deleteImage(publicId).catch(() => {}),
         ),
       );
-      throw txError;
+
+      throw new APIError({
+        message: APIErrorKeys.internal,
+        status: StatusCode.INTERNAL_ERROR,
+      });
     }
 
     const publicIdsToDelete = [
