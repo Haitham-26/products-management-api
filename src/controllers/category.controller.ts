@@ -106,19 +106,6 @@ const deleteCategory: RequestHandler = async (req, res) => {
     const { categoryId } = req.body;
 
     await withTransaction(async (session) => {
-      const category = await CategoryModel.findOne({
-        _id: categoryId,
-        userId: scopeId,
-        isDeleted: { $ne: true },
-      }).session(session);
-
-      if (!category) {
-        throw new APIError({
-          status: StatusCode.NOT_FOUND,
-          message: APIErrorKeys.categories.delete.notFound,
-        });
-      }
-
       await ProductModel.updateMany(
         {
           categoryId: new Types.ObjectId(categoryId as string),
@@ -129,7 +116,7 @@ const deleteCategory: RequestHandler = async (req, res) => {
       );
 
       await CategoryModel.updateOne(
-        { _id: new Types.ObjectId(categoryId as string), userId: scopeId },
+        { _id: categoryId, userId: scopeId },
         { $set: { isDeleted: true, deletedAt: new Date() } },
         { session },
       );
@@ -148,19 +135,6 @@ const deleteBulkCategories: RequestHandler = async (req, res) => {
     const { categoryIds } = req.body;
 
     await withTransaction(async (session) => {
-      const categories = await CategoryModel.find({
-        _id: { $in: categoryIds },
-        userId: scopeId,
-        isDeleted: { $ne: true },
-      }).session(session);
-
-      if (!categories.length) {
-        throw new APIError({
-          status: StatusCode.NOT_FOUND,
-          message: APIErrorKeys.categories.bulkDelete.notFound,
-        });
-      }
-
       await ProductModel.updateMany(
         {
           categoryId: { $in: categoryIds },

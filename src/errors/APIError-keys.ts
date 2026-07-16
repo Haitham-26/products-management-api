@@ -94,9 +94,12 @@ const APIErrorKeySchema = {
     },
     delete: {
       notFound: LEAF,
+      invalidId: LEAF,
     },
     bulkDelete: {
       notFound: LEAF,
+      invalidId: LEAF,
+      minLength: LEAF,
     },
   },
   orders: {
