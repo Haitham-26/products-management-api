@@ -5,7 +5,7 @@ import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
 import UserModel from "../../../models/User.model";
 import { RequestContext } from "../../../utils/RequestContext";
 import { errorHandler } from "../../../errors/errorHandler";
-import { ApiError } from "../../../errors/APIError";
+import { APIError } from "../../../errors/APIError";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
 
 const TRANSLATION_KEY_PREFIX = APIErrorKeys.forgotPassword.email;
@@ -28,21 +28,21 @@ export const ForgotPasswordEmailValidator: RequestHandler = async (
     const user = await UserModel.findOne({ email: req.body.email });
 
     if (!user) {
-      throw new ApiError({
+      throw new APIError({
         message: TRANSLATION_KEY_PREFIX.notFound,
         status: StatusCode.BAD_REQUEST,
       });
     }
 
     if (!user.emailVerified) {
-      throw new ApiError({
+      throw new APIError({
         message: TRANSLATION_KEY_PREFIX.notVerified,
         status: StatusCode.BAD_REQUEST,
       });
     }
 
     if (user.signUpMethod !== SignUpMethods.EMAIL) {
-      throw new ApiError({
+      throw new APIError({
         message: TRANSLATION_KEY_PREFIX.differentMethod,
         status: StatusCode.BAD_REQUEST,
       });

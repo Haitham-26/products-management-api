@@ -1,5 +1,5 @@
 // errorHandler.ts
-import { ApiError } from "./APIError";
+import { APIError } from "./APIError";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import express from "express";
 import { ZodError } from "zod";
@@ -8,7 +8,7 @@ import { APIErrorKeys } from "./APIError-keys";
 export const errorHandler = (e: unknown, res: express.Response) => {
   console.log(e);
 
-  if (e instanceof ApiError) {
+  if (e instanceof APIError) {
     res.status(e.status).json({
       message: e.message,
       params: e.params,

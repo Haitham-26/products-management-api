@@ -19,6 +19,7 @@ import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { escapeSpecialChars } from "../utils/String";
 import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
+import { errorHandler } from "../errors/errorHandler";
 
 export class OrderService {
   constructor() {}
@@ -128,7 +129,7 @@ const createOrder: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -207,8 +208,7 @@ const getOrders: RequestHandler = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 
@@ -248,7 +248,7 @@ const updateOrder: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -272,7 +272,7 @@ const bulkManageOrderVisibility: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -319,10 +319,9 @@ const manageOrderStatus: RequestHandler = async (req, res) => {
       );
     });
 
-    res.sendStatus(200);
+    res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.sendStatus(500);
+    errorHandler(e, res);
   }
 };
 
@@ -400,10 +399,9 @@ const bulkManageOrderStatus: RequestHandler = async (req, res) => {
       await ProductModel.bulkWrite(productBulkOps, { session });
     });
 
-    res.sendStatus(200);
+    res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.sendStatus(500);
+    errorHandler(e, res);
   }
 };
 

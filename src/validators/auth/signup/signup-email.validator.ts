@@ -4,7 +4,7 @@ import { RequestHandler } from "express";
 import { errorHandler } from "../../../errors/errorHandler";
 import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
-import { ApiError } from "../../../errors/APIError";
+import { APIError } from "../../../errors/APIError";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
 
 const TRANSLATION_KEY_PREFIX = APIErrorKeys.signup.email;
@@ -42,13 +42,13 @@ export const SignUpEmailValidator: RequestHandler = async (req, res, next) => {
 
     if (isEmailExist) {
       if (isEmailExist.emailVerified === false) {
-        throw new ApiError({
+        throw new APIError({
           message: TRANSLATION_KEY_PREFIX.notVerifiedExists,
           status: StatusCode.BAD_REQUEST,
         });
       }
 
-      throw new ApiError({
+      throw new APIError({
         message: TRANSLATION_KEY_PREFIX.userExists,
         status: StatusCode.BAD_REQUEST,
       });

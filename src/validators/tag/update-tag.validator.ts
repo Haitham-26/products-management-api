@@ -5,7 +5,7 @@ import TagModel from "../../models/Tag.model";
 import { RequestContext } from "../../utils/RequestContext";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
-import { ApiError } from "../../errors/APIError";
+import { APIError } from "../../errors/APIError";
 
 const updateTagSchema = z
   .object({
@@ -34,7 +34,7 @@ export const UpdateTagValidator: RequestHandler = async (req, res, next) => {
     const tag = await TagModel.findOne({ _id: tagId, userId: scopeId });
 
     if (!tag) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.NOT_FOUND,
         message: APIErrorKeys.tags.update.notFound,
       });

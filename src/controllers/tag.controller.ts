@@ -9,7 +9,7 @@ import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { escapeSpecialChars } from "../utils/String";
 import { errorHandler } from "../errors/errorHandler";
-import { ApiError } from "../errors/APIError";
+import { APIError } from "../errors/APIError";
 import { APIErrorKeys } from "../errors/APIError-keys";
 
 const createTag: RequestHandler = async (req, res) => {
@@ -110,7 +110,7 @@ const deleteTag = async (req: express.Request, res: express.Response) => {
     });
 
     if (!tag) {
-      throw new ApiError({
+      throw new APIError({
         message: APIErrorKeys.tags.delete.notFound,
         status: StatusCode.NOT_FOUND,
       });
@@ -149,7 +149,7 @@ const deleteBulkTags = async (req: express.Request, res: express.Response) => {
     });
 
     if (!tags.length) {
-      throw new ApiError({
+      throw new APIError({
         message: APIErrorKeys.tags.bulkDelete.notFound,
         status: StatusCode.NOT_FOUND,
       });

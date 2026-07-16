@@ -1,4 +1,4 @@
-import express from "express";
+import { RequestHandler } from "express";
 import { Types } from "mongoose";
 import z from "zod";
 import { OrderStatus } from "../../types/order/types/OrderStatus.enum";
@@ -6,25 +6,34 @@ import { RequestContext } from "../../utils/RequestContext";
 import OrderModel, { Order } from "../../models/Order.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import {
-  buildInsufficientStockMessage,
+  buildInsufficientStockDetail,
   checkOrderProductsStockAvailability,
 } from "../../utils/orderProductsStockValidation";
 import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { APIError } from "../../errors/APIError";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.orders.manageStatus;
 
 const manageOrderStatusSchema = z
   .object({
-    orderId: z.string().refine((val) => Types.ObjectId.isValid(val), {
-      message: "Invalid orderId",
-    }),
-    status: z.enum(Object.keys(OrderStatus)),
+    orderId: z
+      .string(TRANSLATION_KEY_PREFIX.invalidOrderId)
+      .refine((val) => Types.ObjectId.isValid(val), {
+        message: TRANSLATION_KEY_PREFIX.invalidOrderId,
+      }),
+    status: z.enum(
+      Object.keys(OrderStatus),
+      TRANSLATION_KEY_PREFIX.invalidStatus,
+    ),
   })
   .loose();
 
-export const ManageOrderStatusValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const ManageOrderStatusValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -37,32 +46,34 @@ export const ManageOrderStatusValidator = async (
     });
 
     if (!order) {
-      res.status(StatusCode.NOT_FOUND).send({ message: "Order not found" });
-      return;
+      throw new APIError({
+        status: StatusCode.NOT_FOUND,
+        message: TRANSLATION_KEY_PREFIX.notFound,
+      });
     }
 
     if (order.status === OrderStatus.CONFIRMED) {
-      res
-        .status(StatusCode.BAD_REQUEST)
-        .send({ message: "Confirmed order's status cannot be changed" });
-      return;
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.cannotChangeConfirmed,
+      });
     }
 
     if (order.status.toLowerCase() === body.status.toLowerCase()) {
-      res
-        .status(StatusCode.BAD_REQUEST)
-        .send({ message: "The order is already in this status" });
-      return;
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.sameStatus,
+      });
     }
 
     if (
       order.status === OrderStatus.CANCELED &&
       body.status === OrderStatus.CONFIRMED
     ) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Canceled order's status cannot be changed to confirmed. ",
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.canceledToConfirmed,
       });
-      return;
     }
 
     const {
@@ -76,14 +87,22 @@ export const ManageOrderStatusValidator = async (
     );
 
     if (insufficientStockProductIds.length) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: buildInsufficientStockMessage(
+      const { orderIdentifier, productNames } =
+        buildInsufficientStockDetail(
           insufficientStockProductIds,
           productMap,
           orderIdentifiersByProductId,
-        ),
+        ) || {};
+
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.items.insufficientStock,
+        ...(orderIdentifier && productNames
+          ? {
+              params: { orderIdentifier, productNames },
+            }
+          : {}),
       });
-      return;
     }
 
     RequestContext(req, { order });

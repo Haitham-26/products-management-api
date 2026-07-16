@@ -5,7 +5,7 @@ import { User } from "../models/User.model";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { APIErrorKeys } from "../errors/APIError-keys";
-import { ApiError } from "../errors/APIError";
+import { APIError } from "../errors/APIError";
 import { errorHandler } from "../errors/errorHandler";
 
 export const UserPermissionsMiddleware = (
@@ -23,7 +23,7 @@ export const UserPermissionsMiddleware = (
       }
 
       if (!user.permissions) {
-        throw new ApiError({
+        throw new APIError({
           status: StatusCode.FORBIDDEN,
           message: APIErrorKeys.permissions.orgOnly,
         });
@@ -34,7 +34,7 @@ export const UserPermissionsMiddleware = (
       });
 
       if (!hasPermissions) {
-        throw new ApiError({
+        throw new APIError({
           status: StatusCode.FORBIDDEN,
           message: APIErrorKeys.permissions.orgOnly,
         });

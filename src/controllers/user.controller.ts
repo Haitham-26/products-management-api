@@ -10,7 +10,7 @@ import {
 } from "../utils/generateJWTs";
 import { UploadService } from "../services/upload.service";
 import isUndefined from "lodash/isUndefined";
-import { ApiError } from "../errors/APIError";
+import { APIError } from "../errors/APIError";
 import { APIErrorKeys } from "../errors/APIError-keys";
 import { errorHandler } from "../errors/errorHandler";
 
@@ -24,7 +24,7 @@ const getUserById = async (req: express.Request, res: express.Response) => {
     );
 
     if (!user) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.NOT_FOUND,
         message: APIErrorKeys.user.get.notFound,
       });

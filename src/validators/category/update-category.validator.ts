@@ -6,7 +6,7 @@ import { RequestContext } from "../../utils/RequestContext";
 import { Types } from "mongoose";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
-import { ApiError } from "../../errors/APIError";
+import { APIError } from "../../errors/APIError";
 
 const updateCategorySchema = z
   .object({
@@ -42,7 +42,7 @@ export const UpdateCategoryValidator: RequestHandler = async (
     });
 
     if (!category) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.NOT_FOUND,
         message: APIErrorKeys.categories.update.notFound,
       });

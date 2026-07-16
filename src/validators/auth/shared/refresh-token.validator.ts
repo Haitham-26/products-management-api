@@ -6,7 +6,7 @@ import isNil from "lodash/isNil";
 import { RequestContext } from "../../../utils/RequestContext";
 import z from "zod";
 import { errorHandler } from "../../../errors/errorHandler";
-import { ApiError } from "../../../errors/APIError";
+import { APIError } from "../../../errors/APIError";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
 
 const refreshTokenSchema = z.object({
@@ -15,10 +15,10 @@ const refreshTokenSchema = z.object({
 
 export const RefreshTokenValidator: RequestHandler = async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
-
     const body = refreshTokenSchema.parse(req.body);
     req.body = body;
+
+    const { refreshToken } = req.body;
 
     const decoded = jwt.verify(
       refreshToken,
@@ -30,7 +30,7 @@ export const RefreshTokenValidator: RequestHandler = async (req, res, next) => {
     };
 
     if (decoded.type !== "refresh" || isNil(decoded.tokenVersion)) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.UNAUTHORIZED,
         message: APIErrorKeys.unauthorized,
       });
@@ -42,7 +42,7 @@ export const RefreshTokenValidator: RequestHandler = async (req, res, next) => {
     });
 
     if (!user) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.UNAUTHORIZED,
         message: APIErrorKeys.unauthorized,
       });

@@ -1,5 +1,5 @@
 import z from "zod";
-import express from "express";
+import { RequestHandler } from "express";
 import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import ProductModel from "../../models/Product.model";
@@ -7,16 +7,20 @@ import { RequestContext } from "../../utils/RequestContext";
 import { parsePhoneNumber } from "awesome-phonenumber";
 import { ProductStatus } from "../../types/product/types/ProductStatus.enum";
 import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { APIError } from "../../errors/APIError";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.orders.create;
 
 const createOrderSchema = z
   .object({
     customerName: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.customerName.invalid)
       .trim()
-      .min(1, "Customer name is required")
-      .max(30, "Customer name must be at most 30 characters"),
+      .min(1, TRANSLATION_KEY_PREFIX.customerName.short)
+      .max(30, TRANSLATION_KEY_PREFIX.customerName.long),
     customerPhone: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.customerPhone.invalid)
       .trim()
       .refine(
         (val) => {
@@ -25,49 +29,42 @@ const createOrderSchema = z
           }
           return parsePhoneNumber(val).valid;
         },
-        { message: "Invalid phone number" },
+        { message: TRANSLATION_KEY_PREFIX.customerPhone.invalid },
       )
       .optional()
       .or(z.literal("")),
     customerEmail: z
-      .email("Please enter a valid email")
+      .email(TRANSLATION_KEY_PREFIX.customerEmail.invalid)
       .optional()
       .or(z.literal("")),
     items: z
       .array(
         z.object({
-          productId: z.string().refine((val) => Types.ObjectId.isValid(val), {
-            message: "Invalid productId",
-          }),
-          quantity: z.number().min(1, "Quantity must be at least 1"),
+          productId: z
+            .string(TRANSLATION_KEY_PREFIX.items.invalidProductId)
+            .refine((val) => Types.ObjectId.isValid(val), {
+              message: TRANSLATION_KEY_PREFIX.items.invalidProductId,
+            }),
+          quantity: z
+            .number(TRANSLATION_KEY_PREFIX.items.quantity.invalid)
+            .min(1, TRANSLATION_KEY_PREFIX.items.quantity.min),
         }),
       )
-      .min(1, "Order must have at least one product"),
+      .min(1, TRANSLATION_KEY_PREFIX.items.minLength),
     note: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.note.invalid)
       .trim()
-      .max(256, "Note must be at most 256 characters")
+      .max(256, TRANSLATION_KEY_PREFIX.note.long)
       .optional(),
   })
   .loose();
 
-export const CreateOrderValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const CreateOrderValidator: RequestHandler = async (req, res, next) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const body = createOrderSchema.parse(req.body);
     req.body = body;
-
-    if (!body.items.length) {
-      res
-        .status(StatusCode.BAD_REQUEST)
-        .send({ message: "Order must have at least one product" });
-      return;
-    }
 
     const productIds = [
       ...new Set(body.items.map((item) => new Types.ObjectId(item.productId))),
@@ -81,11 +78,10 @@ export const CreateOrderValidator = async (
     });
 
     if (products.length !== productIds.length) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message:
-          "Some products not found, they may have been deleted or moved to draft",
+      throw new APIError({
+        status: StatusCode.NOT_FOUND,
+        message: TRANSLATION_KEY_PREFIX.items.someNotFound,
       });
-      return;
     }
 
     let insufficientStockProductNames: string[] = [];
@@ -102,12 +98,13 @@ export const CreateOrderValidator = async (
     }
 
     if (insufficientStockProductNames.length) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: `Insufficient stock for ${insufficientStockProductNames.join(
-          ", ",
-        )}`,
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.items.insufficientStock,
+        params: {
+          productNames: insufficientStockProductNames.join(", "),
+        },
       });
-      return;
     }
 
     RequestContext(req, { products });

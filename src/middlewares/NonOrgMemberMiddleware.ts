@@ -4,7 +4,7 @@ import { RequestContext } from "../utils/RequestContext";
 import { User } from "../models/User.model";
 import { UserRoles } from "../types/user/types/UserRoles.enum";
 import { errorHandler } from "../errors/errorHandler";
-import { ApiError } from "../errors/APIError";
+import { APIError } from "../errors/APIError";
 import { APIErrorKeys } from "../errors/APIError-keys";
 
 export const NonOrgMemberMiddleware: RequestHandler = async (
@@ -18,7 +18,7 @@ export const NonOrgMemberMiddleware: RequestHandler = async (
     const isMember = user.roles.includes(UserRoles.MEMBER);
 
     if (isMember) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.FORBIDDEN,
         message: APIErrorKeys.permissions.orgOnly,
       });

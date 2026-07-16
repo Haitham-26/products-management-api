@@ -3,7 +3,7 @@ import z from "zod";
 import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { errorHandler } from "../../../errors/errorHandler";
-import { ApiError } from "../../../errors/APIError";
+import { APIError } from "../../../errors/APIError";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
 
 const TRANSLATION_KEY_PREFIX = APIErrorKeys.forgotPassword.token;
@@ -34,7 +34,7 @@ export const ForgotPasswordTokenValidator: RequestHandler = async (
       !user.forgotPasswordCode?.code ||
       !user.forgotPasswordCode?.createdAt
     ) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.BAD_REQUEST,
         message: TRANSLATION_KEY_PREFIX.token.missing,
       });
@@ -44,14 +44,14 @@ export const ForgotPasswordTokenValidator: RequestHandler = async (
       new Date(user.forgotPasswordCode.createdAt).getTime() + 5 * 60 * 1000 <
       Date.now()
     ) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.BAD_REQUEST,
         message: TRANSLATION_KEY_PREFIX.token.expired,
       });
     }
 
     if (user.forgotPasswordCode.code !== req.body.token) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.BAD_REQUEST,
         message: TRANSLATION_KEY_PREFIX.token.incorrect,
       });

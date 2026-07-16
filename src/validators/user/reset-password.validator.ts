@@ -8,7 +8,7 @@ import { User } from "../../models/User.model";
 import { SignUpMethods } from "../../types/auth/shared/SignUpMethods";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
-import { ApiError } from "../../errors/APIError";
+import { APIError } from "../../errors/APIError";
 
 const resetPasswordNewSchema = z
   .object({
@@ -36,7 +36,7 @@ export const ResetPasswordValidator: RequestHandler = async (
     const { user } = RequestContext<{ user: User }>(req);
 
     if (user.signUpMethod !== SignUpMethods.EMAIL) {
-      throw new ApiError({
+      throw new APIError({
         message: APIErrorKeys.user.changePassword.differentMethod,
         status: StatusCode.BAD_REQUEST,
       });
@@ -51,7 +51,7 @@ export const ResetPasswordValidator: RequestHandler = async (
     );
 
     if (!isCorrectCurrentPassword) {
-      throw new ApiError({
+      throw new APIError({
         message: APIErrorKeys.user.changePassword.currentPassword.incorrect,
         status: StatusCode.BAD_REQUEST,
       });
@@ -63,7 +63,7 @@ export const ResetPasswordValidator: RequestHandler = async (
     );
 
     if (isCurrentPassword) {
-      throw new ApiError({
+      throw new APIError({
         message: APIErrorKeys.user.changePassword.samePassword,
         status: StatusCode.BAD_REQUEST,
       });

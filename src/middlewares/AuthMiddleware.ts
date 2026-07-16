@@ -4,7 +4,7 @@ import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import UserModel from "../models/User.model";
 import isNil from "lodash/isNil";
-import { ApiError } from "../errors/APIError";
+import { APIError } from "../errors/APIError";
 import { APIErrorKeys } from "../errors/APIError-keys";
 import { errorHandler } from "../errors/errorHandler";
 
@@ -21,7 +21,7 @@ export const AuthMiddleware = async (
     const accessToken = req.headers.authorization?.split(" ")[1];
 
     if (!accessToken) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.UNAUTHORIZED,
         message: APIErrorKeys.unauthorized,
       });
@@ -37,7 +37,7 @@ export const AuthMiddleware = async (
     };
 
     if (decoded.type !== "access" || isNil(decoded.tokenVersion)) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.UNAUTHORIZED,
         message: APIErrorKeys.unauthorized,
       });
@@ -46,10 +46,11 @@ export const AuthMiddleware = async (
     const user = await UserModel.findOne({
       _id: decoded.userId,
       tokenVersion: decoded.tokenVersion,
+      emailVerified: true,
     });
 
     if (!user) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.UNAUTHORIZED,
         message: APIErrorKeys.unauthorized,
       });

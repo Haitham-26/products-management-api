@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import { errorHandler } from "../errors/errorHandler";
-import { ApiError } from "../errors/APIError";
+import { APIError } from "../errors/APIError";
 import { APIErrorKeys } from "../errors/APIError-keys";
 
 export const multerErrorHandler = (
@@ -14,7 +14,7 @@ export const multerErrorHandler = (
   if (err instanceof multer.MulterError) {
     switch (err.code) {
       case "LIMIT_FILE_SIZE":
-        throw new ApiError({
+        throw new APIError({
           status: StatusCode.BAD_REQUEST,
           message: APIErrorKeys.imageUpload.limit.size,
           params: {
@@ -23,13 +23,13 @@ export const multerErrorHandler = (
         });
 
       case "LIMIT_UNEXPECTED_FILE":
-        throw new ApiError({
+        throw new APIError({
           status: StatusCode.BAD_REQUEST,
           message: APIErrorKeys.imageUpload.limit.field,
         });
 
       case "LIMIT_FILE_COUNT":
-        throw new ApiError({
+        throw new APIError({
           status: StatusCode.BAD_REQUEST,
           message: APIErrorKeys.imageUpload.limit.count,
           params: {
@@ -38,7 +38,7 @@ export const multerErrorHandler = (
         });
 
       default:
-        throw new ApiError({
+        throw new APIError({
           status: StatusCode.BAD_REQUEST,
           message: err.message,
         });

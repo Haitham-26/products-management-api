@@ -7,7 +7,7 @@ import currencyCodes from "currency-codes";
 import { AppLangs } from "../../types/settings/types/AppLangs.enum";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
-import { ApiError } from "../../errors/APIError";
+import { APIError } from "../../errors/APIError";
 
 const TRANSLATION_KEY_PREFIX = APIErrorKeys.settings.update;
 
@@ -49,7 +49,7 @@ export const UpdateSettingsValidator: RequestHandler = async (
     });
 
     if (!settings) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.NOT_FOUND,
         message: TRANSLATION_KEY_PREFIX.notFound,
       });

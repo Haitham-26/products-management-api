@@ -5,7 +5,7 @@ import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
 import { errorHandler } from "../../../errors/errorHandler";
-import { ApiError } from "../../../errors/APIError";
+import { APIError } from "../../../errors/APIError";
 import { RequestContext } from "../../../utils/RequestContext";
 import bcrypt from "bcrypt";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
@@ -33,14 +33,14 @@ export const LoginValidator: RequestHandler = async (req, res, next) => {
     )?.toObject();
 
     if (user && user.signUpMethod !== SignUpMethods.EMAIL) {
-      throw new ApiError({
+      throw new APIError({
         message: TRANSLATION_KEY_PREFIX.differentMethod,
         status: StatusCode.BAD_REQUEST,
       });
     }
 
     if (!user) {
-      throw new ApiError({
+      throw new APIError({
         message: TRANSLATION_KEY_PREFIX.notFound,
         status: StatusCode.BAD_REQUEST,
       });
@@ -52,14 +52,14 @@ export const LoginValidator: RequestHandler = async (req, res, next) => {
     );
 
     if (!isPasswordCorrect) {
-      throw new ApiError({
+      throw new APIError({
         message: TRANSLATION_KEY_PREFIX.password.incorrect,
         status: StatusCode.BAD_REQUEST,
       });
     }
 
     if (!user.emailVerified) {
-      throw new ApiError({
+      throw new APIError({
         message: TRANSLATION_KEY_PREFIX.notVerified,
         status: StatusCode.BAD_REQUEST,
       });

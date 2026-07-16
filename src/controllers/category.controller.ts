@@ -11,7 +11,7 @@ import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { escapeSpecialChars } from "../utils/String";
 import { errorHandler } from "../errors/errorHandler";
-import { ApiError } from "../errors/APIError";
+import { APIError } from "../errors/APIError";
 import { APIErrorKeys } from "../errors/APIError-keys";
 
 const createCategory: RequestHandler = async (req, res) => {
@@ -113,7 +113,7 @@ const deleteCategory: RequestHandler = async (req, res) => {
       }).session(session);
 
       if (!category) {
-        throw new ApiError({
+        throw new APIError({
           status: StatusCode.NOT_FOUND,
           message: APIErrorKeys.categories.delete.notFound,
         });
@@ -155,7 +155,7 @@ const deleteBulkCategories: RequestHandler = async (req, res) => {
       }).session(session);
 
       if (!categories.length) {
-        throw new ApiError({
+        throw new APIError({
           status: StatusCode.NOT_FOUND,
           message: APIErrorKeys.categories.bulkDelete.notFound,
         });

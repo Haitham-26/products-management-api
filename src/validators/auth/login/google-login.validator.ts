@@ -2,7 +2,7 @@ import { RequestHandler } from "express";
 import z from "zod";
 import { errorHandler } from "../../../errors/errorHandler";
 import { OAuth2Client } from "google-auth-library";
-import { ApiError } from "../../../errors/APIError";
+import { APIError } from "../../../errors/APIError";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import UserModel from "../../../models/User.model";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
@@ -31,7 +31,7 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
     const payload = ticket.getPayload();
 
     if (!payload) {
-      throw new ApiError({
+      throw new APIError({
         message: "serverErrors.internal",
         status: StatusCode.BAD_REQUEST,
       });
@@ -40,7 +40,7 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
     const { email, name, picture, email_verified } = payload;
 
     if (!email || !email_verified) {
-      throw new ApiError({
+      throw new APIError({
         message: APIErrorKeys["google-login"].notVerified,
         status: StatusCode.BAD_REQUEST,
       });
@@ -51,7 +51,7 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
     );
 
     if (user && user?.signUpMethod !== SignUpMethods.GOOGLE) {
-      throw new ApiError({
+      throw new APIError({
         message: APIErrorKeys["google-login"].differentMethod,
         status: StatusCode.BAD_REQUEST,
       });

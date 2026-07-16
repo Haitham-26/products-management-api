@@ -24,6 +24,7 @@ import { RequestHandler } from "express-serve-static-core";
 import { UploadService } from "../services/upload.service";
 import { CloudinaryImage } from "../types/shared/types/CloudinaryImage";
 import isArray from "lodash/isArray";
+import { errorHandler } from "../errors/errorHandler";
 
 export class ProductService {
   constructor() {}
@@ -183,8 +184,7 @@ const createProduct: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 
@@ -332,8 +332,7 @@ const getProducts: RequestHandler = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error("Get Products Error:", e);
-    res.status(500).json({ message: "Internal Server Error" });
+    errorHandler(e, res);
   }
 };
 
@@ -369,7 +368,7 @@ const deleteProduct: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -424,7 +423,7 @@ const deleteBulkProducts: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -676,8 +675,7 @@ const updateProduct: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 
@@ -714,7 +712,7 @@ const manageProductStock: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 

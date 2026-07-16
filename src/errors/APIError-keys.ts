@@ -99,6 +99,73 @@ const APIErrorKeySchema = {
       notFound: LEAF,
     },
   },
+  orders: {
+    create: {
+      customerName: {
+        invalid: LEAF,
+        short: LEAF,
+        long: LEAF,
+      },
+      customerPhone: {
+        invalid: LEAF,
+      },
+      customerEmail: {
+        invalid: LEAF,
+      },
+      items: {
+        invalidProductId: LEAF,
+        quantity: {
+          invalid: LEAF,
+          min: LEAF,
+        },
+        minLength: LEAF,
+        someNotFound: LEAF,
+        insufficientStock: LEAF,
+      },
+      note: {
+        invalid: LEAF,
+        long: LEAF,
+      },
+    },
+    update: {
+      invalidIsArchived: LEAF,
+      notFound: LEAF,
+      cannotUpdateArchived: LEAF,
+      cannotUpdateNonPending: LEAF,
+    },
+    bulkManageVisibility: {
+      orderIds: {
+        invalid: LEAF,
+        minLength: LEAF,
+      },
+      visibility: {
+        invalid: LEAF,
+      },
+      someNotFound: LEAF,
+    },
+    manageStatus: {
+      invalidOrderId: LEAF,
+      invalidStatus: LEAF,
+      notFound: LEAF,
+      cannotChangeConfirmed: LEAF,
+      sameStatus: LEAF,
+      canceledToConfirmed: LEAF,
+      items: {
+        insufficientStock: LEAF,
+      },
+    },
+    bulkManageStatus: {
+      orderIds: {
+        invalid: LEAF,
+        minLength: LEAF,
+        someNotFound: LEAF,
+      },
+      invalidStatus: LEAF,
+      items: {
+        insufficientStock: LEAF,
+      },
+    },
+  },
   user: {
     get: {
       notFound: LEAF,

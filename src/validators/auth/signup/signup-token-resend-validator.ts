@@ -4,7 +4,7 @@ import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../../utils/RequestContext";
 import { errorHandler } from "../../../errors/errorHandler";
-import { ApiError } from "../../../errors/APIError";
+import { APIError } from "../../../errors/APIError";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
 
 const TRANSLATION_KEY_PREFIX = APIErrorKeys.signup.token;
@@ -29,7 +29,7 @@ export const SignUpTokenResendValidator: RequestHandler = async (
     const user = await UserModel.findOne({ email, emailVerified: false });
 
     if (!user) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.BAD_REQUEST,
         message: TRANSLATION_KEY_PREFIX.notFound,
       });

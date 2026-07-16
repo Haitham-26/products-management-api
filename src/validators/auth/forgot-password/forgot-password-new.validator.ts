@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { errorHandler } from "../../../errors/errorHandler";
 import { RequestHandler } from "express-serve-static-core";
-import { ApiError } from "../../../errors/APIError";
+import { APIError } from "../../../errors/APIError";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
 
 const TRANSLATION_KEY_PREFIX = APIErrorKeys.forgotPassword.new;
@@ -39,7 +39,7 @@ export const ForgotPasswordNewValidator: RequestHandler = async (
     );
 
     if (isCurrentPassword) {
-      throw new ApiError({
+      throw new APIError({
         status: StatusCode.BAD_REQUEST,
         message: TRANSLATION_KEY_PREFIX.samePassword,
       });
