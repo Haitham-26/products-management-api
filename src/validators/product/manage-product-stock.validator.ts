@@ -1,33 +1,36 @@
 import z from "zod";
-import express from "express";
+import { RequestHandler } from "express";
 import ProductModel from "../../models/Product.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../utils/RequestContext";
 import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { APIError } from "../../errors/APIError";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.products.manageStock;
 
 const manageProductStockSchema = z
   .object({
     stockChange: z
-      .number()
-      .int()
+      .int(TRANSLATION_KEY_PREFIX.stockChange.invalid)
       .refine((val) => val !== 0, {
-        message: "Stock change cannot be zero",
+        message: TRANSLATION_KEY_PREFIX.stockChange.zero,
       }),
   })
   .loose();
 
-export const ManageProductStockValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const ManageProductStockValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { productId } = req.body;
-
     const body = manageProductStockSchema.parse(req.body);
     req.body = body;
+
+    const { productId } = req.body;
 
     const product = await ProductModel.findOne({
       _id: productId,
@@ -35,17 +38,20 @@ export const ManageProductStockValidator = async (
     });
 
     if (!product) {
-      res.status(StatusCode.NOT_FOUND).send({ message: "Product not found" });
-      return;
+      throw new APIError({
+        status: StatusCode.NOT_FOUND,
+        message: TRANSLATION_KEY_PREFIX.notFound,
+      });
     }
 
     const currentQuantity = product.quantity as number;
 
     if (currentQuantity + body.stockChange < 0) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: `Cannot decrease stock below 0. Available stock: ${currentQuantity}`,
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.belowZero,
+        params: { currentQuantity: String(currentQuantity) },
       });
-      return;
     }
 
     next();

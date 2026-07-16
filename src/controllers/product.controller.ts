@@ -354,7 +354,14 @@ const deleteProduct: RequestHandler = async (req, res) => {
         { new: true, session },
       ).populate("tags", "_id");
 
-      if (product?.categoryId) {
+      if (!product) {
+        throw new APIError({
+          status: StatusCode.NOT_FOUND,
+          message: APIErrorKeys.products.delete.notFound,
+        });
+      }
+
+      if (product.categoryId) {
         await CategoryModel.updateOne(
           { _id: product.categoryId, userId: scopeId },
           { $inc: { usageCount: -1 } },
@@ -701,8 +708,7 @@ const bulkManageProductStatus: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 

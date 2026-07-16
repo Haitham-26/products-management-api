@@ -215,6 +215,25 @@ const APIErrorKeySchema = {
         notFound: LEAF,
       },
     },
+    delete: {
+      notFound: LEAF,
+    },
+    bulkManageStatus: {
+      productIds: {
+        invalid: LEAF,
+        minLength: LEAF,
+        someNotFound: LEAF,
+      },
+      invalidStatus: LEAF,
+    },
+    manageStock: {
+      stockChange: {
+        invalid: LEAF,
+        zero: LEAF,
+      },
+      notFound: LEAF,
+      belowZero: LEAF,
+    },
   },
   user: {
     get: {
