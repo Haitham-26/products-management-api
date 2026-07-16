@@ -20,8 +20,6 @@ import { BulkManageProductStatusValidator } from "../validators/product/bulk-man
 import upload from "../middlewares/UploadImageMiddleware";
 
 const productRouter = express.Router();
-// stockStatus,
-
 /**
  * @openapi
  * /products/:

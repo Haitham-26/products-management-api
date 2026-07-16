@@ -25,6 +25,8 @@ import { UploadService } from "../services/upload.service";
 import { CloudinaryImage } from "../types/shared/types/CloudinaryImage";
 import isArray from "lodash/isArray";
 import { errorHandler } from "../errors/errorHandler";
+import { APIError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
 export class ProductService {
   constructor() {}
@@ -153,7 +155,7 @@ const createProduct: RequestHandler = async (req, res) => {
             {
               userId: scopeId,
               _id: {
-                $in: tags.map((tagId: string) => new Types.ObjectId(tagId)),
+                $in: tags,
               },
             },
             { $inc: { usageCount: 1 } },
@@ -179,7 +181,10 @@ const createProduct: RequestHandler = async (req, res) => {
         ),
       );
 
-      throw txError;
+      throw new APIError({
+        message: APIErrorKeys.internal,
+        status: StatusCode.INTERNAL_ERROR,
+      });
     }
 
     res.status(StatusCode.OK).send();

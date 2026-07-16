@@ -1,5 +1,5 @@
 import z from "zod";
-import express from "express";
+import { RequestHandler } from "express";
 import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import CategoryModel from "../../models/Category.model";
@@ -8,37 +8,56 @@ import { ProductDiscountTypes } from "../../types/product/types/ProductDiscountT
 import { RequestContext } from "../../utils/RequestContext";
 import { normalizeMultipartBody } from "../../utils/normalizeMultipartBody";
 import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { APIError } from "../../errors/APIError";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.products.create;
 
 const createProductSchema = z
   .object({
     name: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.name.invalid)
       .trim()
-      .min(1, "Name must be at least 1 character")
-      .max(100, "Name must be at most 100 characters"),
+      .min(1, TRANSLATION_KEY_PREFIX.name.short)
+      .max(64, TRANSLATION_KEY_PREFIX.name.long),
     description: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.description.invalid)
       .trim()
-      .max(512, "Description must be at most 512 characters")
+      .max(512, TRANSLATION_KEY_PREFIX.description.long)
       .optional(),
-    price: z.number().min(0, "Price must be at least 0"),
-    quantity: z.number().min(0, "Quantity must be at least 0"),
+    price: z
+      .number(TRANSLATION_KEY_PREFIX.price.invalid)
+      .min(0, TRANSLATION_KEY_PREFIX.price.min),
+    quantity: z
+      .number(TRANSLATION_KEY_PREFIX.quantity.invalid)
+      .min(0, TRANSLATION_KEY_PREFIX.quantity.min),
     discount: z
       .object({
-        type: z.enum(Object.values(ProductDiscountTypes)),
-        value: z.number().min(0, "Value must be at least 0"),
+        type: z.enum(
+          Object.values(ProductDiscountTypes),
+          TRANSLATION_KEY_PREFIX.discount.type.invalid,
+        ),
+        value: z
+          .number(TRANSLATION_KEY_PREFIX.discount.value.invalid)
+          .min(0, TRANSLATION_KEY_PREFIX.discount.value.min),
       })
       .optional(),
-    categoryId: z.string().optional(),
-    tags: z.array(z.string()).optional(),
+    categoryId: z
+      .string()
+      .refine((v) => Types.ObjectId.isValid(v), {
+        message: TRANSLATION_KEY_PREFIX.invalidCategoryId,
+      })
+      .optional()
+      .or(z.literal("")),
+    tags: z.array(z.string(TRANSLATION_KEY_PREFIX.invalidTagId)).optional(),
   })
   .loose();
 
-export const CreateProductValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const CreateProductValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     req.body = normalizeMultipartBody(req.body);
 
@@ -64,40 +83,21 @@ export const CreateProductValidator = async (
     req.body = body;
 
     if (req.body?.categoryId) {
-      if (Types.ObjectId.isValid(body.categoryId as string)) {
-        const category = await CategoryModel.findOne({
-          _id: req.body.categoryId,
-          userId: scopeId,
+      const category = await CategoryModel.findOne({
+        _id: req.body.categoryId,
+        userId: scopeId,
+      });
+
+      if (!category) {
+        throw new APIError({
+          status: StatusCode.NOT_FOUND,
+          message: TRANSLATION_KEY_PREFIX.category.notFound,
         });
-
-        if (!category) {
-          res
-            .status(StatusCode.NOT_FOUND)
-            .send({ message: "Category not found" });
-          return;
-        }
-
-        req.body.categoryId = new Types.ObjectId(req.body.categoryId as string);
-      } else {
-        res
-          .status(StatusCode.BAD_REQUEST)
-          .send({ message: "Category ID is not valid" });
-        return;
       }
     }
 
     if (req.body?.tags) {
       const tagIds = [...new Set(req.body.tags)] as string[];
-      const invalidTagId = tagIds.find(
-        (id: string) => !Types.ObjectId.isValid(id),
-      );
-
-      if (invalidTagId) {
-        res
-          .status(StatusCode.BAD_REQUEST)
-          .send({ message: "Tag ID is not valid" });
-        return;
-      }
 
       const tags = await TagModel.find({
         _id: { $in: tagIds },
@@ -105,11 +105,11 @@ export const CreateProductValidator = async (
       }).select("_id");
 
       if (tags.length !== tagIds.length) {
-        res.status(StatusCode.NOT_FOUND).send({ message: "Tag not found" });
-        return;
+        throw new APIError({
+          status: StatusCode.NOT_FOUND,
+          message: TRANSLATION_KEY_PREFIX.tags.someNotFound,
+        });
       }
-
-      req.body.tags = tagIds.map((id: string) => new Types.ObjectId(id));
     }
 
     next();

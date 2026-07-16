@@ -166,6 +166,44 @@ const APIErrorKeySchema = {
       },
     },
   },
+  products: {
+    create: {
+      name: {
+        invalid: LEAF,
+        short: LEAF,
+        long: LEAF,
+      },
+      description: {
+        invalid: LEAF,
+        long: LEAF,
+      },
+      price: {
+        invalid: LEAF,
+        min: LEAF,
+      },
+      quantity: {
+        invalid: LEAF,
+        min: LEAF,
+      },
+      discount: {
+        type: {
+          invalid: LEAF,
+        },
+        value: {
+          invalid: LEAF,
+          min: LEAF,
+        },
+      },
+      invalidCategoryId: LEAF,
+      invalidTagId: LEAF,
+      category: {
+        notFound: LEAF,
+      },
+      tags: {
+        someNotFound: LEAF,
+      },
+    },
+  },
   user: {
     get: {
       notFound: LEAF,
