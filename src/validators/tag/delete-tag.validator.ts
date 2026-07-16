@@ -42,6 +42,8 @@ export const DeleteTagValidator: RequestHandler = async (req, res, next) => {
       });
     }
 
+    RequestContext(req, { tag });
+
     next();
   } catch (e) {
     errorHandler(e, res);

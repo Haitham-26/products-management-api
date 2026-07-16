@@ -99,22 +99,7 @@ const getTags: RequestHandler = async (req, res) => {
 
 const deleteTag: RequestHandler = async (req, res) => {
   try {
-    const { scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
-
-    const { tagId } = req.body;
-
-    const tag = await TagModel.findOne({
-      _id: tagId,
-      userId: scopeId,
-      isDeleted: { $ne: true },
-    });
-
-    if (!tag) {
-      throw new APIError({
-        message: APIErrorKeys.tags.delete.notFound,
-        status: StatusCode.NOT_FOUND,
-      });
-    }
+    const { tag, scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
 
     if (tag.usageCount > 0) {
       await TagModel.updateOne(
@@ -138,22 +123,9 @@ const deleteTag: RequestHandler = async (req, res) => {
 
 const deleteBulkTags: RequestHandler = async (req, res) => {
   try {
-    const { scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
-
-    const { tagIds } = req.body;
-
-    const tags = await TagModel.find({
-      _id: { $in: tagIds },
-      userId: scopeId,
-      isDeleted: { $ne: true },
-    });
-
-    if (!tags.length) {
-      throw new APIError({
-        message: APIErrorKeys.tags.bulkDelete.notFound,
-        status: StatusCode.NOT_FOUND,
-      });
-    }
+    const { tags, scopeId } = RequestContext<{ tags: Tag[]; scopeId: string }>(
+      req,
+    );
 
     await TagModel.bulkWrite(
       tags.map((tag) => {

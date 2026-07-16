@@ -343,24 +343,12 @@ const getProducts: RequestHandler = async (req, res) => {
 
 const deleteProduct: RequestHandler = async (req, res) => {
   try {
-    const { scopeId } = RequestContext<{ scopeId: string }>(req);
-
-    const { productId } = req.body;
+    const { product, scopeId } = RequestContext<{
+      product: Product;
+      scopeId: string;
+    }>(req);
 
     await withTransaction(async (session) => {
-      const product = await ProductModel.findOneAndUpdate(
-        { _id: productId, userId: scopeId },
-        { $set: { isDeleted: true, deletedAt: new Date() } },
-        { new: true, session },
-      ).populate("tags", "_id");
-
-      if (!product) {
-        throw new APIError({
-          status: StatusCode.NOT_FOUND,
-          message: APIErrorKeys.products.delete.notFound,
-        });
-      }
-
       if (product.categoryId) {
         await CategoryModel.updateOne(
           { _id: product.categoryId, userId: scopeId },
@@ -369,7 +357,7 @@ const deleteProduct: RequestHandler = async (req, res) => {
         );
       }
 
-      if (product?.tags?.length) {
+      if (product.tags?.length) {
         await TagModel.updateMany(
           { userId: scopeId, _id: { $in: product.tags.map((tag) => tag._id) } },
           { $inc: { usageCount: -1 } },
@@ -386,17 +374,13 @@ const deleteProduct: RequestHandler = async (req, res) => {
 
 const deleteBulkProducts: RequestHandler = async (req, res) => {
   try {
-    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+    const { products, scopeId } = RequestContext<{
+      products: Product[];
+      scopeId: string;
+    }>(req);
     const { productIds } = req.body;
 
     await withTransaction(async (session) => {
-      const products = await ProductModel.find({
-        _id: { $in: productIds },
-        userId: scopeId,
-      })
-        .session(session)
-        .populate("tags", "_id");
-
       await ProductModel.updateMany(
         { _id: { $in: productIds }, userId: scopeId },
         { $set: { isDeleted: true, deletedAt: new Date() } },
@@ -422,7 +406,7 @@ const deleteBulkProducts: RequestHandler = async (req, res) => {
           updateMany: {
             filter: {
               userId: scopeId,
-              _id: { $in: product.tags.map((tag) => tag._id) },
+              _id: { $in: product.tags!.map((tag) => tag._id) },
             },
             update: { $inc: { usageCount: -1 } },
           },

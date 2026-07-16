@@ -6,25 +6,21 @@ import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
 import { APIError } from "../../errors/APIError";
 import { Types } from "mongoose";
-import TagModel from "../../models/Tag.model";
+import ProductModel from "../../models/Product.model";
 
-const TRANSLATION_KEY_PREFIX = APIErrorKeys.tags.bulkDelete;
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.products.delete;
 
-const bulkDeleteTagsSchema = z
+const deleteProductSchema = z
   .object({
-    tagIds: z
-      .array(
-        z
-          .string(TRANSLATION_KEY_PREFIX.invalidId)
-          .refine((val) => Types.ObjectId.isValid(val), {
-            message: TRANSLATION_KEY_PREFIX.invalidId,
-          }),
-      )
-      .min(1, TRANSLATION_KEY_PREFIX.minLength),
+    productId: z
+      .string(TRANSLATION_KEY_PREFIX.invalidId)
+      .refine((val) => Types.ObjectId.isValid(val), {
+        message: TRANSLATION_KEY_PREFIX.invalidId,
+      }),
   })
   .loose();
 
-export const BulkDeleteTagsValidator: RequestHandler = async (
+export const DeleteProductValidator: RequestHandler = async (
   req,
   res,
   next,
@@ -32,25 +28,25 @@ export const BulkDeleteTagsValidator: RequestHandler = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const body = bulkDeleteTagsSchema.parse(req.body);
+    const body = deleteProductSchema.parse(req.body);
     req.body = body;
 
-    const { tagIds } = req.body;
+    const { productId } = req.body;
 
-    const tags = await TagModel.find({
-      _id: { $in: tagIds },
+    const product = await ProductModel.findOne({
+      _id: productId,
       userId: scopeId,
       isDeleted: { $ne: true },
-    });
+    }).populate("tags", "_id");
 
-    if (tags.length !== tagIds.length) {
+    if (!product) {
       throw new APIError({
         status: StatusCode.NOT_FOUND,
         message: TRANSLATION_KEY_PREFIX.notFound,
       });
     }
 
-    RequestContext(req, { tags });
+    RequestContext(req, { product });
 
     next();
   } catch (e) {

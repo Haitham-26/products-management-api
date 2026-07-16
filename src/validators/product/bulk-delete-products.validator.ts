@@ -6,13 +6,13 @@ import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
 import { APIError } from "../../errors/APIError";
 import { Types } from "mongoose";
-import TagModel from "../../models/Tag.model";
+import ProductModel from "../../models/Product.model";
 
-const TRANSLATION_KEY_PREFIX = APIErrorKeys.tags.bulkDelete;
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.products.bulkDelete;
 
-const bulkDeleteTagsSchema = z
+const bulkDeleteProductsSchema = z
   .object({
-    tagIds: z
+    productIds: z
       .array(
         z
           .string(TRANSLATION_KEY_PREFIX.invalidId)
@@ -24,7 +24,7 @@ const bulkDeleteTagsSchema = z
   })
   .loose();
 
-export const BulkDeleteTagsValidator: RequestHandler = async (
+export const BulkDeleteProductsValidator: RequestHandler = async (
   req,
   res,
   next,
@@ -32,25 +32,23 @@ export const BulkDeleteTagsValidator: RequestHandler = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const body = bulkDeleteTagsSchema.parse(req.body);
+    const body = bulkDeleteProductsSchema.parse(req.body);
     req.body = body;
 
-    const { tagIds } = req.body;
+    const { productIds } = req.body;
 
-    const tags = await TagModel.find({
-      _id: { $in: tagIds },
+    const products = await ProductModel.find({
+      _id: { $in: productIds },
       userId: scopeId,
       isDeleted: { $ne: true },
-    });
+    }).populate("tags", "_id");
 
-    if (tags.length !== tagIds.length) {
+    if (products.length !== productIds.length) {
       throw new APIError({
         status: StatusCode.NOT_FOUND,
         message: TRANSLATION_KEY_PREFIX.notFound,
       });
     }
-
-    RequestContext(req, { tags });
 
     next();
   } catch (e) {
