@@ -26,6 +26,57 @@ const APIErrorKeySchema = {
   rateLimit: {
     global: LEAF,
   },
+  organization: {
+    inviteMembers: {
+      emails: {
+        invalid: LEAF,
+        duplicate: LEAF,
+        minLength: LEAF,
+      },
+      selfInvite: LEAF,
+      invitees: {
+        someInOrg: LEAF,
+        someHavePending: LEAF,
+      },
+    },
+    cancelInvitation: {
+      notFound: LEAF,
+      invalidId: LEAF,
+      notPending: LEAF,
+      expired: LEAF,
+    },
+    declineInvitation: {
+      notFound: LEAF,
+      invalidId: LEAF,
+      notPending: LEAF,
+      expired: LEAF,
+    },
+    acceptInvitation: {
+      notFound: LEAF,
+      invalidId: LEAF,
+      notPending: LEAF,
+      expired: LEAF,
+    },
+    leave: {
+      notMember: LEAF,
+    },
+    removeMember: {
+      invalidId: LEAF,
+      notMember: LEAF,
+    },
+    managePermissions: {
+      members: {
+        invalidId: LEAF,
+        notMember: LEAF,
+        minLength: LEAF,
+        permissions: {
+          invalidType: LEAF,
+        },
+        someNotFound: LEAF,
+      },
+      self: LEAF,
+    },
+  },
   imageUpload: {
     invalidType: LEAF,
     limit: {

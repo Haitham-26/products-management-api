@@ -6,6 +6,19 @@ import MemberInvitationModel from "../../models/Member-invitation.model";
 import { InvitationStatus } from "../../types/users-permissions/types/InvitationStatus.enum";
 import { Types } from "mongoose";
 import { errorHandler } from "../../errors/errorHandler";
+import z from "zod";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { APIError } from "../../errors/APIError";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.organization.acceptInvitation;
+
+const acceptInvitationSchema = z.object({
+  invitationId: z
+    .string(TRANSLATION_KEY_PREFIX.invalidId)
+    .refine((val) => Types.ObjectId.isValid(val), {
+      message: TRANSLATION_KEY_PREFIX.invalidId,
+    }),
+});
 
 export const AcceptInvitationValidator: RequestHandler = async (
   req,
@@ -13,16 +26,12 @@ export const AcceptInvitationValidator: RequestHandler = async (
   next,
 ) => {
   try {
+    const body = acceptInvitationSchema.parse(req.body);
+    req.body = body;
+
     const { user } = RequestContext<{ user: User }>(req);
 
     const { invitationId } = req.body;
-
-    if (!Types.ObjectId.isValid(invitationId)) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Invalid invitation id",
-      });
-      return;
-    }
 
     const invitation = await MemberInvitationModel.findOne({
       _id: new Types.ObjectId(invitationId as string),
@@ -30,29 +39,29 @@ export const AcceptInvitationValidator: RequestHandler = async (
     });
 
     if (!invitation) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Invitation not found",
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.notFound,
       });
-      return;
     }
 
     if (invitation.status !== InvitationStatus.PENDING) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Cannot accept an invitation that is not pending",
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.notPending,
       });
-      return;
     }
 
     const EXPIRES_IN = 30 * 24 * 60 * 60 * 1000;
 
     const isExpired =
-      new Date(invitation.createdAt).getTime() + EXPIRES_IN < Date.now();
+      new Date(invitation.sentAt).getTime() + EXPIRES_IN < Date.now();
 
     if (isExpired) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Invitation has expired",
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.expired,
       });
-      return;
     }
 
     next();
