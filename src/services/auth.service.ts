@@ -18,6 +18,7 @@ import { ForgotPasswordTokenValidator } from "../validators/auth/forgot-password
 import { ForgotPasswordNewValidator } from "../validators/auth/forgot-password/forgot-password-new.validator";
 import { SignUpTokenResendValidator } from "../validators/auth/signup/signup-token-resend-validator";
 import { RefreshTokenValidator } from "../validators/auth/shared/refresh-token.validator";
+import { GoogleLoginValidator } from "../validators/auth/login/google-login.validator";
 
 const authRouter = express.Router();
 
@@ -135,7 +136,7 @@ authRouter.post("/login", LoginValidator, login);
  *             schema:
  *               $ref: '#/components/schemas/RegisterResponseSchema'
  */
-authRouter.post("/google-login", googleLogin);
+authRouter.post("/google-login", GoogleLoginValidator, googleLogin);
 
 /**
  * @openapi

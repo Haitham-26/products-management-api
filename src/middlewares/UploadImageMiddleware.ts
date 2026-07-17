@@ -1,4 +1,7 @@
 import multer from "multer";
+import { APIError } from "../errors/APIError";
+import { StatusCode } from "../types/shared/dto/StatusCode.enum";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
 const storage = multer.memoryStorage();
 
@@ -9,7 +12,12 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Please upload a valid image file"));
+      return cb(
+        new APIError({
+          status: StatusCode.BAD_REQUEST,
+          message: APIErrorKeys.imageUpload.invalidType,
+        }),
+      );
     }
     cb(null, true);
   },

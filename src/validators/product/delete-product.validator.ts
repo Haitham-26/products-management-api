@@ -1,26 +1,26 @@
 import z from "zod";
 import { RequestHandler } from "express";
-import ProductModel from "../../models/Product.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../utils/RequestContext";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
 import { APIError } from "../../errors/APIError";
+import { Types } from "mongoose";
+import ProductModel from "../../models/Product.model";
 
-const TRANSLATION_KEY_PREFIX = APIErrorKeys.products.manageStock;
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.products.delete;
 
-const manageProductStockSchema = z
+const deleteProductSchema = z
   .object({
-    productId: z.string(TRANSLATION_KEY_PREFIX.invalidProductId),
-    stockChange: z
-      .int(TRANSLATION_KEY_PREFIX.stockChange.invalid)
-      .refine((val) => val !== 0, {
-        message: TRANSLATION_KEY_PREFIX.stockChange.zero,
+    productId: z
+      .string(TRANSLATION_KEY_PREFIX.invalidId)
+      .refine((val) => Types.ObjectId.isValid(val), {
+        message: TRANSLATION_KEY_PREFIX.invalidId,
       }),
   })
   .loose();
 
-export const ManageProductStockValidator: RequestHandler = async (
+export const DeleteProductValidator: RequestHandler = async (
   req,
   res,
   next,
@@ -28,7 +28,7 @@ export const ManageProductStockValidator: RequestHandler = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const body = manageProductStockSchema.parse(req.body);
+    const body = deleteProductSchema.parse(req.body);
     req.body = body;
 
     const { productId } = req.body;
@@ -37,7 +37,7 @@ export const ManageProductStockValidator: RequestHandler = async (
       _id: productId,
       userId: scopeId,
       isDeleted: { $ne: true },
-    });
+    }).populate("tags", "_id");
 
     if (!product) {
       throw new APIError({
@@ -46,15 +46,7 @@ export const ManageProductStockValidator: RequestHandler = async (
       });
     }
 
-    const currentQuantity = product.quantity as number;
-
-    if (currentQuantity + body.stockChange < 0) {
-      throw new APIError({
-        status: StatusCode.BAD_REQUEST,
-        message: TRANSLATION_KEY_PREFIX.belowZero,
-        params: { currentQuantity: String(currentQuantity) },
-      });
-    }
+    RequestContext(req, { product });
 
     next();
   } catch (e) {

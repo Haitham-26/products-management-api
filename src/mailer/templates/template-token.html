@@ -1,12 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Verification Code</title>
+    <title>{{title}}</title>
   </head>
 
   <body
+    lang="{{lang}}"
+    dir="{{dir}}"
     style="
       margin: 0;
       padding: 0;
@@ -42,7 +44,7 @@
             <tr>
               <td align="center" style="padding: 40px 24px 24px">
                 <img
-                  src="cid:logo"
+                  src="{{logoUrl}}"
                   alt="Inventix"
                   width="180"
                   style="
@@ -136,12 +138,11 @@
                     font-size: 14px;
                   "
                 >
-                  This verification code expires in 5 minutes.
+                  {{info}}
                 </p>
 
                 <div style="height: 32px"></div>
 
-                <!-- WARNING BOX -->
                 <table
                   role="presentation"
                   width="100%"
@@ -161,15 +162,13 @@
                         text-align: center;
                       "
                     >
-                      If you didn't request this code, you can safely ignore
-                      this email.
+                      {{warning}}
                     </td>
                   </tr>
                 </table>
               </td>
             </tr>
 
-            <!-- FOOTER -->
             <tr>
               <td
                 align="center"
@@ -180,9 +179,9 @@
                   font-size: 12px;
                 "
               >
-                © 2026 Inventix. All rights reserved.
+                {{rights}}
                 <br />
-                This is an automated email. Please do not reply.
+                {{dontReply}}
               </td>
             </tr>
           </table>

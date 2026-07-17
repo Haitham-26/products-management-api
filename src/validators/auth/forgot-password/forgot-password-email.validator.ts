@@ -1,54 +1,47 @@
 import z from "zod";
-import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
+import { RequestHandler } from "express";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
 import UserModel from "../../../models/User.model";
 import { RequestContext } from "../../../utils/RequestContext";
+import { errorHandler } from "../../../errors/errorHandler";
+import { APIError } from "../../../errors/APIError";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.forgotPassword.email;
 
 const forgotPasswordEmailSchema = z
   .object({
-    email: z.email("Please enter a valid email address"),
+    email: z.email(TRANSLATION_KEY_PREFIX.email.invalid),
   })
   .loose();
 
-export const ForgotPasswordEmailValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const ForgotPasswordEmailValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const body = forgotPasswordEmailSchema.parse(req.body);
     req.body = body;
 
     const user = await UserModel.findOne({ email: req.body.email });
 
-    if (!user) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message: "A user with this email does not exist",
+    if (
+      !user ||
+      !user.emailVerified ||
+      user.signUpMethod !== SignUpMethods.EMAIL
+    ) {
+      throw new APIError({
+        message: TRANSLATION_KEY_PREFIX.notFound,
+        status: StatusCode.BAD_REQUEST,
       });
-      return;
-    }
-
-    if (!user.emailVerified) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "This account is not verified.",
-      });
-      return;
-    }
-
-    if (user.signUpMethod !== SignUpMethods.EMAIL) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message:
-          "This account was created with google, please sign in with google",
-      });
-      return;
     }
 
     RequestContext(req, { user });
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

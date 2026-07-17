@@ -1,3 +1,4 @@
+import { AppLangs } from "../../../types/settings/types/AppLangs.enum";
 import { SwaggerTypes } from "../../types/SwaggerTypes";
 
 const SignUpEmailRequestSchema = {
@@ -20,6 +21,16 @@ const SignUpEmailRequestSchema = {
     password: {
       type: SwaggerTypes.STRING,
       example: "password123",
+    },
+    lang: {
+      type: SwaggerTypes.STRING,
+      enum: Object.values(AppLangs),
+      example: AppLangs.EN,
+    },
+    dir: {
+      type: SwaggerTypes.STRING,
+      enum: ["rtl", "ltr"],
+      example: "rtl",
     },
   },
 };

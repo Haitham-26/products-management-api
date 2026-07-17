@@ -1,38 +1,30 @@
 import z from "zod";
-import express, { RequestHandler } from "express";
+import { RequestHandler } from "express";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
-import TagModel from "../../models/Tag.model";
 import { RequestContext } from "../../utils/RequestContext";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
 import { APIError } from "../../errors/APIError";
 import { Types } from "mongoose";
+import TagModel from "../../models/Tag.model";
 
-const updateTagSchema = z
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.tags.delete;
+
+const deleteTagSchema = z
   .object({
     tagId: z
-      .string(APIErrorKeys.tags.update.invalidId)
+      .string(TRANSLATION_KEY_PREFIX.invalidId)
       .refine((val) => Types.ObjectId.isValid(val), {
-        message: APIErrorKeys.tags.update.invalidId,
+        message: TRANSLATION_KEY_PREFIX.invalidId,
       }),
-    name: z
-      .string(APIErrorKeys.tags.create.name.invalid)
-      .trim()
-      .min(1, APIErrorKeys.tags.create.name.short)
-      .max(32, APIErrorKeys.tags.create.name.long),
-    description: z
-      .string()
-      .trim()
-      .max(512, APIErrorKeys.tags.create.description.long)
-      .optional(),
   })
   .loose();
 
-export const UpdateTagValidator: RequestHandler = async (req, res, next) => {
+export const DeleteTagValidator: RequestHandler = async (req, res, next) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const body = updateTagSchema.parse(req.body);
+    const body = deleteTagSchema.parse(req.body);
     req.body = body;
 
     const { tagId } = req.body;
@@ -46,9 +38,11 @@ export const UpdateTagValidator: RequestHandler = async (req, res, next) => {
     if (!tag) {
       throw new APIError({
         status: StatusCode.NOT_FOUND,
-        message: APIErrorKeys.tags.update.notFound,
+        message: TRANSLATION_KEY_PREFIX.notFound,
       });
     }
+
+    RequestContext(req, { tag });
 
     next();
   } catch (e) {

@@ -10,6 +10,11 @@ import { UserRoles } from "../types/user/types/UserRoles.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { withTransaction } from "../utils/withTransaction";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
+import SettingsModel from "../models/Settings.model";
+import { AppLangs } from "../types/settings/types/AppLangs.enum";
+import { errorHandler } from "../errors/errorHandler";
+import { APIError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
 const getOwnerInvitations: RequestHandler = async (req, res) => {
   try {
@@ -21,7 +26,7 @@ const getOwnerInvitations: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).json({ invitations });
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -70,13 +75,20 @@ const getJoinOrgInvitations: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).json({ invitations });
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
 const inviteMembers: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
+
+    const settings = await SettingsModel.findOne(
+      { userId: user._id },
+      {
+        lang: 1,
+      },
+    );
 
     const { emails } = req.body;
 
@@ -102,15 +114,18 @@ const inviteMembers: RequestHandler = async (req, res) => {
       })),
     );
 
+    const lang = settings?.lang || AppLangs.EN;
+    const dir = lang === AppLangs.AR ? "rtl" : "ltr";
+
     await Promise.allSettled(
       emails.map((email: string) =>
-        sendMemberInvitationEmail(email, user?.company || user.name),
+        sendMemberInvitationEmail(email, user?.company || user.name, lang, dir),
       ),
     );
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -134,7 +149,7 @@ const cancelInvitation: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -158,7 +173,7 @@ const declineInvitation: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -184,7 +199,10 @@ const acceptInvitation: RequestHandler = async (req, res) => {
       );
 
       if (!invitation) {
-        throw new Error("Invitation not found");
+        throw new APIError({
+          status: StatusCode.BAD_REQUEST,
+          message: APIErrorKeys.organization.acceptInvitation.notFound,
+        });
       }
 
       await MemberInvitationModel.deleteMany(
@@ -240,7 +258,7 @@ const acceptInvitation: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -250,15 +268,6 @@ const removeMember: RequestHandler = async (req, res) => {
     const { memberId } = req.body;
 
     await withTransaction(async (session) => {
-      const removed = await UserModel.findOne({
-        _id: memberId,
-        organizationId: user._id,
-      }).session(session);
-
-      if (!removed) {
-        throw new Error("Member not found");
-      }
-
       await UserModel.updateOne(
         { _id: memberId },
         {
@@ -284,7 +293,7 @@ const removeMember: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -345,24 +354,13 @@ const getOrgMembers: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).json(members);
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
 const leaveOrg: RequestHandler = async (req, res) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
-
-    const isMember =
-      user.roles.includes(UserRoles.MEMBER) &&
-      Types.ObjectId.isValid(user.organizationId as Types.ObjectId);
-
-    if (!isMember) {
-      res
-        .status(StatusCode.NOT_FOUND)
-        .send({ message: "You are not a member of an organization" });
-      return;
-    }
 
     await withTransaction(async (session) => {
       await UserModel.updateOne(
@@ -390,7 +388,7 @@ const leaveOrg: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -446,7 +444,7 @@ const manageMembersPermissions: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 

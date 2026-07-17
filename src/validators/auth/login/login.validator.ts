@@ -1,40 +1,67 @@
 import z from "zod";
 import { Regexes } from "../../../utils/String";
-import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
+import { RequestHandler } from "express";
 import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
+import { errorHandler } from "../../../errors/errorHandler";
+import { APIError } from "../../../errors/APIError";
+import { RequestContext } from "../../../utils/RequestContext";
+import bcrypt from "bcrypt";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.login;
 
 const loginSchema = z.object({
-  email: z.email("Please enter a valid email"),
+  email: z.email(TRANSLATION_KEY_PREFIX.email.invalid),
   password: z
-    .string()
-    .min(6, "The password must be at least 6 characters long")
-    .max(64, "The password must be at most 64 characters long")
-    .regex(Regexes.PASSWORD, "The password contains invalid characters"),
+    .string(TRANSLATION_KEY_PREFIX.password.invalid)
+    .min(8, TRANSLATION_KEY_PREFIX.password.short)
+    .max(64, TRANSLATION_KEY_PREFIX.password.long)
+    .regex(Regexes.PASSWORD, TRANSLATION_KEY_PREFIX.password.regex),
 });
 
-export const LoginValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-) => {
-  const user = await UserModel.findOne({ email: req.body.email });
-
+export const LoginValidator: RequestHandler = async (req, res, next) => {
   try {
-    if (user && user.signUpMethod !== SignUpMethods.EMAIL) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message:
-          "This account was created with google, please sign in with google",
-      });
-      return;
-    }
-
     const body = loginSchema.parse(req.body);
     req.body = body;
+
+    const { email, password } = req.body;
+
+    const user = (
+      await UserModel.findOne({ email }).select("-forgotPasswordCode")
+    )?.toObject();
+
+    if (user && user.signUpMethod !== SignUpMethods.EMAIL) {
+      throw new APIError({
+        message: TRANSLATION_KEY_PREFIX.differentMethod,
+        status: StatusCode.BAD_REQUEST,
+      });
+    }
+
+    if (!user || !user.emailVerified) {
+      throw new APIError({
+        message: TRANSLATION_KEY_PREFIX.notFound,
+        status: StatusCode.BAD_REQUEST,
+      });
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user.password as string,
+    );
+
+    if (!isPasswordCorrect) {
+      throw new APIError({
+        message: TRANSLATION_KEY_PREFIX.password.incorrect,
+        status: StatusCode.BAD_REQUEST,
+      });
+    }
+
+    RequestContext(req, { user });
+
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

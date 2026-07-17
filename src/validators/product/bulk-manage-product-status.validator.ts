@@ -1,30 +1,37 @@
 import z from "zod";
-import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
+import { RequestHandler } from "express";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import ProductModel from "../../models/Product.model";
 import { Types } from "mongoose";
 import { RequestContext } from "../../utils/RequestContext";
 import { ProductStatus } from "../../types/product/types/ProductStatus.enum";
+import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { APIError } from "../../errors/APIError";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.products.bulkManageStatus;
 
 const bulkManageProductStatusSchema = z
   .object({
-    status: z.enum(Object.values(ProductStatus)),
+    status: z.enum(
+      Object.values(ProductStatus),
+      TRANSLATION_KEY_PREFIX.invalidStatus,
+    ),
     productIds: z
       .array(
         z.string().refine((val) => Types.ObjectId.isValid(val), {
-          message: "Invalid product id",
+          message: TRANSLATION_KEY_PREFIX.productIds.invalid,
         }),
       )
-      .min(1, "At least one product id is required"),
+      .min(1, TRANSLATION_KEY_PREFIX.productIds.minLength),
   })
   .loose();
 
-export const BulkManageProductStatusValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const BulkManageProductStatusValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -37,14 +44,14 @@ export const BulkManageProductStatusValidator = async (
     });
 
     if (products.length !== req.body.productIds.length) {
-      res
-        .status(StatusCode.BAD_REQUEST)
-        .send({ message: "Some product not found" });
-      return;
+      throw new APIError({
+        status: StatusCode.NOT_FOUND,
+        message: TRANSLATION_KEY_PREFIX.productIds.someNotFound,
+      });
     }
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

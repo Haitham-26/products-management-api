@@ -1,13 +1,16 @@
-import { Request, Response, NextFunction } from "express";
+import { RequestHandler } from "express";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../utils/RequestContext";
 import { User } from "../models/User.model";
 import { UserRoles } from "../types/user/types/UserRoles.enum";
+import { errorHandler } from "../errors/errorHandler";
+import { APIError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
-export const NonOrgMemberMiddleware = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
+export const NonOrgMemberMiddleware: RequestHandler = async (
+  req,
+  res,
+  next,
 ) => {
   try {
     const { user } = RequestContext<{ user: User }>(req);
@@ -15,16 +18,14 @@ export const NonOrgMemberMiddleware = async (
     const isMember = user.roles.includes(UserRoles.MEMBER);
 
     if (isMember) {
-      res
-        .status(StatusCode.FORBIDDEN)
-        .send("Organization members cannot take this action");
-      return;
+      throw new APIError({
+        status: StatusCode.FORBIDDEN,
+        message: APIErrorKeys.permissions.orgOnly,
+      });
     }
 
     next();
   } catch (e) {
-    console.error("Something went wrong", e);
-    res.status(StatusCode.INTERNAL_ERROR).send("Something went wrong");
-    return;
+    errorHandler(e, res);
   }
 };

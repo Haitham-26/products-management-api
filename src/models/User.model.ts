@@ -13,7 +13,10 @@ export interface User extends mongoose.Document {
   signUpMethod: SignUpMethods;
   avatar?: string;
   avatarPublicId?: string;
-  optCode?: string;
+  optCode?: {
+    code: string;
+    createdAt: string;
+  };
   roles: UserRoles[];
   organizationId?: Types.ObjectId;
   permissions?: UserPermissions;
@@ -62,7 +65,12 @@ const UserSchema = new mongoose.Schema(
       enum: SignUpMethods,
     },
     optCode: {
-      type: String,
+      code: {
+        type: String,
+      },
+      createdAt: {
+        type: Date,
+      },
     },
     tokenVersion: {
       type: Number,

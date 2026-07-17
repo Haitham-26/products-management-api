@@ -2,7 +2,6 @@ import { RequestHandler } from "express";
 import bcrypt from "bcrypt";
 import UserModel, { User } from "../models/User.model";
 import { generateVerificationToken } from "../utils/generateVerificationToken";
-import { SignUpToken } from "../types/auth/signup/SignUpToken";
 import { sendSignUpTokenEmail, sendForgotPasswordTokenEmail } from "../mailer";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
@@ -13,39 +12,35 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "../utils/generateJWTs";
-import { OAuth2Client } from "google-auth-library";
+import { AppLangs } from "../types/settings/types/AppLangs.enum";
+import { SignUpEmailDto } from "../types/auth/signup/SignUpEmailDto";
+import { errorHandler } from "../errors/errorHandler";
 
 const createAuthTokens = (userId: string, tokenVersion: number) => ({
   accessToken: generateAccessToken(userId, tokenVersion),
   refreshToken: generateRefreshToken(userId, tokenVersion),
 });
 
+const getEmailLang = (lang: string) => {
+  if (Object.values(AppLangs).includes(lang as AppLangs)) {
+    return lang as AppLangs;
+  }
+
+  return AppLangs.EN;
+};
+
+const getEmailDir = (dir: string): "rtl" | "ltr" => {
+  if (["rtl", "ltr"].includes(dir)) {
+    return dir as "rtl" | "ltr";
+  }
+
+  return "ltr";
+};
+
 const signUpEmail: RequestHandler = async (req, res) => {
   try {
-    const { email, password, name, company } = req.body as SignUpEmailDto;
-
-    const isEmailExist = await UserModel.findOne({ email });
-
-    const tokenExpiryMs = 5 * 60 * 1000;
-
-    if (
-      isEmailExist &&
-      !isEmailExist.emailVerified &&
-      Date.now() - isEmailExist.createdAt.getTime() >= tokenExpiryMs
-    ) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message:
-          "We already sent you a verification code. Please check your email or try again in 5 minutes",
-      });
-      return;
-    }
-
-    if (isEmailExist) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "An account with this email already exists",
-      });
-      return;
-    }
+    const { email, password, name, company, lang, dir } =
+      req.body as SignUpEmailDto;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -57,55 +52,28 @@ const signUpEmail: RequestHandler = async (req, res) => {
       email,
       password: hashedPassword,
       emailVerified: false,
-      optCode: token,
+      optCode: {
+        code: token,
+        createdAt: new Date(),
+      },
       signUpMethod: SignUpMethods.EMAIL,
     });
 
-    await sendSignUpTokenEmail(email, token);
+    const emailLang = getEmailLang(lang);
+    const emailDir = getEmailDir(dir);
 
-    res
-      .status(StatusCode.OK)
-      .send({ message: "The verification code has been sent to your email" });
+    await sendSignUpTokenEmail(email, token, emailLang, emailDir);
+
+    res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.sendStatus(StatusCode.INTERNAL_ERROR);
+    errorHandler(e, res);
   }
 };
 
 const signUpToken: RequestHandler = async (req, res) => {
   try {
-    const { email, token } = req.body as SignUpToken;
-
-    const user = (
-      await UserModel.findOne({
-        email,
-        emailVerified: false,
-      })
-    )?.toObject();
-
-    if (!user) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "This email does not exist",
-      });
-      return;
-    }
-
-    if (user.optCode !== token) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Incorrect verification code",
-      });
-      return;
-    }
-
-    // Token expires in 5 minutes
-    const signUpTokenExpiryMs = 5 * 60 * 1000;
-
-    if (Date.now() - user.createdAt.getTime() >= signUpTokenExpiryMs) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "The verification code has expired",
-      });
-      return;
-    }
+    // This comes from SignUpTokenValidator
+    const { user } = RequestContext<{ user: User }>(req);
 
     await withTransaction(async (session) => {
       await UserModel.updateOne(
@@ -139,13 +107,14 @@ const signUpToken: RequestHandler = async (req, res) => {
       ...createAuthTokens(user._id.toString(), user.tokenVersion || 0),
     });
   } catch (e) {
-    console.log(e);
-    res.status(StatusCode.INTERNAL_ERROR).send(e);
+    errorHandler(e, res);
   }
 };
 
 const signupResendToken: RequestHandler = async (req, res) => {
   try {
+    const { lang, dir } = req.body;
+
     const { user } = RequestContext<{ user: User }>(req);
 
     const newToken = generateVerificationToken();
@@ -154,55 +123,29 @@ const signupResendToken: RequestHandler = async (req, res) => {
       { _id: user._id },
       {
         $set: {
-          optCode: newToken,
+          optCode: {
+            code: newToken,
+            createdAt: new Date(),
+          },
         },
       },
     );
 
-    await sendSignUpTokenEmail(user.email, newToken);
+    const emailLang = getEmailLang(lang);
+    const emailDir = getEmailDir(dir);
 
-    res.status(StatusCode.OK).send({
-      message: "The verification code has been sent to your email",
-    });
+    await sendSignUpTokenEmail(user.email, newToken, emailLang, emailDir);
+
+    res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
 const login: RequestHandler = async (req, res) => {
   try {
-    const { email, password } = req.body as LoginDto;
-
-    const user = (
-      await UserModel.findOne({ email }).select("-forgotPasswordCode")
-    )?.toObject();
-
-    if (!user) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message:
-          "An account with this email does not exist. Please sign up first.",
-      });
-      return;
-    }
-
-    const isPasswordCorrect = await bcrypt.compare(
-      password,
-      user.password as string,
-    );
-
-    if (!isPasswordCorrect) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Incorrect email or password",
-      });
-      return;
-    }
-
-    if (!user.emailVerified) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Please verify your email first",
-      });
-      return;
-    }
+    // This comes from LoginValidator
+    const { user } = RequestContext<{ user: User }>(req);
 
     const { password: _password, tokenVersion, ...safeUser } = user;
 
@@ -223,49 +166,21 @@ const refreshToken: RequestHandler = async (req, res) => {
       accessToken: generateAccessToken(user._id.toString(), user.tokenVersion),
     });
   } catch (e) {
-    console.log(e);
-    res.status(StatusCode.UNAUTHORIZED).send("Unauthorized");
+    errorHandler(e, res);
   }
 };
 
 const googleLogin: RequestHandler = async (req, res) => {
-  const { idToken } = req.body;
-
-  const client = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-  );
-
   try {
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
+    // these come from GoogleLoginValidator
+    const { user, name, picture, email } = RequestContext<{
+      user: User | null;
+      name: string;
+      picture: string;
+      email: string;
+    }>(req);
 
-    const payload = ticket.getPayload();
-
-    if (!payload) {
-      res.status(400).send({ message: "Invalid Google token" });
-      return;
-    }
-
-    const { email, name, picture, email_verified } = payload;
-
-    if (!email || !email_verified) {
-      res.status(400).send({ message: "Your google account is not verified" });
-      return;
-    }
-
-    let user = await UserModel.findOne({ email }).select(
-      "-password -optCode -forgotPasswordCode",
-    );
-
-    if (user && user?.signUpMethod !== SignUpMethods.GOOGLE) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "This account was not created with a google account.",
-      });
-      return;
-    }
+    let _user = user;
 
     if (!user) {
       await withTransaction(async (session) => {
@@ -283,29 +198,28 @@ const googleLogin: RequestHandler = async (req, res) => {
           { session },
         );
 
-        user = newUser;
+        _user = newUser as unknown as User;
 
-        await SettingsModel.create([{ userId: user._id }], { session });
+        await SettingsModel.create([{ userId: _user!._id }], { session });
       });
     }
 
     const { password, forgotPasswordCode, tokenVersion, optCode, ...safeUser } =
-      user!.toObject();
+      _user!.toObject();
 
     res.status(StatusCode.OK).send({
       user: safeUser,
-      ...createAuthTokens(user!._id.toString(), user!.tokenVersion),
+      ...createAuthTokens(_user!._id.toString(), _user!.tokenVersion),
     });
   } catch (e) {
-    console.log(e);
-    res.status(StatusCode.INTERNAL_ERROR).send({
-      message: "Something went wrong",
-    });
+    errorHandler(e, res);
   }
 };
 
 const forgotPasswordEmail: RequestHandler = async (req, res) => {
   try {
+    const { lang, dir } = req.body;
+
     const { user } = RequestContext<{ user: User }>(req);
 
     const token = generateVerificationToken();
@@ -322,11 +236,14 @@ const forgotPasswordEmail: RequestHandler = async (req, res) => {
       },
     );
 
-    await sendForgotPasswordTokenEmail(user.email, token);
+    const emailLang = getEmailLang(lang);
+    const emailDir = getEmailDir(dir);
+
+    await sendForgotPasswordTokenEmail(user.email, token, emailLang, emailDir);
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -334,7 +251,7 @@ const forgotPasswordToken: RequestHandler = async (req, res) => {
   try {
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -359,7 +276,7 @@ const forgotPasswordNew: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 

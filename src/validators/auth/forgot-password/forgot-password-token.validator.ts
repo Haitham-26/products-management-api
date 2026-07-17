@@ -1,68 +1,64 @@
-import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
+import { RequestHandler } from "express";
 import z from "zod";
 import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
+import { errorHandler } from "../../../errors/errorHandler";
+import { APIError } from "../../../errors/APIError";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.forgotPassword.token;
 
 const forgotPasswordTokenSchema = z
   .object({
     token: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.token.invalid)
       .trim()
-      .min(6, "The verification code must be 6 characters long")
-      .max(6, "The verification code must be 6 characters long"),
+      .min(6, TRANSLATION_KEY_PREFIX.token.length)
+      .max(6, TRANSLATION_KEY_PREFIX.token.length),
   })
   .loose();
 
-export const ForgotPasswordTokenValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const ForgotPasswordTokenValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const body = forgotPasswordTokenSchema.parse(req.body);
     req.body = body;
 
     const user = await UserModel.findOne({ email: req.body.email });
 
-    if (!user?.emailVerified) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "This account is not verified.",
-      });
-      return;
-    }
-
     if (
       !user?.forgotPasswordCode ||
       !user.forgotPasswordCode?.code ||
       !user.forgotPasswordCode?.createdAt
     ) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message:
-          "Something went wrong, please restart the process from the beginning.",
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.token.missing,
       });
-      return;
     }
 
     if (
       new Date(user.forgotPasswordCode.createdAt).getTime() + 5 * 60 * 1000 <
       Date.now()
     ) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "The verification code has expired, please request a new one.",
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.token.expired,
       });
-      return;
     }
 
     if (user.forgotPasswordCode.code !== req.body.token) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "Incorrect verification code.",
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.token.incorrect,
       });
-      return;
     }
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

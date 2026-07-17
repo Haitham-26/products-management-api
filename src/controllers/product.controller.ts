@@ -24,6 +24,9 @@ import { RequestHandler } from "express-serve-static-core";
 import { UploadService } from "../services/upload.service";
 import { CloudinaryImage } from "../types/shared/types/CloudinaryImage";
 import isArray from "lodash/isArray";
+import { errorHandler } from "../errors/errorHandler";
+import { APIError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
 export class ProductService {
   constructor() {}
@@ -152,7 +155,7 @@ const createProduct: RequestHandler = async (req, res) => {
             {
               userId: scopeId,
               _id: {
-                $in: tags.map((tagId: string) => new Types.ObjectId(tagId)),
+                $in: tags,
               },
             },
             { $inc: { usageCount: 1 } },
@@ -178,13 +181,15 @@ const createProduct: RequestHandler = async (req, res) => {
         ),
       );
 
-      throw txError;
+      throw new APIError({
+        message: APIErrorKeys.internal,
+        status: StatusCode.INTERNAL_ERROR,
+      });
     }
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 
@@ -332,25 +337,25 @@ const getProducts: RequestHandler = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error("Get Products Error:", e);
-    res.status(500).json({ message: "Internal Server Error" });
+    errorHandler(e, res);
   }
 };
 
 const deleteProduct: RequestHandler = async (req, res) => {
   try {
-    const { scopeId } = RequestContext<{ scopeId: string }>(req);
-
-    const { productId } = req.body;
+    const { product, scopeId } = RequestContext<{
+      product: Product;
+      scopeId: string;
+    }>(req);
 
     await withTransaction(async (session) => {
-      const product = await ProductModel.findOneAndUpdate(
-        { _id: productId, userId: scopeId },
+      await ProductModel.updateOne(
+        { _id: product._id, userId: scopeId },
         { $set: { isDeleted: true, deletedAt: new Date() } },
-        { new: true, session },
-      ).populate("tags", "_id");
+        { session },
+      );
 
-      if (product?.categoryId) {
+      if (product.categoryId) {
         await CategoryModel.updateOne(
           { _id: product.categoryId, userId: scopeId },
           { $inc: { usageCount: -1 } },
@@ -358,7 +363,7 @@ const deleteProduct: RequestHandler = async (req, res) => {
         );
       }
 
-      if (product?.tags?.length) {
+      if (product.tags?.length) {
         await TagModel.updateMany(
           { userId: scopeId, _id: { $in: product.tags.map((tag) => tag._id) } },
           { $inc: { usageCount: -1 } },
@@ -369,23 +374,19 @@ const deleteProduct: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
 const deleteBulkProducts: RequestHandler = async (req, res) => {
   try {
-    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+    const { products, scopeId } = RequestContext<{
+      products: Product[];
+      scopeId: string;
+    }>(req);
     const { productIds } = req.body;
 
     await withTransaction(async (session) => {
-      const products = await ProductModel.find({
-        _id: { $in: productIds },
-        userId: scopeId,
-      })
-        .session(session)
-        .populate("tags", "_id");
-
       await ProductModel.updateMany(
         { _id: { $in: productIds }, userId: scopeId },
         { $set: { isDeleted: true, deletedAt: new Date() } },
@@ -411,7 +412,7 @@ const deleteBulkProducts: RequestHandler = async (req, res) => {
           updateMany: {
             filter: {
               userId: scopeId,
-              _id: { $in: product.tags.map((tag) => tag._id) },
+              _id: { $in: product.tags!.map((tag) => tag._id) },
             },
             update: { $inc: { usageCount: -1 } },
           },
@@ -424,7 +425,7 @@ const deleteBulkProducts: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
@@ -656,7 +657,11 @@ const updateProduct: RequestHandler = async (req, res) => {
           UploadService.deleteImage(publicId).catch(() => {}),
         ),
       );
-      throw txError;
+
+      throw new APIError({
+        message: APIErrorKeys.internal,
+        status: StatusCode.INTERNAL_ERROR,
+      });
     }
 
     const publicIdsToDelete = [
@@ -676,8 +681,7 @@ const updateProduct: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 
@@ -694,8 +698,7 @@ const bulkManageProductStatus: RequestHandler = async (req, res) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 
@@ -707,14 +710,28 @@ const manageProductStock: RequestHandler = async (req, res) => {
 
     const { stockChange } = req.body;
 
-    await ProductModel.updateOne(
-      { _id: productId, userId: scopeId },
-      { $inc: { quantity: Number(stockChange) } },
+    const numberStockChange = Number(stockChange);
+
+    const result = await ProductModel.updateOne(
+      {
+        _id: productId,
+        userId: scopeId,
+        isDeleted: { $ne: true },
+        $expr: { $gte: [{ $add: ["$quantity", numberStockChange] }, 0] },
+      },
+      { $inc: { quantity: numberStockChange } },
     );
+
+    if (result.matchedCount === 0) {
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: APIErrorKeys.products.manageStock.belowZero,
+      });
+    }
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 

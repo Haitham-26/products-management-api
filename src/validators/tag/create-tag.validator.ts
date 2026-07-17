@@ -1,32 +1,31 @@
 import z from "zod";
-import express from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
+import { RequestHandler } from "express";
+import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.tags.create;
 
 const createTagSchema = z
   .object({
     name: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.name.invalid)
       .trim()
-      .min(1, "Name must be at least 1 character")
-      .max(100, "Name must be at most 100 characters"),
+      .min(1, TRANSLATION_KEY_PREFIX.name.short)
+      .max(32, TRANSLATION_KEY_PREFIX.name.long),
     description: z
-      .string()
+      .string(TRANSLATION_KEY_PREFIX.description.invalid)
       .trim()
-      .max(512, "Description must be at most 512 characters")
+      .max(512, TRANSLATION_KEY_PREFIX.description.long)
       .optional(),
   })
   .loose();
 
-export const CreateTagValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+export const CreateTagValidator: RequestHandler = async (req, res, next) => {
   try {
     const body = createTagSchema.parse(req.body);
     req.body = body;
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

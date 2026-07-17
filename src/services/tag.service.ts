@@ -13,6 +13,8 @@ import { OrgScopeMiddleware } from "../middlewares/OrgScopeMiddleware";
 import { UserPermissionsMiddleware } from "../middlewares/UserPermissionsMiddleware";
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
+import { BulkDeleteTagsValidator } from "../validators/tag/bulk-delete-tags.validator";
+import { DeleteTagValidator } from "../validators/tag/delete-tag.validator";
 
 const tagRouter = express.Router();
 
@@ -155,6 +157,7 @@ tagRouter.delete(
     CRUDPermissions.READ,
   ]),
   OrgScopeMiddleware,
+  DeleteTagValidator,
   deleteTag,
 );
 
@@ -183,6 +186,7 @@ tagRouter.delete(
     CRUDPermissions.READ,
   ]),
   OrgScopeMiddleware,
+  BulkDeleteTagsValidator,
   deleteBulkTags,
 );
 

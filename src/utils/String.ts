@@ -1,6 +1,6 @@
 export const Regexes = {
-  PASSWORD: /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]*$/,
-  NAME: /^.{3,}$/u,
+  PASSWORD: /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,64}$/,
+  NAME: /^[\p{L}]+(?:[ '-][\p{L}]+)*$/u,
 };
 
 export const escapeSpecialChars = (text: string) => {

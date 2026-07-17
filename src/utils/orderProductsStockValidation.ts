@@ -85,37 +85,37 @@ export const checkOrderProductsStockAvailability = async (
   };
 };
 
-export const buildInsufficientStockMessage = (
+type InsufficientStockDetail = {
+  orderIdentifier: string;
+  productNames: string;
+};
+
+export const buildInsufficientStockDetail = (
   insufficientStockProductIds: string[],
   productMap: Map<string, Product>,
   orderIdentifiersByProductId: Map<string, string[]>,
-): string => {
-  const productIdsByOrderIdentifier = new Map<string, string[]>();
-
-  for (const productId of insufficientStockProductIds) {
-    const orderIdentifiers = orderIdentifiersByProductId.get(productId) || [];
-
-    for (const orderIdentifier of orderIdentifiers) {
-      const existing = productIdsByOrderIdentifier.get(orderIdentifier) || [];
-
-      existing.push(productId);
-
-      productIdsByOrderIdentifier.set(orderIdentifier, existing);
-    }
-  }
-
+): InsufficientStockDetail | null => {
   const productLabel = (id: string) => {
     const product = productMap.get(id);
     return product?.name || id;
   };
 
-  const messages = Array.from(productIdsByOrderIdentifier.entries()).map(
-    ([orderIdentifier, productIds]) => {
-      const labels = productIds.map(productLabel).join(", ");
+  for (const productId of insufficientStockProductIds) {
+    const orderIdentifiers = orderIdentifiersByProductId.get(productId) || [];
 
-      return `Order ${orderIdentifier}: insufficient stock for ${labels}`;
-    },
-  );
+    if (orderIdentifiers.length) {
+      const orderIdentifier = orderIdentifiers[0];
 
-  return messages.join(". ");
+      const productIdsForOrder = insufficientStockProductIds.filter((id) =>
+        (orderIdentifiersByProductId.get(id) || []).includes(orderIdentifier),
+      );
+
+      return {
+        orderIdentifier,
+        productNames: productIdsForOrder.map(productLabel).join(", "),
+      };
+    }
+  }
+
+  return null;
 };

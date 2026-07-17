@@ -1,5 +1,4 @@
 import { RequestHandler } from "express";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import z from "zod";
 import { Types } from "mongoose";
 import { PermissionEntities } from "../../types/user/types/PermissionEntities.enum";
@@ -7,38 +6,46 @@ import { CRUDPermissions } from "../../types/user/types/CRUDPermissions.enum";
 import { RequestContext } from "../../utils/RequestContext";
 import UserModel from "../../models/User.model";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
+import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { APIError } from "../../errors/APIError";
 
-const manageMembersPermissionsSchema = z.object({
-  userId: z.string().refine((val) => Types.ObjectId.isValid(val), {
-    message: "Invalid userId",
-  }),
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.organization.managePermissions;
 
-  members: z
-    .record(
-      z.string().refine((val) => Types.ObjectId.isValid(val), {
-        message: "Invalid member id",
+const memberPermissionEntitySchema = z.strictObject(
+  Object.fromEntries(
+    Object.values(CRUDPermissions).map((permission) => [
+      permission,
+      z.boolean(TRANSLATION_KEY_PREFIX.members.permissions.invalidType),
+    ]),
+  ),
+);
+
+const memberPermissionsSchema = z.strictObject(
+  Object.fromEntries(
+    Object.values(PermissionEntities).map((entity) => [
+      entity,
+      memberPermissionEntitySchema,
+    ]),
+  ),
+);
+
+const manageMembersPermissionsSchema = z
+  .object({
+    members: z
+      .record(
+        z
+          .string(TRANSLATION_KEY_PREFIX.members.invalidId)
+          .refine((val) => Types.ObjectId.isValid(val), {
+            message: TRANSLATION_KEY_PREFIX.members.invalidId,
+          }),
+        memberPermissionsSchema,
+      )
+      .refine((members) => Object.keys(members).length > 0, {
+        message: TRANSLATION_KEY_PREFIX.members.minLength,
       }),
-
-      z.object(
-        Object.fromEntries(
-          Object.values(PermissionEntities).map((entity) => [
-            entity,
-            z.object(
-              Object.fromEntries(
-                Object.values(CRUDPermissions).map((permission) => [
-                  permission,
-                  z.boolean(),
-                ]),
-              ),
-            ),
-          ]),
-        ),
-      ),
-    )
-    .refine((members) => Object.keys(members).length > 0, {
-      message: "At least one member is required",
-    }),
-});
+  })
+  .loose();
 
 export const ManageMembersPermissionsValidator: RequestHandler = async (
   req,
@@ -51,7 +58,7 @@ export const ManageMembersPermissionsValidator: RequestHandler = async (
 
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const memberIds = Object.keys(body.members);
+    const memberIds = Object.keys(req.body.members);
 
     const members = await UserModel.find({
       organizationId: userId,
@@ -59,21 +66,21 @@ export const ManageMembersPermissionsValidator: RequestHandler = async (
     });
 
     if (memberIds.includes(userId)) {
-      res
-        .status(StatusCode.BAD_REQUEST)
-        .send({ message: "You cannot manage your own permissions" });
-      return;
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.self,
+      });
     }
 
     if (members.length !== memberIds.length) {
-      res
-        .status(StatusCode.NOT_FOUND)
-        .send({ message: "Some members not found in your organization" });
-      return;
+      throw new APIError({
+        status: StatusCode.NOT_FOUND,
+        message: TRANSLATION_KEY_PREFIX.members.someNotFound,
+      });
     }
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

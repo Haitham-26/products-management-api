@@ -1,32 +1,34 @@
 import { RequestHandler } from "express";
 import { RequestContext } from "../../utils/RequestContext";
 import SettingsModel from "../../models/Settings.model";
-import { Types } from "mongoose";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
-import { ThrowZodError } from "../../utils/ThrowZodError";
 import z from "zod";
 import currencyCodes from "currency-codes";
 import { AppLangs } from "../../types/settings/types/AppLangs.enum";
+import { errorHandler } from "../../errors/errorHandler";
+import { APIErrorKeys } from "../../errors/APIError-keys";
+import { APIError } from "../../errors/APIError";
+
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.settings.update;
 
 const updateSettingsSchema = z
   .object({
     inventory: z
       .object({
         defaultMinStock: z
-          .number()
-          .min(1, "Default minimum stock must be at least 1.")
+          .number(TRANSLATION_KEY_PREFIX.inventory.defaultMinStock.invalid)
+          .min(1, TRANSLATION_KEY_PREFIX.inventory.defaultMinStock.min)
           .optional(),
       })
       .optional(),
     currency: z
-      .string()
-      .length(3)
+      .string(TRANSLATION_KEY_PREFIX.currency.invalid)
       .refine((v) => currencyCodes.code(v), {
-        message: "Unsupported currency code",
+        message: TRANSLATION_KEY_PREFIX.currency.invalid,
       })
       .optional(),
     lang: z
-      .enum(Object.values(AppLangs), "Language is not supported")
+      .enum(Object.values(AppLangs), TRANSLATION_KEY_PREFIX.lang.invalid)
       .optional(),
   })
   .loose();
@@ -39,20 +41,22 @@ export const UpdateSettingsValidator: RequestHandler = async (
   try {
     const { userId } = RequestContext<{ userId: string }>(req);
 
-    const settings = await SettingsModel.findOne({
-      userId: new Types.ObjectId(userId),
-    });
-
-    if (!settings) {
-      res.status(StatusCode.NOT_FOUND).send({ message: "Settings not found" });
-      return;
-    }
-
     const body = updateSettingsSchema.parse(req.body);
     req.body = body;
 
+    const settings = await SettingsModel.findOne({
+      userId,
+    });
+
+    if (!settings) {
+      throw new APIError({
+        status: StatusCode.NOT_FOUND,
+        message: TRANSLATION_KEY_PREFIX.notFound,
+      });
+    }
+
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };

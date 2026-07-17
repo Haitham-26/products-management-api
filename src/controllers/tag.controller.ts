@@ -1,4 +1,4 @@
-import express from "express";
+import express, { RequestHandler } from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
@@ -8,8 +8,11 @@ import isNil from "lodash/isNil";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { escapeSpecialChars } from "../utils/String";
+import { errorHandler } from "../errors/errorHandler";
+import { APIError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
-const createTag = async (req: express.Request, res: express.Response) => {
+const createTag: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -23,11 +26,11 @@ const createTag = async (req: express.Request, res: express.Response) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 
-const getTags = async (req: express.Request, res: express.Response) => {
+const getTags: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -90,28 +93,13 @@ const getTags = async (req: express.Request, res: express.Response) => {
       },
     });
   } catch (e) {
-    console.error(e);
-    res.status(500).send();
+    errorHandler(e, res);
   }
 };
 
-const deleteTag = async (req: express.Request, res: express.Response) => {
+const deleteTag: RequestHandler = async (req, res) => {
   try {
-    const { scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
-
-    const { tagId } = req.body;
-
-    const tag = await TagModel.findOne({
-      _id: tagId,
-      userId: scopeId,
-    });
-
-    if (!tag) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message: "Tag not found",
-      });
-      return;
-    }
+    const { tag, scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
 
     if (tag.usageCount > 0) {
       await TagModel.updateOne(
@@ -129,28 +117,15 @@ const deleteTag = async (req: express.Request, res: express.Response) => {
 
     res.sendStatus(StatusCode.OK);
   } catch (e) {
-    console.log(e);
-    res.sendStatus(500);
+    errorHandler(e, res);
   }
 };
 
-const deleteBulkTags = async (req: express.Request, res: express.Response) => {
+const deleteBulkTags: RequestHandler = async (req, res) => {
   try {
-    const { scopeId } = RequestContext<{ tag: Tag; scopeId: string }>(req);
-
-    const { tagIds } = req.body;
-
-    const tags = await TagModel.find({
-      _id: { $in: tagIds },
-      userId: scopeId,
-    });
-
-    if (!tags.length) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message: "Tags not found",
-      });
-      return;
-    }
+    const { tags, scopeId } = RequestContext<{ tags: Tag[]; scopeId: string }>(
+      req,
+    );
 
     await TagModel.bulkWrite(
       tags.map((tag) => {
@@ -180,12 +155,11 @@ const deleteBulkTags = async (req: express.Request, res: express.Response) => {
 
     res.sendStatus(StatusCode.OK);
   } catch (e) {
-    console.log(e);
-    res.sendStatus(500);
+    errorHandler(e, res);
   }
 };
 
-const updateTag = async (req: express.Request, res: express.Response) => {
+const updateTag: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -212,7 +186,7 @@ const updateTag = async (req: express.Request, res: express.Response) => {
 
     res.status(StatusCode.OK).send();
   } catch (e) {
-    console.log(e);
+    errorHandler(e, res);
   }
 };
 

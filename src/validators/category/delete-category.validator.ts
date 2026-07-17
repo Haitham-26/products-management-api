@@ -3,32 +3,24 @@ import { RequestHandler } from "express";
 import { StatusCode } from "../../types/shared/dto/StatusCode.enum";
 import CategoryModel from "../../models/Category.model";
 import { RequestContext } from "../../utils/RequestContext";
-import { Types } from "mongoose";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
 import { APIError } from "../../errors/APIError";
+import { Types } from "mongoose";
 
-const updateCategorySchema = z
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.categories.delete;
+
+const deleteCategorySchema = z
   .object({
     categoryId: z
-      .string(APIErrorKeys.categories.update.invalidId)
+      .string(TRANSLATION_KEY_PREFIX.invalidId)
       .refine((val) => Types.ObjectId.isValid(val), {
-        message: APIErrorKeys.categories.update.invalidId,
+        message: TRANSLATION_KEY_PREFIX.invalidId,
       }),
-    name: z
-      .string(APIErrorKeys.categories.create.name.invalid)
-      .trim()
-      .min(1, APIErrorKeys.categories.create.name.short)
-      .max(64, APIErrorKeys.categories.create.name.long),
-    description: z
-      .string(APIErrorKeys.categories.create.description.invalid)
-      .trim()
-      .max(512, APIErrorKeys.categories.create.description.long)
-      .optional(),
   })
   .loose();
 
-export const UpdateCategoryValidator: RequestHandler = async (
+export const DeleteCategoryValidator: RequestHandler = async (
   req,
   res,
   next,
@@ -36,13 +28,13 @@ export const UpdateCategoryValidator: RequestHandler = async (
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { categoryId } = req.body;
-
-    const body = updateCategorySchema.parse(req.body);
+    const body = deleteCategorySchema.parse(req.body);
     req.body = body;
 
+    const { categoryId } = req.body;
+
     const category = await CategoryModel.findOne({
-      _id: new Types.ObjectId(categoryId as string),
+      _id: categoryId,
       userId: scopeId,
       isDeleted: { $ne: true },
     });
@@ -50,7 +42,7 @@ export const UpdateCategoryValidator: RequestHandler = async (
     if (!category) {
       throw new APIError({
         status: StatusCode.NOT_FOUND,
-        message: APIErrorKeys.categories.update.notFound,
+        message: TRANSLATION_KEY_PREFIX.notFound,
       });
     }
 

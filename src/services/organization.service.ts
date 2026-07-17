@@ -18,6 +18,8 @@ import { CancelInvitationValidator } from "../validators/organization/cancel-inv
 import { DeclineInvitationValidator } from "../validators/organization/decline-invitation.validator";
 import { AcceptInvitationValidator } from "../validators/organization/accept-invitation.validator";
 import { ManageMembersPermissionsValidator } from "../validators/organization/manage-members-permissions.validator";
+import { LeaveOrgValidator } from "../validators/organization/leave-org.validator";
+import { RemoveMemberValidator } from "../validators/organization/remove-member.validator";
 
 const organizationRouter = express.Router();
 
@@ -162,6 +164,7 @@ organizationRouter.post(
   "/owner/members/remove",
   AuthMiddleware,
   NonOrgMemberMiddleware,
+  RemoveMemberValidator,
   removeMember,
 );
 
@@ -252,6 +255,11 @@ organizationRouter.post(
  *       200:
  *         description: Left the organization successfully.
  */
-organizationRouter.post("/member/leave", AuthMiddleware, leaveOrg);
+organizationRouter.post(
+  "/member/leave",
+  AuthMiddleware,
+  LeaveOrgValidator,
+  leaveOrg,
+);
 
 export default organizationRouter;

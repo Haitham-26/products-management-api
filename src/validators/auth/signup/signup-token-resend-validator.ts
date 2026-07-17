@@ -1,45 +1,44 @@
 import z from "zod";
-import express from "express";
-import { ThrowZodError } from "../../../utils/ThrowZodError";
+import { RequestHandler } from "express";
 import UserModel from "../../../models/User.model";
 import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import { RequestContext } from "../../../utils/RequestContext";
+import { errorHandler } from "../../../errors/errorHandler";
+import { APIError } from "../../../errors/APIError";
+import { APIErrorKeys } from "../../../errors/APIError-keys";
 
-const signUpResendTokenSchema = z.object({
-  email: z.email("Please enter a valid email address"),
-});
+const TRANSLATION_KEY_PREFIX = APIErrorKeys.signup.token;
 
-export const SignUpTokenResendValidator = async (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-): Promise<void> => {
+const signUpResendTokenSchema = z
+  .object({
+    email: z.email(TRANSLATION_KEY_PREFIX.email.invalid),
+  })
+  .loose();
+
+export const SignUpTokenResendValidator: RequestHandler = async (
+  req,
+  res,
+  next,
+) => {
   try {
     const body = signUpResendTokenSchema.parse(req.body);
     req.body = body;
 
     const { email } = req.body;
 
-    const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email, emailVerified: false });
 
     if (!user) {
-      res.status(StatusCode.NOT_FOUND).send({
-        message: "A user with this email does not exist",
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: TRANSLATION_KEY_PREFIX.notFound,
       });
-      return;
-    }
-
-    if (user.emailVerified) {
-      res.status(StatusCode.BAD_REQUEST).send({
-        message: "This email is already verified, please sign in instead.",
-      });
-      return;
     }
 
     RequestContext(req, { user });
 
     next();
   } catch (e) {
-    ThrowZodError(res, e);
+    errorHandler(e, res);
   }
 };
