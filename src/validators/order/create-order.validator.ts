@@ -37,6 +37,11 @@ const createOrderSchema = z
       .email(TRANSLATION_KEY_PREFIX.customerEmail.invalid)
       .optional()
       .or(z.literal("")),
+    customerAddress: z
+      .string(TRANSLATION_KEY_PREFIX.customerAddress.invalid)
+      .max(256, TRANSLATION_KEY_PREFIX.customerAddress.long)
+      .optional()
+      .or(z.literal("")),
     items: z
       .array(
         z.object({

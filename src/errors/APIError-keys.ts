@@ -171,6 +171,10 @@ const APIErrorKeySchema = {
       customerEmail: {
         invalid: LEAF,
       },
+      customerAddress: {
+        invalid: LEAF,
+        long: LEAF,
+      },
       items: {
         invalidProductId: LEAF,
         quantity: {

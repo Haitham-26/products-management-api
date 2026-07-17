@@ -32,6 +32,10 @@ const GetOrdersResponseSchema = {
             format: "email",
             example: "haitham@example.com",
           },
+          customerAddress: {
+            type: SwaggerTypes.STRING,
+            example: "123 Main St, Anytown, USA",
+          },
           userId: {
             type: SwaggerTypes.STRING,
             example: "6a9d...",

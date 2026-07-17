@@ -5,6 +5,7 @@ export interface CreateOrderDto extends GenericWithUserId {
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
+  customerAddress?: string;
   items: CreateUpdateOrderItem[];
   note?: string;
 }

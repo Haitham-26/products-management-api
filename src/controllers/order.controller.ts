@@ -61,8 +61,14 @@ const createOrder: RequestHandler = async (req, res) => {
       products: Product[];
     }>(req);
 
-    const { items, note, customerName, customerPhone, customerEmail } =
-      req.body as CreateOrderDto;
+    const {
+      items,
+      note,
+      customerName,
+      customerPhone,
+      customerEmail,
+      customerAddress,
+    } = req.body as CreateOrderDto;
 
     await withTransaction(async (session) => {
       const orderItems: OrderItem[] = items.map((item) => {
@@ -112,6 +118,7 @@ const createOrder: RequestHandler = async (req, res) => {
             customerName,
             customerPhone,
             customerEmail,
+            customerAddress,
             identifier,
             items: orderItems,
             note,
@@ -166,6 +173,7 @@ const getOrders: RequestHandler = async (req, res) => {
         { customerPhone: { $regex: escapedKeyword || "", $options: "i" } },
         { customerName: { $regex: escapedKeyword || "", $options: "i" } },
         { customerEmail: { $regex: escapedKeyword || "", $options: "i" } },
+        { customerAddress: { $regex: escapedKeyword || "", $options: "i" } },
       ];
     }
 
@@ -220,9 +228,10 @@ const updateOrder: RequestHandler = async (req, res) => {
       note,
       customerName,
       customerPhone,
+      customerEmail,
+      customerAddress,
       isArchived,
       orderId,
-      customerEmail,
     } = req.body as UpdateOrderDto;
 
     const updateQuery: UpdateQuery<Order> = {
@@ -230,6 +239,7 @@ const updateOrder: RequestHandler = async (req, res) => {
       customerName,
       customerPhone,
       customerEmail,
+      customerAddress,
     };
 
     if (isBoolean(isArchived)) {

@@ -17,6 +17,10 @@ const UpdateOrderRequestSchema = {
       format: "email",
       example: "haitham@example.com",
     },
+    customerAddress: {
+      type: SwaggerTypes.STRING,
+      example: "123 Main St, Anytown, USA",
+    },
     items: {
       type: SwaggerTypes.ARRAY,
       items: {
