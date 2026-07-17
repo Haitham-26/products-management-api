@@ -53,7 +53,7 @@ const orderRouter = express.Router();
  *         name: status
  *         schema:
  *           type: string
- *           enum: [PENDING, CONFIRMED, CANCELED]
+ *           enum: [PENDING, DELIVERED, CANCELED]
  *           example: PENDING
  *       - in: query
  *         name: creationDate

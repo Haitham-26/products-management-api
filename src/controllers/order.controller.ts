@@ -31,7 +31,7 @@ export class OrderService {
   ) {
     if (
       currentStatus === OrderStatus.PENDING &&
-      newStatus === OrderStatus.CONFIRMED
+      newStatus === OrderStatus.DELIVERED
     ) {
       return 0;
     }
@@ -340,15 +340,15 @@ const bulkManageOrderStatus: RequestHandler = async (req, res) => {
         _id: { $in: orderIds },
         userId: scopeId,
         isDeleted: { $ne: true },
-        status: { $ne: OrderStatus.CONFIRMED },
+        status: { $ne: OrderStatus.DELIVERED },
       }).session(session);
 
       const productBulkOps = orders
         .filter((order) => {
-          // Canceled orders' status cannot be directly changed to CONFIRMED
+          // Canceled orders' status cannot be directly changed to DELIVERED
           if (
             order.status === OrderStatus.CANCELED &&
-            newStatus === OrderStatus.CONFIRMED
+            newStatus === OrderStatus.DELIVERED
           ) {
             return false;
           } else {
@@ -383,11 +383,11 @@ const bulkManageOrderStatus: RequestHandler = async (req, res) => {
           _id: { $in: orderIds },
           userId: scopeId,
           isDeleted: { $ne: true },
-          status: { $ne: OrderStatus.CONFIRMED },
-          ...(newStatus === OrderStatus.CONFIRMED
+          status: { $ne: OrderStatus.DELIVERED },
+          ...(newStatus === OrderStatus.DELIVERED
             ? {
                 status: {
-                  $nin: [OrderStatus.CONFIRMED, OrderStatus.CANCELED],
+                  $nin: [OrderStatus.DELIVERED, OrderStatus.CANCELED],
                 },
               }
             : {}),

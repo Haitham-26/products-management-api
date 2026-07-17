@@ -52,10 +52,10 @@ export const ManageOrderStatusValidator: RequestHandler = async (
       });
     }
 
-    if (order.status === OrderStatus.CONFIRMED) {
+    if (order.status === OrderStatus.DELIVERED) {
       throw new APIError({
         status: StatusCode.BAD_REQUEST,
-        message: TRANSLATION_KEY_PREFIX.cannotChangeConfirmed,
+        message: TRANSLATION_KEY_PREFIX.cannotChangeDelivered,
       });
     }
 
@@ -68,11 +68,11 @@ export const ManageOrderStatusValidator: RequestHandler = async (
 
     if (
       order.status === OrderStatus.CANCELED &&
-      body.status === OrderStatus.CONFIRMED
+      body.status === OrderStatus.DELIVERED
     ) {
       throw new APIError({
         status: StatusCode.BAD_REQUEST,
-        message: TRANSLATION_KEY_PREFIX.canceledToConfirmed,
+        message: TRANSLATION_KEY_PREFIX.canceledToDelivered,
       });
     }
 

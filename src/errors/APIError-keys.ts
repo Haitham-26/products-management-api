@@ -206,9 +206,9 @@ const APIErrorKeySchema = {
       invalidOrderId: LEAF,
       invalidStatus: LEAF,
       notFound: LEAF,
-      cannotChangeConfirmed: LEAF,
+      cannotChangeDelivered: LEAF,
       sameStatus: LEAF,
-      canceledToConfirmed: LEAF,
+      canceledToDelivered: LEAF,
       items: {
         insufficientStock: LEAF,
       },
