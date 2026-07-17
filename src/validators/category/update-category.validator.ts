@@ -10,6 +10,11 @@ import { APIError } from "../../errors/APIError";
 
 const updateCategorySchema = z
   .object({
+    categoryId: z
+      .string(APIErrorKeys.categories.update.invalidId)
+      .refine((val) => Types.ObjectId.isValid(val), {
+        message: APIErrorKeys.categories.update.invalidId,
+      }),
     name: z
       .string(APIErrorKeys.categories.create.name.invalid)
       .trim()
@@ -39,6 +44,7 @@ export const UpdateCategoryValidator: RequestHandler = async (
     const category = await CategoryModel.findOne({
       _id: new Types.ObjectId(categoryId as string),
       userId: scopeId,
+      isDeleted: { $ne: true },
     });
 
     if (!category) {

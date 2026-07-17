@@ -30,7 +30,7 @@ export const UserPermissionsMiddleware = (
       }
 
       const hasPermissions = permissions.every((permission) => {
-        return user.permissions?.[entity][permission];
+        return user.permissions?.[entity][permission] === true;
       });
 
       if (!hasPermissions) {

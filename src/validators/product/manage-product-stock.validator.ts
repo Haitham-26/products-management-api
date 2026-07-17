@@ -11,6 +11,7 @@ const TRANSLATION_KEY_PREFIX = APIErrorKeys.products.manageStock;
 
 const manageProductStockSchema = z
   .object({
+    productId: z.string(TRANSLATION_KEY_PREFIX.invalidProductId),
     stockChange: z
       .int(TRANSLATION_KEY_PREFIX.stockChange.invalid)
       .refine((val) => val !== 0, {
@@ -35,6 +36,7 @@ export const ManageProductStockValidator: RequestHandler = async (
     const product = await ProductModel.findOne({
       _id: productId,
       userId: scopeId,
+      isDeleted: { $ne: true },
     });
 
     if (!product) {

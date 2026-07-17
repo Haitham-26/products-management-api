@@ -49,7 +49,18 @@ const createProductSchema = z
       })
       .optional()
       .or(z.literal("")),
-    tags: z.array(z.string(TRANSLATION_KEY_PREFIX.invalidTagId)).optional(),
+    tags: z
+      .array(
+        z
+          .string(TRANSLATION_KEY_PREFIX.invalidTagId)
+          .refine((val) => Types.ObjectId.isValid(val), {
+            message: TRANSLATION_KEY_PREFIX.invalidTagId,
+          }),
+      )
+      .refine((tags) => new Set(tags).size === tags.length, {
+        message: TRANSLATION_KEY_PREFIX.duplicateTags,
+      })
+      .optional(),
   })
   .loose();
 
@@ -86,6 +97,7 @@ export const CreateProductValidator: RequestHandler = async (
       const category = await CategoryModel.findOne({
         _id: req.body.categoryId,
         userId: scopeId,
+        isDeleted: { $ne: true },
       });
 
       if (!category) {
@@ -102,6 +114,7 @@ export const CreateProductValidator: RequestHandler = async (
       const tags = await TagModel.find({
         _id: { $in: tagIds },
         userId: scopeId,
+        isDeleted: { $ne: true },
       }).select("_id");
 
       if (tags.length !== tagIds.length) {

@@ -6,9 +6,15 @@ import { RequestContext } from "../../utils/RequestContext";
 import { errorHandler } from "../../errors/errorHandler";
 import { APIErrorKeys } from "../../errors/APIError-keys";
 import { APIError } from "../../errors/APIError";
+import { Types } from "mongoose";
 
 const updateTagSchema = z
   .object({
+    tagId: z
+      .string(APIErrorKeys.tags.update.invalidId)
+      .refine((val) => Types.ObjectId.isValid(val), {
+        message: APIErrorKeys.tags.update.invalidId,
+      }),
     name: z
       .string(APIErrorKeys.tags.create.name.invalid)
       .trim()
@@ -31,7 +37,11 @@ export const UpdateTagValidator: RequestHandler = async (req, res, next) => {
 
     const { tagId } = req.body;
 
-    const tag = await TagModel.findOne({ _id: tagId, userId: scopeId });
+    const tag = await TagModel.findOne({
+      _id: tagId,
+      userId: scopeId,
+      isDeleted: { $ne: true },
+    });
 
     if (!tag) {
       throw new APIError({

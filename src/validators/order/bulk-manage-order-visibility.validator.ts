@@ -15,9 +15,11 @@ const bulkManageOrderVisibilitySchema = z
   .object({
     orderIds: z
       .array(
-        z.string().refine((val) => Types.ObjectId.isValid(val), {
-          message: TRANSLATION_KEY_PREFIX.orderIds.invalid,
-        }),
+        z
+          .string(TRANSLATION_KEY_PREFIX.orderIds.invalid)
+          .refine((val) => Types.ObjectId.isValid(val), {
+            message: TRANSLATION_KEY_PREFIX.orderIds.invalid,
+          }),
       )
       .min(1, TRANSLATION_KEY_PREFIX.orderIds.minLength),
     visibility: z.enum(

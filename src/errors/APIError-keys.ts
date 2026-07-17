@@ -120,6 +120,7 @@ const APIErrorKeySchema = {
     },
     update: {
       notFound: LEAF,
+      invalidId: LEAF,
     },
     delete: {
       notFound: LEAF,
@@ -145,6 +146,7 @@ const APIErrorKeySchema = {
     },
     update: {
       notFound: LEAF,
+      invalidId: LEAF,
     },
     delete: {
       notFound: LEAF,
@@ -253,6 +255,7 @@ const APIErrorKeySchema = {
       },
       invalidCategoryId: LEAF,
       invalidTagId: LEAF,
+      duplicateTags: LEAF,
       category: {
         notFound: LEAF,
       },
@@ -294,6 +297,7 @@ const APIErrorKeySchema = {
         invalid: LEAF,
         zero: LEAF,
       },
+      invalidProductId: LEAF,
       notFound: LEAF,
       belowZero: LEAF,
     },
@@ -328,7 +332,6 @@ const APIErrorKeySchema = {
     },
     differentMethod: LEAF,
     notFound: LEAF,
-    notVerified: LEAF,
   },
 
   "google-login": {
@@ -360,8 +363,6 @@ const APIErrorKeySchema = {
     email: {
       email: { invalid: LEAF },
       notFound: LEAF,
-      notVerified: LEAF,
-      differentMethod: LEAF,
     },
     token: {
       token: {

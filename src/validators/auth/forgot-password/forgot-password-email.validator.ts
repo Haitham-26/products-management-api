@@ -27,23 +27,13 @@ export const ForgotPasswordEmailValidator: RequestHandler = async (
 
     const user = await UserModel.findOne({ email: req.body.email });
 
-    if (!user) {
+    if (
+      !user ||
+      !user.emailVerified ||
+      user.signUpMethod !== SignUpMethods.EMAIL
+    ) {
       throw new APIError({
         message: TRANSLATION_KEY_PREFIX.notFound,
-        status: StatusCode.BAD_REQUEST,
-      });
-    }
-
-    if (!user.emailVerified) {
-      throw new APIError({
-        message: TRANSLATION_KEY_PREFIX.notVerified,
-        status: StatusCode.BAD_REQUEST,
-      });
-    }
-
-    if (user.signUpMethod !== SignUpMethods.EMAIL) {
-      throw new APIError({
-        message: TRANSLATION_KEY_PREFIX.differentMethod,
         status: StatusCode.BAD_REQUEST,
       });
     }

@@ -710,10 +710,24 @@ const manageProductStock: RequestHandler = async (req, res) => {
 
     const { stockChange } = req.body;
 
-    await ProductModel.updateOne(
-      { _id: productId, userId: scopeId },
-      { $inc: { quantity: Number(stockChange) } },
+    const numberStockChange = Number(stockChange);
+
+    const result = await ProductModel.updateOne(
+      {
+        _id: productId,
+        userId: scopeId,
+        isDeleted: { $ne: true },
+        $expr: { $gte: [{ $add: ["$quantity", numberStockChange] }, 0] },
+      },
+      { $inc: { quantity: numberStockChange } },
     );
+
+    if (result.matchedCount === 0) {
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: APIErrorKeys.products.manageStock.belowZero,
+      });
+    }
 
     res.status(StatusCode.OK).send();
   } catch (e) {

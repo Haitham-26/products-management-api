@@ -66,6 +66,9 @@ const updateProductSchema = z
             message: APIErrorKeys.products.create.invalidTagId,
           }),
       )
+      .refine((tags) => new Set(tags).size === tags.length, {
+        message: APIErrorKeys.products.create.duplicateTags,
+      })
       .optional(),
     mainImage: z
       .string(TRANSLATION_KEY_PREFIX.invalidMainImage)
@@ -115,6 +118,7 @@ export const UpdateProductValidator: RequestHandler = async (
     const product = await ProductModel.findOne({
       _id: productId,
       userId: scopeId,
+      isDeleted: { $ne: true },
     });
 
     if (!product) {
@@ -128,6 +132,7 @@ export const UpdateProductValidator: RequestHandler = async (
       const category = await CategoryModel.findOne({
         _id: req.body.categoryId,
         userId: scopeId,
+        isDeleted: { $ne: true },
       });
 
       if (!category) {
@@ -144,6 +149,7 @@ export const UpdateProductValidator: RequestHandler = async (
       const tags = await TagModel.find({
         _id: { $in: tagIds },
         userId: scopeId,
+        isDeleted: { $ne: true },
       }).select("_id");
 
       if (tags.length !== tagIds.length) {

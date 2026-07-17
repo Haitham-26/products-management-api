@@ -39,7 +39,7 @@ export const LoginValidator: RequestHandler = async (req, res, next) => {
       });
     }
 
-    if (!user) {
+    if (!user || !user.emailVerified) {
       throw new APIError({
         message: TRANSLATION_KEY_PREFIX.notFound,
         status: StatusCode.BAD_REQUEST,
@@ -54,13 +54,6 @@ export const LoginValidator: RequestHandler = async (req, res, next) => {
     if (!isPasswordCorrect) {
       throw new APIError({
         message: TRANSLATION_KEY_PREFIX.password.incorrect,
-        status: StatusCode.BAD_REQUEST,
-      });
-    }
-
-    if (!user.emailVerified) {
-      throw new APIError({
-        message: TRANSLATION_KEY_PREFIX.notVerified,
         status: StatusCode.BAD_REQUEST,
       });
     }
