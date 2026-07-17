@@ -52,7 +52,10 @@ const signUpEmail: RequestHandler = async (req, res) => {
       email,
       password: hashedPassword,
       emailVerified: false,
-      optCode: token,
+      optCode: {
+        code: token,
+        createdAt: new Date(),
+      },
       signUpMethod: SignUpMethods.EMAIL,
     });
 
@@ -120,7 +123,10 @@ const signupResendToken: RequestHandler = async (req, res) => {
       { _id: user._id },
       {
         $set: {
-          optCode: newToken,
+          optCode: {
+            code: newToken,
+            createdAt: new Date(),
+          },
         },
       },
     );

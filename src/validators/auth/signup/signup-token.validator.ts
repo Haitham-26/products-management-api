@@ -38,7 +38,14 @@ export const SignUpTokenValidator: RequestHandler = async (req, res, next) => {
       });
     }
 
-    if (user.optCode !== token) {
+    if (!user.optCode?.code || !user.optCode?.createdAt) {
+      throw new APIError({
+        status: StatusCode.INTERNAL_ERROR,
+        message: APIErrorKeys.internal,
+      });
+    }
+
+    if (user.optCode.code !== token) {
       throw new APIError({
         status: StatusCode.BAD_REQUEST,
         message: TRANSLATION_KEY_PREFIX.token.incorrect,
@@ -48,7 +55,7 @@ export const SignUpTokenValidator: RequestHandler = async (req, res, next) => {
     // Token expires in 5 minutes
     const signUpTokenExpiryMs = 5 * 60 * 1000;
 
-    if (Date.now() - user.createdAt.getTime() >= signUpTokenExpiryMs) {
+    if (Date.now() - user.optCode.createdAt.getTime() >= signUpTokenExpiryMs) {
       throw new APIError({
         status: StatusCode.BAD_REQUEST,
         message: TRANSLATION_KEY_PREFIX.token.expired,
