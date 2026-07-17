@@ -38,6 +38,11 @@ const updateOrderSchema = z
       .email(APIErrorKeys.orders.create.customerEmail.invalid)
       .optional()
       .or(z.literal("")),
+    customerAddress: z
+      .string(APIErrorKeys.orders.create.customerAddress.invalid)
+      .max(256, APIErrorKeys.orders.create.customerAddress.long)
+      .optional()
+      .or(z.literal("")),
     note: z
       .string(APIErrorKeys.orders.create.note.invalid)
       .trim()

@@ -9,6 +9,7 @@ export interface Order extends mongoose.Document {
   customerName: string;
   customerPhone?: string;
   customerEmail?: string;
+  customerAddress?: string;
   userId: Types.ObjectId;
   items: OrderItem[];
   note?: string;
@@ -34,6 +35,10 @@ const OrderSchema = new mongoose.Schema(
       required: false,
     },
     customerEmail: {
+      type: String,
+      required: false,
+    },
+    customerAddress: {
       type: String,
       required: false,
     },
