@@ -51,7 +51,7 @@ const createOrderSchema = z
               message: TRANSLATION_KEY_PREFIX.items.invalidProductId,
             }),
           quantity: z
-            .number(TRANSLATION_KEY_PREFIX.items.quantity.invalid)
+            .int(TRANSLATION_KEY_PREFIX.items.quantity.invalid)
             .min(1, TRANSLATION_KEY_PREFIX.items.quantity.min),
         }),
       )

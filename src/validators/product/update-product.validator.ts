@@ -37,7 +37,7 @@ const updateProductSchema = z
       .min(0, APIErrorKeys.products.create.price.min)
       .optional(),
     quantity: z
-      .number(APIErrorKeys.products.create.quantity.invalid)
+      .int(APIErrorKeys.products.create.quantity.invalid)
       .min(0, APIErrorKeys.products.create.quantity.min)
       .optional(),
     discount: z
@@ -47,7 +47,7 @@ const updateProductSchema = z
           APIErrorKeys.products.create.discount.type.invalid,
         ),
         value: z
-          .number()
+          .number(APIErrorKeys.products.create.discount.value.invalid)
           .min(0, APIErrorKeys.products.create.discount.value.min),
       })
       .optional(),

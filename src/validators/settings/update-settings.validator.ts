@@ -16,7 +16,7 @@ const updateSettingsSchema = z
     inventory: z
       .object({
         defaultMinStock: z
-          .number(TRANSLATION_KEY_PREFIX.inventory.defaultMinStock.invalid)
+          .int(TRANSLATION_KEY_PREFIX.inventory.defaultMinStock.invalid)
           .min(1, TRANSLATION_KEY_PREFIX.inventory.defaultMinStock.min)
           .optional(),
       })
