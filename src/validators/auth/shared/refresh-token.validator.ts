@@ -3,22 +3,37 @@ import { StatusCode } from "../../../types/shared/dto/StatusCode.enum";
 import UserModel from "../../../models/User.model";
 import jwt from "jsonwebtoken";
 import isNil from "lodash/isNil";
+import crypto from "crypto";
 import { RequestContext } from "../../../utils/RequestContext";
-import z from "zod";
 import { errorHandler } from "../../../errors/errorHandler";
 import { APIError } from "../../../errors/APIError";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
-
-const refreshTokenSchema = z.object({
-  refreshToken: z.string(APIErrorKeys.refreshToken.token.invalid),
-});
+import { RefreshTokenModel } from "../../../models/Refresh-token.model";
+import { hashToken } from "../../../utils/authUtils";
 
 export const RefreshTokenValidator: RequestHandler = async (req, res, next) => {
   try {
-    const body = refreshTokenSchema.parse(req.body);
-    req.body = body;
+    const refreshToken = req.cookies.refreshToken;
 
-    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      throw new APIError({
+        status: StatusCode.UNAUTHORIZED,
+        message: APIErrorKeys.unauthorized,
+      });
+    }
+
+    const hashedToken = hashToken(refreshToken);
+
+    const storedToken = await RefreshTokenModel.findOne({
+      hashedToken,
+    });
+
+    if (!storedToken || storedToken.expiresAt < new Date()) {
+      throw new APIError({
+        status: StatusCode.UNAUTHORIZED,
+        message: APIErrorKeys.unauthorized,
+      });
+    }
 
     const decoded = jwt.verify(
       refreshToken,
@@ -29,7 +44,11 @@ export const RefreshTokenValidator: RequestHandler = async (req, res, next) => {
       type?: string;
     };
 
-    if (decoded.type !== "refresh" || isNil(decoded.tokenVersion)) {
+    if (
+      decoded.type !== "refresh" ||
+      isNil(decoded.tokenVersion) ||
+      storedToken.userId.toString() !== decoded.userId
+    ) {
       throw new APIError({
         status: StatusCode.UNAUTHORIZED,
         message: APIErrorKeys.unauthorized,

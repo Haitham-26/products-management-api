@@ -2,17 +2,14 @@ import UserModel, { User } from "../models/User.model";
 import express from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
-import { Types } from "mongoose";
 import bcrypt from "bcrypt";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-} from "../utils/generateJWTs";
+import { createAuthSession } from "../utils/authUtils";
 import { UploadService } from "../services/upload.service";
 import isUndefined from "lodash/isUndefined";
 import { APIError } from "../errors/APIError";
 import { APIErrorKeys } from "../errors/APIError-keys";
 import { errorHandler } from "../errors/errorHandler";
+import { RefreshTokenModel } from "../models/Refresh-token.model";
 
 const getUserById = async (req: express.Request, res: express.Response) => {
   try {
@@ -90,7 +87,7 @@ const resetPassword = async (req: express.Request, res: express.Response) => {
     const { userId } = RequestContext<{ userId: string }>(req);
 
     const user = await UserModel.findOneAndUpdate(
-      { _id: new Types.ObjectId(userId) },
+      { _id: userId },
       {
         $set: {
           password: await bcrypt.hash(newPassword, 10),
@@ -102,16 +99,11 @@ const resetPassword = async (req: express.Request, res: express.Response) => {
       { new: true },
     );
 
-    res.status(StatusCode.OK).send({
-      accessToken: generateAccessToken(
-        user!._id.toString(),
-        user!.tokenVersion,
-      ),
-      refreshToken: generateRefreshToken(
-        user!._id.toString(),
-        user!.tokenVersion,
-      ),
+    await RefreshTokenModel.deleteMany({
+      userId,
     });
+
+    await createAuthSession(res, user as unknown as User, false);
   } catch (e) {
     errorHandler(e, res);
   }

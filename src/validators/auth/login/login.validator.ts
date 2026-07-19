@@ -14,11 +14,7 @@ const TRANSLATION_KEY_PREFIX = APIErrorKeys.login;
 
 const loginSchema = z.object({
   email: z.email(TRANSLATION_KEY_PREFIX.email.invalid),
-  password: z
-    .string(TRANSLATION_KEY_PREFIX.password.invalid)
-    .min(8, TRANSLATION_KEY_PREFIX.password.short)
-    .max(64, TRANSLATION_KEY_PREFIX.password.long)
-    .regex(Regexes.PASSWORD, TRANSLATION_KEY_PREFIX.password.regex),
+  password: z.string(TRANSLATION_KEY_PREFIX.password.invalid),
 });
 
 export const LoginValidator: RequestHandler = async (req, res, next) => {

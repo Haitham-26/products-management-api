@@ -1,4 +1,4 @@
-import { RequestHandler } from "express";
+import { RequestHandler, Response } from "express";
 import bcrypt from "bcrypt";
 import UserModel, { User } from "../models/User.model";
 import { generateVerificationToken } from "../utils/generateVerificationToken";
@@ -8,18 +8,11 @@ import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
 import { withTransaction } from "../utils/withTransaction";
 import SettingsModel from "../models/Settings.model";
 import { RequestContext } from "../utils/RequestContext";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-} from "../utils/generateJWTs";
+import { createAuthSession, hashToken } from "../utils/authUtils";
 import { AppLangs } from "../types/settings/types/AppLangs.enum";
 import { SignUpEmailDto } from "../types/auth/signup/SignUpEmailDto";
 import { errorHandler } from "../errors/errorHandler";
-
-const createAuthTokens = (userId: string, tokenVersion: number) => ({
-  accessToken: generateAccessToken(userId, tokenVersion),
-  refreshToken: generateRefreshToken(userId, tokenVersion),
-});
+import { RefreshTokenModel } from "../models/Refresh-token.model";
 
 const getEmailLang = (lang: string) => {
   if (Object.values(AppLangs).includes(lang as AppLangs)) {
@@ -100,12 +93,7 @@ const signUpToken: RequestHandler = async (req, res) => {
       );
     });
 
-    const { password, tokenVersion, optCode, ...safeUser } = user;
-
-    res.status(StatusCode.OK).send({
-      user: safeUser,
-      ...createAuthTokens(user._id.toString(), user.tokenVersion || 0),
-    });
+    await createAuthSession(res, user);
   } catch (e) {
     errorHandler(e, res);
   }
@@ -147,24 +135,25 @@ const login: RequestHandler = async (req, res) => {
     // This comes from LoginValidator
     const { user } = RequestContext<{ user: User }>(req);
 
-    const { password: _password, tokenVersion, ...safeUser } = user;
-
-    res.status(StatusCode.OK).send({
-      user: safeUser,
-      ...createAuthTokens(user._id.toString(), user.tokenVersion),
-    });
+    await createAuthSession(res, user);
   } catch (e) {
-    res.status(StatusCode.INTERNAL_ERROR).send(e);
+    errorHandler(e, res);
   }
 };
 
 const refreshToken: RequestHandler = async (req, res) => {
   try {
+    const oldRefreshToken = req.cookies.refreshToken;
+
     const { user } = RequestContext<{ user: User }>(req);
 
-    res.status(StatusCode.OK).send({
-      accessToken: generateAccessToken(user._id.toString(), user.tokenVersion),
+    const hashedOldToken = hashToken(oldRefreshToken);
+
+    await RefreshTokenModel.deleteOne({
+      hashedToken: hashedOldToken,
     });
+
+    await createAuthSession(res, user, false);
   } catch (e) {
     errorHandler(e, res);
   }
@@ -204,13 +193,7 @@ const googleLogin: RequestHandler = async (req, res) => {
       });
     }
 
-    const { password, forgotPasswordCode, tokenVersion, optCode, ...safeUser } =
-      _user!.toObject();
-
-    res.status(StatusCode.OK).send({
-      user: safeUser,
-      ...createAuthTokens(_user!._id.toString(), _user!.tokenVersion),
-    });
+    await createAuthSession(res, _user!);
   } catch (e) {
     errorHandler(e, res);
   }
@@ -259,7 +242,7 @@ const forgotPasswordNew: RequestHandler = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
 
-    await UserModel.updateOne(
+    const user = await UserModel.findOneAndUpdate(
       { email },
       {
         $set: {
@@ -272,7 +255,37 @@ const forgotPasswordNew: RequestHandler = async (req, res) => {
           forgotPasswordCode: "",
         },
       },
+      { new: true },
     );
+
+    await RefreshTokenModel.deleteMany({
+      userId: user!._id,
+    });
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    errorHandler(e, res);
+  }
+};
+
+const logout: RequestHandler = async (req, res) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (refreshToken) {
+      const hashedToken = hashToken(refreshToken);
+
+      await RefreshTokenModel.deleteOne({
+        hashedToken,
+      });
+    }
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
 
     res.status(StatusCode.OK).send();
   } catch (e) {
@@ -290,4 +303,5 @@ export {
   forgotPasswordEmail,
   forgotPasswordToken,
   forgotPasswordNew,
+  logout,
 };

@@ -14,10 +14,12 @@ import organizationRouter from "./src/services/organization.service";
 import { startCronJobs } from "./src/cron";
 import { multerErrorHandler } from "./src/utils/multerErrorHandler";
 import { setupSwagger } from "./src/swagger/swagger";
+import cookieParser from "cookie-parser";
 
 require("dotenv").config();
 
 const app = express();
+app.use(cookieParser());
 
 setupSwagger(app);
 
