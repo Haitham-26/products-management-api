@@ -99,6 +99,13 @@ const resetPassword = async (req: express.Request, res: express.Response) => {
       { new: true },
     );
 
+    if (!user) {
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: APIErrorKeys.internal,
+      });
+    }
+
     await RefreshTokenModel.deleteMany({
       userId,
     });

@@ -13,6 +13,8 @@ import { AppLangs } from "../types/settings/types/AppLangs.enum";
 import { SignUpEmailDto } from "../types/auth/signup/SignUpEmailDto";
 import { errorHandler } from "../errors/errorHandler";
 import { RefreshTokenModel } from "../models/Refresh-token.model";
+import { APIError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
 const getEmailLang = (lang: string) => {
   if (Object.values(AppLangs).includes(lang as AppLangs)) {
@@ -68,8 +70,10 @@ const signUpToken: RequestHandler = async (req, res) => {
     // This comes from SignUpTokenValidator
     const { user } = RequestContext<{ user: User }>(req);
 
+    let _user = user;
+
     await withTransaction(async (session) => {
-      await UserModel.updateOne(
+      _user = (await UserModel.findOneAndUpdate(
         { _id: user._id },
         {
           emailVerified: true,
@@ -80,8 +84,8 @@ const signUpToken: RequestHandler = async (req, res) => {
             tokenVersion: 0,
           },
         },
-        { session },
-      );
+        { session, new: true },
+      )) as User;
 
       await SettingsModel.create(
         [
@@ -93,7 +97,7 @@ const signUpToken: RequestHandler = async (req, res) => {
       );
     });
 
-    await createAuthSession(res, user);
+    await createAuthSession(res, _user);
   } catch (e) {
     errorHandler(e, res);
   }
@@ -258,8 +262,15 @@ const forgotPasswordNew: RequestHandler = async (req, res) => {
       { new: true },
     );
 
+    if (!user) {
+      throw new APIError({
+        status: StatusCode.BAD_REQUEST,
+        message: APIErrorKeys.internal,
+      });
+    }
+
     await RefreshTokenModel.deleteMany({
-      userId: user!._id,
+      userId: user._id,
     });
 
     res.status(StatusCode.OK).send();

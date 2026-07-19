@@ -58,7 +58,7 @@ export const createAuthSession = async (
     });
 
     const { forgotPasswordCode, optCode, tokenVersion, password, ...safeUser } =
-      user;
+      user.toObject();
 
     res.status(StatusCode.OK).json({
       ...(sendUser ? { user: safeUser } : {}),

@@ -24,9 +24,9 @@ export const LoginValidator: RequestHandler = async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    const user = (
-      await UserModel.findOne({ email }).select("-forgotPasswordCode")
-    )?.toObject();
+    const user = await UserModel.findOne({ email }).select(
+      "-forgotPasswordCode",
+    );
 
     if (user && user.signUpMethod !== SignUpMethods.EMAIL) {
       throw new APIError({
