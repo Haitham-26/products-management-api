@@ -34,9 +34,12 @@ export const AuthMiddleware = async (
       userId: string;
       tokenVersion?: number;
       type?: string;
+      expiresAt?: number;
     };
 
-    if (decoded.type !== "access" || isNil(decoded.tokenVersion)) {
+    const isExpired = decoded.expiresAt && decoded.expiresAt < Date.now();
+
+    if (decoded.type !== "access" || isNil(decoded.tokenVersion) || isExpired) {
       throw new APIError({
         status: StatusCode.UNAUTHORIZED,
         message: APIErrorKeys.unauthorized,

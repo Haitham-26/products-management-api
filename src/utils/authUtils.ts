@@ -8,7 +8,12 @@ import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 
 export const generateAccessToken = (userId: string, tokenVersion: number) => {
   const jwtToken = jwt.sign(
-    { userId, tokenVersion, type: "access" },
+    {
+      userId,
+      tokenVersion,
+      type: "access",
+      expiresAt: Date.now() + 5 * 60 * 1000,
+    },
     process.env.ACCESS_TOKEN_SECRET!,
     {
       expiresIn: "5m",
