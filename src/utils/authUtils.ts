@@ -12,7 +12,6 @@ export const generateAccessToken = (userId: string, tokenVersion: number) => {
       userId,
       tokenVersion,
       type: "access",
-      expiresAt: Date.now() + 5 * 60 * 1000,
     },
     process.env.ACCESS_TOKEN_SECRET!,
     {
