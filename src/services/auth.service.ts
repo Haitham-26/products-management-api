@@ -9,6 +9,7 @@ import {
   forgotPasswordNew,
   signupResendToken,
   refreshToken,
+  logout,
 } from "../controllers/auth.controller";
 import { SignUpEmailValidator } from "../validators/auth/signup/signup-email.validator";
 import { SignUpTokenValidator } from "../validators/auth/signup/signup-token.validator";
@@ -236,5 +237,19 @@ authRouter.post(
   ForgotPasswordNewValidator,
   forgotPasswordNew,
 );
+
+/**
+ * @openapi
+ * /auth/logout:
+ *   post:
+ *     summary: Logs out a user
+ *     description: Logs out a user and deletes the refresh token.
+ *     tags:
+ *       - Auth
+ *     responses:
+ *       200:
+ *         description: User logged out successfully.
+ */
+authRouter.post("/logout", logout);
 
 export default authRouter;

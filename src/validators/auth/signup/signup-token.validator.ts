@@ -24,12 +24,10 @@ export const SignUpTokenValidator: RequestHandler = async (req, res, next) => {
 
     const { email, token } = req.body;
 
-    const user = (
-      await UserModel.findOne({
-        email,
-        emailVerified: false,
-      })
-    )?.toObject();
+    const user = await UserModel.findOne({
+      email,
+      emailVerified: false,
+    });
 
     if (!user) {
       throw new APIError({
