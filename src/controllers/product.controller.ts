@@ -129,9 +129,7 @@ const createProduct: RequestHandler = async (req, res) => {
               categoryId: categoryId
                 ? new Types.ObjectId(categoryId as string)
                 : undefined,
-              tags: tags
-                ?.filter((tagId: string) => Types.ObjectId.isValid(tagId))
-                ?.map((tagId: string) => new Types.ObjectId(tagId)),
+              tags: tags?.map((tagId: string) => new Types.ObjectId(tagId)),
               minStock: isNumber(minStock) ? Number(minStock) : undefined,
               mainImage: mainImageToUpload,
               galleryImages: galleryImagesToUpload.length

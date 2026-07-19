@@ -18,7 +18,6 @@ const CounterSchema = new Schema<Counter>({
     type: Schema.Types.ObjectId,
     required: true,
     index: true,
-    unique: true,
   },
   seq: { type: Number, default: 0, min: [0, "Sequence must be at least 0."] },
 });

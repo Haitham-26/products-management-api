@@ -29,7 +29,7 @@ const createProductSchema = z
       .number(TRANSLATION_KEY_PREFIX.price.invalid)
       .min(0, TRANSLATION_KEY_PREFIX.price.min),
     quantity: z
-      .number(TRANSLATION_KEY_PREFIX.quantity.invalid)
+      .int(TRANSLATION_KEY_PREFIX.quantity.invalid)
       .min(0, TRANSLATION_KEY_PREFIX.quantity.min),
     discount: z
       .object({

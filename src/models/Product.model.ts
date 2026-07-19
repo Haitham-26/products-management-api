@@ -31,7 +31,6 @@ const ProductSchema = new mongoose.Schema(
     identifier: {
       type: String,
       required: [true, "The identifier is required."],
-      unique: true,
     },
     name: {
       type: String,
@@ -58,7 +57,6 @@ const ProductSchema = new mongoose.Schema(
     },
     minStock: {
       type: Number,
-      required: false,
       default: 10,
       min: [1, "Minimum stock must be at least 1."],
     },
