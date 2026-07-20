@@ -37,15 +37,45 @@ const productRouter = express.Router();
  *           type: string
  *           example: "Iphone 13"
  *       - in: query
- *         name: minBasePrice
+ *         name: minPurchasePrice
  *         schema:
  *           type: integer
  *           example: 500
  *       - in: query
- *         name: maxBasePrice
+ *         name: maxPurchasePrice
  *         schema:
  *           type: integer
  *           example: 2000
+ *       - in: query
+ *         name: minSalePrice
+ *         schema:
+ *           type: integer
+ *           example: 1000
+ *       - in: query
+ *         name: maxSalePrice
+ *         schema:
+ *           type: integer
+ *           example: 3000
+ *       - in: query
+ *         name: minFinalSalePrice
+ *         schema:
+ *           type: integer
+ *           example: 1500
+ *       - in: query
+ *         name: maxFinalSalePrice
+ *         schema:
+ *           type: integer
+ *           example: 3500
+ *       - in: query
+ *         name: minProfit
+ *         schema:
+ *           type: integer
+ *           example: 200
+ *       - in: query
+ *         name: maxProfit
+ *         schema:
+ *           type: integer
+ *           example: 500
  *       - in: query
  *         name: minFinalPrice
  *         schema:

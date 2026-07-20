@@ -13,9 +13,13 @@ const CreateProductRequestSchema = {
       type: SwaggerTypes.STRING,
       example: "It has 3 different colors, blue, black and white",
     },
-    price: {
+    purchasePrice: {
       type: SwaggerTypes.NUMBER,
       example: 1000,
+    },
+    salePrice: {
+      type: SwaggerTypes.NUMBER,
+      example: 1500,
     },
     quantity: {
       type: SwaggerTypes.INTEGER,

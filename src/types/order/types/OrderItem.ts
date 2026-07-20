@@ -8,7 +8,9 @@ export interface OrderItem {
   productMainImage?: string;
   productGalleryImages?: string[];
   quantity: number;
-  priceAtPurchase: number;
+  purchasePriceAtPurchase: number;
+  salePriceAtPurchase: number;
   discountAtPurchase?: ProductDiscount;
-  finalPrice: number;
+  finalSalePriceAtPurchase: number;
+  totalProfit: number;
 }

@@ -86,7 +86,7 @@ const createOrder: RequestHandler = async (req, res) => {
           quantity: item.quantity,
           priceAtPurchase: product.price || 0,
           discountAtPurchase: product?.discount,
-          finalPrice: ProductService.calculatePriceAfterDiscount(
+          finalPrice: ProductService.calculateFinalSalePrice(
             product?.price || 0,
             product?.discount,
           ),

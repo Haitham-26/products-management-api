@@ -31,7 +31,7 @@ import { APIErrorKeys } from "../errors/APIError-keys";
 export class ProductService {
   constructor() {}
 
-  static calculatePriceAfterDiscount(
+  static calculateFinalSalePrice(
     price: number,
     discount?: Product["discount"],
   ) {
@@ -49,6 +49,19 @@ export class ProductService {
 
     return Number(value.toFixed(2));
   }
+
+  static calculateProfit(
+    purchasePrice: number,
+    salePrice: number,
+    discount?: Product["discount"],
+  ) {
+    const finalSalePrice = ProductService.calculateFinalSalePrice(
+      salePrice,
+      discount,
+    );
+
+    return finalSalePrice - purchasePrice;
+  }
 }
 
 const createProduct: RequestHandler = async (req, res) => {
@@ -56,7 +69,8 @@ const createProduct: RequestHandler = async (req, res) => {
     const {
       name,
       description,
-      price,
+      purchasePrice,
+      salePrice,
       quantity,
       discount,
       categoryId,
@@ -118,13 +132,19 @@ const createProduct: RequestHandler = async (req, res) => {
               identifier,
               name,
               description,
-              price,
-              quantity,
-              discount,
-              priceAfterDiscount: ProductService.calculatePriceAfterDiscount(
-                price,
+              purchasePrice,
+              salePrice,
+              finalSalePrice: ProductService.calculateFinalSalePrice(
+                salePrice,
                 discount,
               ),
+              profit: ProductService.calculateProfit(
+                purchasePrice,
+                salePrice,
+                discount,
+              ),
+              quantity,
+              discount,
               userId: scopeId,
               categoryId: categoryId
                 ? new Types.ObjectId(categoryId as string)
@@ -201,10 +221,14 @@ const getProducts: RequestHandler = async (req, res) => {
       keyword,
       showDraft,
       creationDate,
-      minBasePrice,
-      maxBasePrice,
-      minFinalPrice,
-      maxFinalPrice,
+      minPurchasePrice,
+      maxPurchasePrice,
+      minSalePrice,
+      maxSalePrice,
+      minFinalSalePrice,
+      maxFinalSalePrice,
+      minProfit,
+      maxProfit,
       minQuantity,
       maxQuantity,
       discountType,
@@ -252,35 +276,41 @@ const getProducts: RequestHandler = async (req, res) => {
       ];
     }
 
-    if (!isNil(minBasePrice) || !isNil(maxBasePrice)) {
-      query.price = {};
-      if (minBasePrice) {
-        query.price.$gte = Number(minBasePrice);
-      }
-      if (maxBasePrice) {
-        query.price.$lte = Number(maxBasePrice);
-      }
-    }
+    const rangeFilters = {
+      purchasePrice: {
+        min: minPurchasePrice,
+        max: maxPurchasePrice,
+      },
+      salePrice: {
+        min: minSalePrice,
+        max: maxSalePrice,
+      },
+      finalSalePrice: {
+        min: minFinalSalePrice,
+        max: maxFinalSalePrice,
+      },
+      profit: {
+        min: minProfit,
+        max: maxProfit,
+      },
+      quantity: {
+        min: minQuantity,
+        max: maxQuantity,
+      },
+    };
 
-    if (!isNil(minFinalPrice) || !isNil(maxFinalPrice)) {
-      query.priceAfterDiscount = {};
-      if (minFinalPrice) {
-        query.priceAfterDiscount.$gte = Number(minFinalPrice);
-      }
-      if (maxFinalPrice) {
-        query.priceAfterDiscount.$lte = Number(maxFinalPrice);
-      }
-    }
+    Object.entries(rangeFilters).forEach(([key, { min, max }]) => {
+      if (!isNil(min) || !isNil(max)) {
+        query[key] = {};
 
-    if (!isNil(minQuantity) || !isNil(maxQuantity)) {
-      query.quantity = {};
-      if (minQuantity) {
-        query.quantity.$gte = Number(minQuantity);
+        if (min) {
+          query[key].$gte = Number(min);
+        }
+        if (max) {
+          query[key].$lte = Number(max);
+        }
       }
-      if (maxQuantity) {
-        query.quantity.$lte = Number(maxQuantity);
-      }
-    }
+    });
 
     if (stockStatus) {
       if (stockStatus === ProductStockStatus.OUT_OF_STOCK) {
@@ -436,7 +466,8 @@ const updateProduct: RequestHandler = async (req, res) => {
     const {
       name,
       description,
-      price,
+      purchasePrice,
+      salePrice,
       quantity,
       discount,
       categoryId,
@@ -460,13 +491,19 @@ const updateProduct: RequestHandler = async (req, res) => {
       updateDto.status = status;
     }
 
-    if (!isNaN(price) && isNull(price)) {
-      updateDto.price = Number(price);
+    if (!isNaN(purchasePrice) && !isUndefined(purchasePrice)) {
+      updateDto.purchasePrice = Number(purchasePrice);
     }
-    if (!isNaN(quantity) && isNull(quantity)) {
+
+    if (!isNaN(salePrice) && !isUndefined(salePrice)) {
+      updateDto.salePrice = Number(salePrice);
+    }
+
+    if (!isNaN(quantity) && !isUndefined(quantity)) {
       updateDto.quantity = Number(quantity);
     }
-    if (!isUndefined(minStock) && !isNaN(minStock)) {
+
+    if (!isNaN(minStock) && !isUndefined(minStock)) {
       updateDto.minStock = Number(minStock);
     }
 
@@ -474,13 +511,28 @@ const updateProduct: RequestHandler = async (req, res) => {
       updateDto.discount = discount;
     }
 
-    if (!isUndefined(price) || !isUndefined(discount)) {
-      const finalPrice = !isNaN(price) ? Number(price) : product.price;
-      const finalDiscount = discount ?? product.discount;
+    if (!isUndefined(salePrice) || !isUndefined(discount)) {
+      const _salePrice = !isNaN(salePrice)
+        ? Number(salePrice)
+        : product.salePrice;
 
-      updateDto.priceAfterDiscount = ProductService.calculatePriceAfterDiscount(
-        finalPrice,
-        finalDiscount,
+      const _discount = discount ?? product.discount;
+
+      updateDto.finalSalePrice = ProductService.calculateFinalSalePrice(
+        _salePrice,
+        _discount,
+      );
+    }
+
+    if (
+      !isUndefined(salePrice) ||
+      !isUndefined(purchasePrice) ||
+      !isUndefined(discount)
+    ) {
+      updateDto.profit = ProductService.calculateProfit(
+        purchasePrice ?? product.purchasePrice,
+        salePrice ?? product.salePrice,
+        discount ?? product.discount,
       );
     }
 
@@ -604,7 +656,7 @@ const updateProduct: RequestHandler = async (req, res) => {
           );
         }
 
-        await ProductModel.findOneAndUpdate(
+        await ProductModel.updateOne(
           { _id: productId, userId: scopeId },
           { $set: updateDto },
           { session },

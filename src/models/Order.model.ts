@@ -14,7 +14,14 @@ export interface Order extends mongoose.Document {
   items: OrderItem[];
   note?: string;
   status: OrderStatus;
+  /**
+   * @description Total amount paid by the customer (final sale price).
+   */
   totalAmount: number;
+  /**
+   * @description Total profit generated from the items.
+   */
+  totalProfit: number;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -66,10 +73,18 @@ const OrderSchema = new mongoose.Schema(
             required: [true, "The quantity is required."],
             min: [1, "Quantity must be at least 1."],
           },
-          priceAtPurchase: {
+          purchasePriceAtPurchase: {
             type: Number,
-            required: [true, "The price at purchase is required."],
-            min: [0, "Price at purchase must be at least 0."],
+            required: [true, "The purchase price at purchase is required."],
+            min: [0, "Purchase price at purchase must be at least 0."],
+          },
+          salePriceAtPurchase: {
+            type: Number,
+            required: [
+              true,
+              "The sale purchase price at purchase is required.",
+            ],
+            min: [0, "Sale price at purchase must be at least 0."],
           },
           discountAtPurchase: {
             type: {
@@ -81,10 +96,10 @@ const OrderSchema = new mongoose.Schema(
               min: [0, "Discount value must be at least 0."],
             },
           },
-          finalPrice: {
+          finalSalePriceAtPurchase: {
             type: Number,
             required: false,
-            min: [0, "Final price must be at least 0."],
+            min: [0, "Final sale price must be at least 0."],
           },
         },
       ],
@@ -104,6 +119,10 @@ const OrderSchema = new mongoose.Schema(
       type: Number,
       required: [true, "The total price at purchase is required."],
       min: [0, "Total price at purchase must be at least 0."],
+    },
+    totalProfit: {
+      type: Number,
+      required: [true, "The total profit is required."],
     },
     isArchived: {
       type: Boolean,
