@@ -77,12 +77,12 @@ const productRouter = express.Router();
  *           type: integer
  *           example: 500
  *       - in: query
- *         name: minFinalPrice
+ *         name: minFinalSalePrice
  *         schema:
  *           type: integer
  *           example: 500
  *       - in: query
- *         name: maxFinalPrice
+ *         name: maxFinalSalePrice
  *         schema:
  *           type: integer
  *           example: 2000
