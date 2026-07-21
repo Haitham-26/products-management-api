@@ -80,10 +80,7 @@ const OrderSchema = new mongoose.Schema(
           },
           salePriceAtPurchase: {
             type: Number,
-            required: [
-              true,
-              "The sale purchase price at purchase is required.",
-            ],
+            required: [true, "The sale price at purchase is required."],
             min: [0, "Sale price at purchase must be at least 0."],
           },
           discountAtPurchase: {

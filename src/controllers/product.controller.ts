@@ -288,10 +288,10 @@ const getProducts: RequestHandler = async (req, res) => {
       if (!isNil(min) || !isNil(max)) {
         query[key] = {};
 
-        if (min) {
+        if (isNumber(Number(min))) {
           query[key].$gte = Number(min);
         }
-        if (max) {
+        if (isNumber(Number(max))) {
           query[key].$lte = Number(max);
         }
       }

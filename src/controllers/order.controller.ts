@@ -1,4 +1,4 @@
-import express, { RequestHandler } from "express";
+import { RequestHandler } from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import isString from "lodash/isString";
@@ -11,7 +11,6 @@ import { OrderStatus } from "../types/order/types/OrderStatus.enum";
 import { UpdateOrderDto } from "../types/order/dto/UpdateOrderDto";
 import { withTransaction } from "../utils/withTransaction";
 import { OrderItem } from "../types/order/types/OrderItem";
-import { ProductService } from "./product.controller";
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import isBoolean from "lodash/isBoolean";
 import { generateIdentifier } from "./counter.controller";
@@ -20,6 +19,7 @@ import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.e
 import { escapeSpecialChars } from "../utils/String";
 import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
 import { errorHandler } from "../errors/errorHandler";
+import isNumber from "lodash/isNumber";
 
 export class OrderService {
   constructor() {}
@@ -200,11 +200,11 @@ const getOrders: RequestHandler = async (req, res) => {
       if (!isNil(min) || !isNil(max)) {
         query[key] = {};
 
-        if (min) {
+        if (isNumber(Number(min))) {
           query[key].$gte = Number(min);
         }
 
-        if (max) {
+        if (isNumber(Number(max))) {
           query[key].$lte = Number(max);
         }
       }
