@@ -25,9 +25,12 @@ const createProductSchema = z
       .trim()
       .max(512, TRANSLATION_KEY_PREFIX.description.long)
       .optional(),
-    price: z
-      .number(TRANSLATION_KEY_PREFIX.price.invalid)
-      .min(0, TRANSLATION_KEY_PREFIX.price.min),
+    purchasePrice: z
+      .number(TRANSLATION_KEY_PREFIX.purchasePrice.invalid)
+      .min(0, TRANSLATION_KEY_PREFIX.purchasePrice.min),
+    salePrice: z
+      .number(TRANSLATION_KEY_PREFIX.salePrice.invalid)
+      .min(0, TRANSLATION_KEY_PREFIX.salePrice.min),
     quantity: z
       .int(TRANSLATION_KEY_PREFIX.quantity.invalid)
       .min(0, TRANSLATION_KEY_PREFIX.quantity.min),
@@ -84,11 +87,13 @@ export const CreateProductValidator: RequestHandler = async (
       }
     });
 
-    ["price", "quantity", "minStock"].forEach((key: string) => {
-      if (req.body[key]) {
-        req.body[key] = Number(req.body[key]);
-      }
-    });
+    ["purchasePrice", "salePrice", "quantity", "minStock"].forEach(
+      (key: string) => {
+        if (req.body[key]) {
+          req.body[key] = Number(req.body[key]);
+        }
+      },
+    );
 
     const body = createProductSchema.parse(req.body);
     req.body = body;

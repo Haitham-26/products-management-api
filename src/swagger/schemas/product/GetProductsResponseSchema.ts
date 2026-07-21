@@ -32,9 +32,21 @@ const GetProductsResponseSchema = {
             enum: Object.values(ProductStatus),
             example: ProductStatus.PUBLISHED,
           },
-          price: {
+          purchasePrice: {
             type: SwaggerTypes.NUMBER,
             example: 1000,
+          },
+          salePrice: {
+            type: SwaggerTypes.NUMBER,
+            example: 1500,
+          },
+          finalSalePrice: {
+            type: SwaggerTypes.NUMBER,
+            example: 1400,
+          },
+          profit: {
+            type: SwaggerTypes.NUMBER,
+            example: 300,
           },
           quantity: {
             type: SwaggerTypes.INTEGER,
@@ -53,10 +65,6 @@ const GetProductsResponseSchema = {
                 example: 10,
               },
             },
-          },
-          priceAfterDiscount: {
-            type: SwaggerTypes.NUMBER,
-            example: 900,
           },
           category: {
             type: SwaggerTypes.OBJECT,

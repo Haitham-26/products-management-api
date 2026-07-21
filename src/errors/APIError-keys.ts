@@ -240,7 +240,11 @@ const APIErrorKeySchema = {
         invalid: LEAF,
         long: LEAF,
       },
-      price: {
+      purchasePrice: {
+        invalid: LEAF,
+        min: LEAF,
+      },
+      salePrice: {
         invalid: LEAF,
         min: LEAF,
       },

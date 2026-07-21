@@ -11,11 +11,13 @@ export interface Product extends mongoose.Document {
   name: string;
   status: ProductStatus;
   description?: string;
-  price: number;
+  purchasePrice: number;
+  salePrice: number;
+  finalSalePrice: number;
+  profit: number;
   quantity: number;
   minStock?: number;
   discount?: ProductDiscount;
-  priceAfterDiscount?: number;
   categoryId?: Types.ObjectId | null;
   tags?: Types.ObjectId[];
   mainImage?: CloudinaryImage | null;
@@ -45,10 +47,24 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-    price: {
+    purchasePrice: {
       type: Number,
-      required: [true, "The price is required."],
-      min: [0, "Price must be at least 0."],
+      required: [true, "The purchase price is required."],
+      min: [0, "Purchase price must be at least 0."],
+    },
+    salePrice: {
+      type: Number,
+      required: [true, "The sale price is required."],
+      min: [0, "Sale price must be at least 0."],
+    },
+    finalSalePrice: {
+      type: Number,
+      required: [true, "The final sale price is required."],
+      min: [0, "Final sale price must be at least 0."],
+    },
+    profit: {
+      type: Number,
+      required: [true, "The profit is required."],
     },
     quantity: {
       type: Number,
@@ -69,10 +85,6 @@ const ProductSchema = new mongoose.Schema(
         type: Number,
         min: [0, "Discount value must be at least 0."],
       },
-    },
-    priceAfterDiscount: {
-      type: Number,
-      min: [0, "Price after discount must be at least 0."],
     },
     userId: {
       type: Types.ObjectId,

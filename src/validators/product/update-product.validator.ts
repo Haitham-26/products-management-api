@@ -32,9 +32,13 @@ const updateProductSchema = z
     status: z
       .enum(Object.values(ProductStatus), TRANSLATION_KEY_PREFIX.invalidStatus)
       .optional(),
-    price: z
-      .number(APIErrorKeys.products.create.price.invalid)
-      .min(0, APIErrorKeys.products.create.price.min)
+    purchasePrice: z
+      .number(APIErrorKeys.products.create.purchasePrice.invalid)
+      .min(0, APIErrorKeys.products.create.purchasePrice.min)
+      .optional(),
+    salePrice: z
+      .number(APIErrorKeys.products.create.salePrice.invalid)
+      .min(0, APIErrorKeys.products.create.salePrice.min)
       .optional(),
     quantity: z
       .int(APIErrorKeys.products.create.quantity.invalid)
@@ -106,11 +110,13 @@ export const UpdateProductValidator: RequestHandler = async (
       }
     });
 
-    ["price", "quantity", "minStock"].forEach((key: string) => {
-      if (req.body[key]) {
-        req.body[key] = Number(req.body[key]);
-      }
-    });
+    ["purchasePrice", "salePrice", "quantity", "minStock"].forEach(
+      (key: string) => {
+        if (req.body[key]) {
+          req.body[key] = Number(req.body[key]);
+        }
+      },
+    );
 
     const body = updateProductSchema.parse(req.body);
     req.body = body;
