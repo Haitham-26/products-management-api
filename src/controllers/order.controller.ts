@@ -19,7 +19,7 @@ import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.e
 import { escapeSpecialChars } from "../utils/String";
 import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
 import { errorHandler } from "../errors/errorHandler";
-import isNumber from "lodash/isNumber";
+import { isNaN } from "lodash";
 
 export class OrderService {
   constructor() {}
@@ -200,11 +200,11 @@ const getOrders: RequestHandler = async (req, res) => {
       if (!isNil(min) || !isNil(max)) {
         query[key] = {};
 
-        if (isNumber(Number(min))) {
+        if (!isNaN(min) && !isNil(min)) {
           query[key].$gte = Number(min);
         }
 
-        if (isNumber(Number(max))) {
+        if (!isNaN(max) && !isNil(max)) {
           query[key].$lte = Number(max);
         }
       }
