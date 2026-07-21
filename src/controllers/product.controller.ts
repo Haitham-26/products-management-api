@@ -277,29 +277,14 @@ const getProducts: RequestHandler = async (req, res) => {
     }
 
     const rangeFilters = {
-      purchasePrice: {
-        min: minPurchasePrice,
-        max: maxPurchasePrice,
-      },
-      salePrice: {
-        min: minSalePrice,
-        max: maxSalePrice,
-      },
-      finalSalePrice: {
-        min: minFinalSalePrice,
-        max: maxFinalSalePrice,
-      },
-      profit: {
-        min: minProfit,
-        max: maxProfit,
-      },
-      quantity: {
-        min: minQuantity,
-        max: maxQuantity,
-      },
+      purchasePrice: [minPurchasePrice, maxPurchasePrice],
+      salePrice: [minSalePrice, maxSalePrice],
+      finalSalePrice: [minFinalSalePrice, maxFinalSalePrice],
+      profit: [minProfit, maxProfit],
+      quantity: [minQuantity, maxQuantity],
     };
 
-    Object.entries(rangeFilters).forEach(([key, { min, max }]) => {
+    Object.entries(rangeFilters).forEach(([key, [min, max]]) => {
       if (!isNil(min) || !isNil(max)) {
         query[key] = {};
 

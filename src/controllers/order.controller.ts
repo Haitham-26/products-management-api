@@ -84,12 +84,11 @@ const createOrder: RequestHandler = async (req, res) => {
             (image) => image.secureUrl,
           ),
           quantity: item.quantity,
-          priceAtPurchase: product.price || 0,
+          purchasePriceAtPurchase: product.purchasePrice,
+          salePriceAtPurchase: product.salePrice,
+          finalSalePriceAtPurchase: product.finalSalePrice,
+          totalProfitAtPurchase: product.profit * item.quantity,
           discountAtPurchase: product?.discount,
-          finalPrice: ProductService.calculateFinalSalePrice(
-            product?.price || 0,
-            product?.discount,
-          ),
         };
       });
 
@@ -124,7 +123,12 @@ const createOrder: RequestHandler = async (req, res) => {
             note,
             status: OrderStatus.PENDING,
             totalAmount: orderItems.reduce(
-              (total, item) => total + item.finalPrice * item.quantity,
+              (total, item) =>
+                total + item.finalSalePriceAtPurchase * item.quantity,
+              0,
+            ),
+            totalProfit: orderItems.reduce(
+              (total, item) => total + item.totalProfitAtPurchase,
               0,
             ),
             userId: scopeId,
@@ -147,8 +151,10 @@ const getOrders: RequestHandler = async (req, res) => {
     const {
       keyword,
       meta,
-      minTotalPrice,
-      maxTotalPrice,
+      minTotalAmount,
+      maxTotalAmount,
+      minTotalProfit,
+      maxTotalProfit,
       status,
       showArchived,
       creationDate,
@@ -185,17 +191,24 @@ const getOrders: RequestHandler = async (req, res) => {
       query.status = status;
     }
 
-    if (!isNil(minTotalPrice) || !isNil(maxTotalPrice)) {
-      query.totalAmount = {};
+    const rangeFilters = {
+      totalAmount: [minTotalAmount, maxTotalAmount],
+      totalProfit: [minTotalProfit, maxTotalProfit],
+    };
 
-      if (minTotalPrice) {
-        query.totalAmount.$gte = Number(minTotalPrice);
-      }
+    Object.entries(rangeFilters).forEach(([key, [min, max]]) => {
+      if (!isNil(min) || !isNil(max)) {
+        query[key] = {};
 
-      if (maxTotalPrice) {
-        query.totalAmount.$lte = Number(maxTotalPrice);
+        if (min) {
+          query[key].$gte = Number(min);
+        }
+
+        if (max) {
+          query[key].$lte = Number(max);
+        }
       }
-    }
+    });
 
     const [data, total] = await Promise.all([
       OrderModel.find(query)

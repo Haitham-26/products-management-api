@@ -40,15 +40,25 @@ const orderRouter = express.Router();
  *           type: boolean
  *           example: true
  *       - in: query
- *         name: minTotalPrice
+ *         name: minTotalAmount
  *         schema:
  *           type: integer
  *           example: 500
  *       - in: query
- *         name: maxTotalPrice
+ *         name: maxTotalAmount
  *         schema:
  *           type: integer
  *           example: 2000
+ *       - in: query
+ *         name: minTotalProfit
+ *         schema:
+ *           type: integer
+ *           example: 200
+ *       - in: query
+ *         name: maxTotalProfit
+ *         schema:
+ *           type: integer
+ *           example: 1000
  *       - in: query
  *         name: status
  *         schema:

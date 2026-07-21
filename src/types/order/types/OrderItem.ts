@@ -12,5 +12,5 @@ export interface OrderItem {
   salePriceAtPurchase: number;
   discountAtPurchase?: ProductDiscount;
   finalSalePriceAtPurchase: number;
-  totalProfit: number;
+  totalProfitAtPurchase: number;
 }

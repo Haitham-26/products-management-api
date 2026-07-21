@@ -98,8 +98,12 @@ const OrderSchema = new mongoose.Schema(
           },
           finalSalePriceAtPurchase: {
             type: Number,
-            required: false,
+            required: true,
             min: [0, "Final sale price must be at least 0."],
+          },
+          totalProfitAtPurchase: {
+            type: Number,
+            required: [true, "The total profit at purchase is required."],
           },
         },
       ],

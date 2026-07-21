@@ -68,9 +68,21 @@ const GetOrdersResponseSchema = {
                   type: SwaggerTypes.INTEGER,
                   example: 1,
                 },
-                priceAtPurchase: {
+                purchasePriceAtPurchase: {
                   type: SwaggerTypes.NUMBER,
                   example: 1000,
+                },
+                salePriceAtPurchase: {
+                  type: SwaggerTypes.NUMBER,
+                  example: 1500,
+                },
+                finalSalePriceAtPurchase: {
+                  type: SwaggerTypes.NUMBER,
+                  example: 1500,
+                },
+                totalProfitAtPurchase: {
+                  type: SwaggerTypes.NUMBER,
+                  example: 500,
                 },
                 discountAtPurchase: {
                   type: SwaggerTypes.OBJECT,
@@ -85,10 +97,6 @@ const GetOrdersResponseSchema = {
                       example: 10,
                     },
                   },
-                },
-                finalPrice: {
-                  type: SwaggerTypes.NUMBER,
-                  example: 900,
                 },
               },
             },
@@ -106,6 +114,10 @@ const GetOrdersResponseSchema = {
           totalAmount: {
             type: SwaggerTypes.NUMBER,
             example: 900,
+          },
+          totalProfit: {
+            type: SwaggerTypes.NUMBER,
+            example: 500,
           },
           isArchived: {
             type: SwaggerTypes.BOOLEAN,
