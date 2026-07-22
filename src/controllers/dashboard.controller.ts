@@ -187,9 +187,9 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
     const totalProfit = totalProfitAndRevenueResult[0]?.totalProfit || 0;
 
     const lowStockProductsCount =
-      outOfStockAndLowStockCounts[0]?.outOfStockCount || 0;
-    const outOfStockProductsCount =
       outOfStockAndLowStockCounts[0]?.lowStockCount || 0;
+    const outOfStockProductsCount =
+      outOfStockAndLowStockCounts[0]?.outOfStockCount || 0;
 
     const pendingOrdersCount =
       orderCountsByStatusResult.find((o) => o._id === OrderStatus.PENDING)
