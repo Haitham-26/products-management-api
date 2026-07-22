@@ -13,6 +13,13 @@ const dashboardRouter = express.Router();
  *     description: Gets dashboard stats.
  *     tags:
  *       - Dashboard
+ *     parameters:
+ *       - in: query
+ *         name: datePeriod
+ *         schema:
+ *           type: string
+ *           enum: [TODAY, LAST_WEEK, LAST_MONTH]
+ *           example: "TODAY"
  *     responses:
  *       200:
  *         description: Dashboard stats fetched successfully.
