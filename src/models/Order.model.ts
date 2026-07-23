@@ -102,6 +102,10 @@ const OrderSchema = new Schema(
             required: true,
             min: [0, "Final sale price must be at least 0."],
           },
+          profitAtPurchase: {
+            type: SchemaTypes.Number,
+            required: [true, "The profit at purchase is required."],
+          },
           totalProfitAtPurchase: {
             type: SchemaTypes.Number,
             required: [true, "The total profit at purchase is required."],

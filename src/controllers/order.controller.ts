@@ -106,6 +106,7 @@ const createOrder: RequestHandler = async (req, res) => {
           purchasePriceAtPurchase: product.purchasePrice,
           salePriceAtPurchase: product.salePrice,
           finalSalePriceAtPurchase: product.finalSalePrice,
+          profitAtPurchase: product.profit,
           totalProfitAtPurchase: product.profit * item.quantity,
           discountAtPurchase: product?.discount,
         };
