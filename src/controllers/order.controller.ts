@@ -52,6 +52,25 @@ export class OrderService {
 
     return 0;
   }
+
+  getStatusTimestampUpdate(status: OrderStatus) {
+    const now = new Date();
+
+    switch (status) {
+      case OrderStatus.PENDING:
+        return {
+          lastPendingAt: now,
+        };
+      case OrderStatus.DELIVERED:
+        return {
+          lastDeliveredAt: now,
+        };
+      case OrderStatus.CANCELED:
+        return {
+          lastCanceledAt: now,
+        };
+    }
+  }
 }
 
 const createOrder: RequestHandler = async (req, res) => {
@@ -131,6 +150,7 @@ const createOrder: RequestHandler = async (req, res) => {
               (total, item) => total + item.totalProfitAtPurchase,
               0,
             ),
+            lastPendingAt: new Date(),
             userId: scopeId,
           },
         ],
@@ -337,7 +357,12 @@ const manageOrderStatus: RequestHandler = async (req, res) => {
 
       await OrderModel.updateOne(
         { _id: orderId, userId: scopeId },
-        { $set: { status: newStatus } },
+        {
+          $set: {
+            status: newStatus,
+            ...orderService.getStatusTimestampUpdate(newStatus),
+          },
+        },
         { session },
       );
     });
@@ -415,7 +440,12 @@ const bulkManageOrderStatus: RequestHandler = async (req, res) => {
               }
             : {}),
         },
-        { $set: { status: newStatus } },
+        {
+          $set: {
+            status: newStatus,
+            ...orderService.getStatusTimestampUpdate(newStatus),
+          },
+        },
         { session },
       );
 

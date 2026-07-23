@@ -23,8 +23,11 @@ export interface Order extends mongoose.Document {
    */
   totalProfit: number;
   isArchived: boolean;
-  createdAt: string;
-  updatedAt: string;
+  lastDeliveredAt?: Date;
+  lastCanceledAt?: Date;
+  lastPendingAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const OrderSchema = new mongoose.Schema(
@@ -133,6 +136,18 @@ const OrderSchema = new mongoose.Schema(
       type: Types.ObjectId,
       required: [true, "The userId is required."],
       index: true,
+    },
+    lastDeliveredAt: {
+      type: Date,
+      default: null,
+    },
+    lastCanceledAt: {
+      type: Date,
+      default: null,
+    },
+    lastPendingAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   { timestamps: true },

@@ -1,28 +1,23 @@
 import OrderModel from "../models/Order.model";
-import ProductModel from "../models/Product.model";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import { RequestHandler } from "express";
 import { RequestContext } from "../utils/RequestContext";
-import SettingsModel from "../models/Settings.model";
 import { errorHandler } from "../errors/errorHandler";
+import { DatePeriodFilters } from "../types/shared/types/DatePeriodFilters.enum";
+import { OrderStatus } from "../types/order/types/OrderStatus.enum";
+import { getDatePeriodMatch } from "../utils/dateUtils";
+import ProductModel from "../models/Product.model";
+import SettingsModel from "../models/Settings.model";
+import { PipelineStage } from "mongoose";
 
 export const getDashboardStats: RequestHandler = async (req, res) => {
   try {
+    const { datePeriod } = req.query as { datePeriod: DatePeriodFilters };
+    const isToday = datePeriod === DatePeriodFilters.TODAY;
+
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
-    const startOf7Days = new Date(startOfToday);
-    startOf7Days.setDate(startOf7Days.getDate() - 7);
-
-    const startOf30Days = new Date(startOfToday);
-    startOf30Days.setDate(startOf30Days.getDate() - 30);
-
-    const settings = await SettingsModel.findOne(
-      { userId: scopeId },
-      { "inventory.defaultMinStock": 1 },
-    ).lean();
+    const settings = await SettingsModel.findOne({ userId: scopeId });
 
     const minStockDefault = settings?.inventory?.defaultMinStock || 10;
 
@@ -33,117 +28,198 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
       },
     };
 
-    const byDateGroup = {
-      $group: {
-        _id: null,
-        totalCount: { $sum: 1 },
-        todayCount: {
-          $sum: { $cond: [{ $gte: ["$createdAt", startOfToday] }, 1, 0] },
-        },
-        lastWeekCount: {
-          $sum: { $cond: [{ $gte: ["$createdAt", startOf7Days] }, 1, 0] },
-        },
-        lastMonthCount: {
-          $sum: { $cond: [{ $gte: ["$createdAt", startOf30Days] }, 1, 0] },
+    const totalProfitAndRevenueQuery = OrderModel.aggregate([
+      {
+        $match: {
+          ...matchStage["$match"],
+          status: OrderStatus.DELIVERED,
+          lastDeliveredAt: getDatePeriodMatch(datePeriod),
         },
       },
-    };
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalAmount" },
+          totalProfit: { $sum: "$totalProfit" },
+        },
+      },
+    ]).exec();
 
-    const [productsByDate, ordersByDate, stockCounts, mostSoldProducts] =
-      await Promise.all([
-        ProductModel.aggregate([matchStage, byDateGroup]).exec(),
-        OrderModel.aggregate([matchStage, byDateGroup]).exec(),
-        ProductModel.aggregate([
-          matchStage,
-          {
-            $project: {
-              isOutOfStock: { $cond: [{ $eq: ["$quantity", 0] }, 1, 0] },
-              isLowStock: {
-                $cond: [
+    const outOfStockAndLowStockCountQuery = ProductModel.aggregate([
+      matchStage,
+      {
+        $project: {
+          isOutOfStock: { $cond: [{ $eq: ["$quantity", 0] }, 1, 0] },
+          isLowStock: {
+            $cond: [
+              {
+                $and: [
+                  { $gt: ["$quantity", 0] },
                   {
-                    $and: [
-                      { $gt: ["$quantity", 0] },
-                      {
-                        $lte: [
-                          "$quantity",
-                          { $ifNull: ["$minStock", minStockDefault] },
-                        ],
-                      },
+                    $lte: [
+                      "$quantity",
+                      { $ifNull: ["$minStock", minStockDefault] },
                     ],
                   },
-                  1,
-                  0,
                 ],
               },
-            },
+              1,
+              0,
+            ],
           },
-          {
-            $group: {
-              _id: null,
-              outOfStockCount: { $sum: "$isOutOfStock" },
-              lowStockCount: { $sum: "$isLowStock" },
-            },
-          },
-        ]).exec(),
-        OrderModel.aggregate([
-          matchStage,
-          { $project: { items: 1 } },
-          { $unwind: "$items" },
-          {
-            $group: {
-              _id: "$items.productId",
-              totalSold: { $sum: "$items.quantity" },
-            },
-          },
-          { $sort: { totalSold: -1 } },
-          { $limit: 5 },
-          {
-            $lookup: {
-              from: "products",
-              localField: "_id",
-              foreignField: "_id",
-              as: "product",
-              pipeline: [
-                { $project: { name: 1, mainImage: { secureUrl: 1 } } },
-              ],
-            },
-          },
-          { $unwind: "$product" },
-          {
-            $project: {
-              _id: 0,
-              productId: "$_id",
-              name: "$product.name",
-              image: "$product.mainImage.secureUrl",
-              totalSold: 1,
-            },
-          },
-        ]).exec(),
-      ]);
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          outOfStockCount: { $sum: "$isOutOfStock" },
+          lowStockCount: { $sum: "$isLowStock" },
+        },
+      },
+    ]).exec();
 
-    const productsByDateResult = productsByDate[0] || {};
-    const ordersByDateResult = ordersByDate[0] || {};
-    const stockResult = stockCounts[0] || {};
+    const orderCountsByStatusQuery = OrderModel.aggregate([
+      matchStage,
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]).exec();
+
+    const profitAndRevenuePipeline: PipelineStage[] = [
+      {
+        $match: {
+          ...matchStage["$match"],
+          status: OrderStatus.DELIVERED,
+          lastDeliveredAt: getDatePeriodMatch(datePeriod),
+        },
+      },
+    ];
+
+    if (isToday) {
+      profitAndRevenuePipeline.push({
+        $group: {
+          _id: null,
+          revenue: { $sum: "$totalAmount" },
+          profit: { $sum: "$totalProfit" },
+        },
+      });
+    } else {
+      profitAndRevenuePipeline.push(
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$lastDeliveredAt",
+              },
+            },
+            revenue: { $sum: "$totalAmount" },
+            profit: { $sum: "$totalProfit" },
+          },
+        },
+        { $sort: { _id: 1 } },
+        {
+          $project: {
+            _id: 0,
+            date: "$_id",
+            revenue: 1,
+            profit: 1,
+          },
+        },
+      );
+    }
+
+    const profitAndRevenueQuery = OrderModel.aggregate(
+      profitAndRevenuePipeline,
+    ).exec();
+
+    const mostSoldProductsQuery = OrderModel.aggregate([
+      {
+        $match: {
+          ...matchStage["$match"],
+          status: OrderStatus.DELIVERED,
+          lastDeliveredAt: getDatePeriodMatch(datePeriod),
+        },
+      },
+      { $project: { items: 1 } },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.productId",
+          totalSold: { $sum: "$items.quantity" },
+        },
+      },
+      { $sort: { totalSold: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "product",
+          pipeline: [{ $project: { name: 1, mainImage: { secureUrl: 1 } } }],
+        },
+      },
+      { $unwind: "$product" },
+      {
+        $project: {
+          _id: 0,
+          productId: "$_id",
+          name: "$product.name",
+          image: "$product.mainImage.secureUrl",
+          totalSold: 1,
+        },
+      },
+    ]).exec();
+
+    const [
+      totalProfitAndRevenueResult,
+      orderCountsByStatusResult,
+      outOfStockAndLowStockCounts,
+      profitAndRevenueResult,
+      mostSoldProducts,
+    ] = await Promise.all([
+      totalProfitAndRevenueQuery,
+      orderCountsByStatusQuery,
+      outOfStockAndLowStockCountQuery,
+      profitAndRevenueQuery,
+      mostSoldProductsQuery,
+    ]);
+
+    const totalRevenue = totalProfitAndRevenueResult[0]?.totalRevenue || 0;
+    const totalProfit = totalProfitAndRevenueResult[0]?.totalProfit || 0;
+
+    const lowStockProductsCount =
+      outOfStockAndLowStockCounts[0]?.lowStockCount || 0;
+    const outOfStockProductsCount =
+      outOfStockAndLowStockCounts[0]?.outOfStockCount || 0;
+
+    const pendingOrdersCount =
+      orderCountsByStatusResult.find((o) => o._id === OrderStatus.PENDING)
+        ?.count || 0;
+    const deliveredOrdersCount =
+      orderCountsByStatusResult.find((o) => o._id === OrderStatus.DELIVERED)
+        ?.count || 0;
+    const canceledOrdersCount =
+      orderCountsByStatusResult.find((o) => o._id === OrderStatus.CANCELED)
+        ?.count || 0;
 
     res.status(StatusCode.OK).json({
-      products: {
-        totalCount: productsByDateResult.totalCount || 0,
-        todayCount: productsByDateResult.todayCount || 0,
-        lastWeekCount: productsByDateResult.lastWeekCount || 0,
-        lastMonthCount: productsByDateResult.lastMonthCount || 0,
+      totalRevenue,
+      totalProfit,
+      ordersCountByStatus: {
+        pending: pendingOrdersCount,
+        delivered: deliveredOrdersCount,
+        canceled: canceledOrdersCount,
       },
-      lowStockProducts: {
-        totalCount: stockResult.lowStockCount || 0,
+      productsCountByStatus: {
+        outOfStock: outOfStockProductsCount,
+        lowStock: lowStockProductsCount,
       },
-      outOfStockProducts: {
-        totalCount: stockResult.outOfStockCount || 0,
-      },
-      orders: {
-        totalCount: ordersByDateResult.totalCount || 0,
-        todayCount: ordersByDateResult.todayCount || 0,
-        lastWeekCount: ordersByDateResult.lastWeekCount || 0,
-        lastMonthCount: ordersByDateResult.lastMonthCount || 0,
-      },
+      profitAndRevenue: profitAndRevenueResult,
       mostSoldProducts,
     });
   } catch (e) {
