@@ -137,7 +137,13 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
     ).exec();
 
     const mostSoldProductsQuery = OrderModel.aggregate([
-      matchStage,
+      {
+        $match: {
+          ...matchStage["$match"],
+          status: OrderStatus.DELIVERED,
+          lastDeliveredAt: getDatePeriodMatch(datePeriod),
+        },
+      },
       { $project: { items: 1 } },
       { $unwind: "$items" },
       {
