@@ -1,40 +1,38 @@
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import { DatePeriodFilters } from "../types/shared/types/DatePeriodFilters.enum";
 
-export const getDatePeriodMatch = (datePeriod: DatePeriodFilters) => {
-  const now = new Date();
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+export const getDatePeriodMatch = (
+  datePeriod: DatePeriodFilters,
+  userTimezone: string = "UTC",
+) => {
+  const nowInUserTz = dayjs().tz(userTimezone);
 
   switch (datePeriod) {
     case DatePeriodFilters.LAST_WEEK: {
-      const sevenDaysAgo = new Date(now);
-      sevenDaysAgo.setDate(now.getDate() - 6);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
+      const start = nowInUserTz.subtract(6, "day").startOf("day").toDate();
+      const end = nowInUserTz.endOf("day").toDate();
 
-      return {
-        $gte: sevenDaysAgo,
-        $lte: now,
-      };
+      return { $gte: start, $lte: end };
     }
 
     case DatePeriodFilters.LAST_MONTH: {
-      const thirtyDaysAgo = new Date(now);
-      thirtyDaysAgo.setDate(now.getDate() - 29);
-      thirtyDaysAgo.setHours(0, 0, 0, 0);
+      const start = nowInUserTz.subtract(29, "day").startOf("day").toDate();
+      const end = nowInUserTz.endOf("day").toDate();
 
-      return {
-        $gte: thirtyDaysAgo,
-        $lte: now,
-      };
+      return { $gte: start, $lte: end };
     }
 
     case DatePeriodFilters.TODAY:
     default: {
-      const startOfToday = new Date(now);
-      startOfToday.setHours(0, 0, 0, 0);
+      const start = nowInUserTz.startOf("day").toDate();
+      const end = nowInUserTz.endOf("day").toDate();
 
-      return {
-        $gte: startOfToday,
-        $lte: now,
-      };
+      return { $gte: start, $lte: end };
     }
   }
 };
