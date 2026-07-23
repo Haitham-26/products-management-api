@@ -11,6 +11,15 @@ import { APIError } from "../../errors/APIError";
 
 const TRANSLATION_KEY_PREFIX = APIErrorKeys.settings.update;
 
+const isValidTimeZone = (timeZone: string) => {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const updateSettingsSchema = z
   .object({
     inventory: z
@@ -29,6 +38,12 @@ const updateSettingsSchema = z
       .optional(),
     lang: z
       .enum(Object.values(AppLangs), TRANSLATION_KEY_PREFIX.lang.invalid)
+      .optional(),
+    timeZone: z
+      .string(TRANSLATION_KEY_PREFIX.timeZone.invalid)
+      .refine(isValidTimeZone, {
+        message: TRANSLATION_KEY_PREFIX.timeZone.invalid,
+      })
       .optional(),
   })
   .loose();

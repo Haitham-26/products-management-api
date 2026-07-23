@@ -12,14 +12,20 @@ import { PipelineStage } from "mongoose";
 
 export const getDashboardStats: RequestHandler = async (req, res) => {
   try {
-    const { datePeriod } = req.query as { datePeriod: DatePeriodFilters };
-    const isToday = datePeriod === DatePeriodFilters.TODAY;
+    const { datePeriod: _datePeriod } = req.query as {
+      datePeriod: DatePeriodFilters;
+    };
+    const isToday = _datePeriod === DatePeriodFilters.TODAY;
 
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const settings = await SettingsModel.findOne({ userId: scopeId });
 
     const minStockDefault = settings?.inventory?.defaultMinStock || 10;
+
+    const timeZone = settings?.timeZone || "UTC";
+
+    const datePeriod = getDatePeriodMatch(_datePeriod, timeZone);
 
     const matchStage = {
       $match: {
@@ -33,7 +39,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
         $match: {
           ...matchStage["$match"],
           status: OrderStatus.DELIVERED,
-          lastDeliveredAt: getDatePeriodMatch(datePeriod),
+          lastDeliveredAt: datePeriod,
         },
       },
       {
@@ -93,7 +99,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
         $match: {
           ...matchStage["$match"],
           status: OrderStatus.DELIVERED,
-          lastDeliveredAt: getDatePeriodMatch(datePeriod),
+          lastDeliveredAt: datePeriod,
         },
       },
     ];
@@ -114,6 +120,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
               $dateToString: {
                 format: "%Y-%m-%d",
                 date: "$lastDeliveredAt",
+                timezone: timeZone,
               },
             },
             revenue: { $sum: "$totalAmount" },
@@ -141,7 +148,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
         $match: {
           ...matchStage["$match"],
           status: OrderStatus.DELIVERED,
-          lastDeliveredAt: getDatePeriodMatch(datePeriod),
+          lastDeliveredAt: datePeriod,
         },
       },
       { $project: { items: 1 } },

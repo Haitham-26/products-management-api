@@ -18,7 +18,7 @@ const dashboardRouter = express.Router();
  *         name: datePeriod
  *         schema:
  *           type: string
- *           enum: [TODAY, LAST_WEEK, LAST_MONTH]
+ *           enum: [TODAY, LAST_7_DAYS, LAST_30_DAYS]
  *           example: "TODAY"
  *     responses:
  *       200:
