@@ -29,6 +29,10 @@ const UpdateSettingsRequestSchema = {
       enum: Object.values(AppLangs),
       example: AppLangs.EN,
     },
+    timeZone: {
+      type: SwaggerTypes.STRING,
+      example: "America/New_York",
+    },
   },
 };
 

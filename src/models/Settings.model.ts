@@ -10,6 +10,7 @@ export interface Settings extends mongoose.Document {
   };
   currency: string;
   lang: AppLangs;
+  timeZone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -38,6 +39,10 @@ const SettingsSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(AppLangs),
       default: AppLangs.EN,
+    },
+    timeZone: {
+      type: String,
+      default: "UTC",
     },
   },
   {

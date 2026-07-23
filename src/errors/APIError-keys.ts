@@ -103,6 +103,9 @@ const APIErrorKeySchema = {
       lang: {
         invalid: LEAF,
       },
+      timeZone: {
+        invalid: LEAF,
+      },
       notFound: LEAF,
     },
   },
