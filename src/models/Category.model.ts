@@ -1,6 +1,7 @@
-import mongoose, { model, Types } from "mongoose";
+import { model, Schema, Types, Document } from "mongoose";
+import { SchemaTypes } from "../types/shared/types/SchemaTypes";
 
-export interface Category extends mongoose.Document {
+export interface Category extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   name: string;
@@ -12,33 +13,33 @@ export interface Category extends mongoose.Document {
   updatedAt: string;
 }
 
-const CategorySchema = new mongoose.Schema(
+const CategorySchema = new Schema(
   {
     name: {
-      type: String,
+      type: SchemaTypes.String,
       required: [true, "The name is required."],
     },
     description: {
-      type: String,
+      type: SchemaTypes.String,
       required: false,
     },
     usageCount: {
-      type: Number,
+      type: SchemaTypes.Number,
       default: 0,
       min: [0, "Usage count must be at least 0."],
     },
     userId: {
-      type: Types.ObjectId,
+      type: SchemaTypes.ObjectId,
       required: [true, "The userId is required."],
       index: true,
     },
     isDeleted: {
-      type: Boolean,
+      type: SchemaTypes.Boolean,
       default: false,
       index: true,
     },
     deletedAt: {
-      type: Date,
+      type: SchemaTypes.Date,
       default: null,
     },
   },

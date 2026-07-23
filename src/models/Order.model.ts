@@ -1,9 +1,10 @@
-import mongoose, { model, Types } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 import { OrderStatus } from "../types/order/types/OrderStatus.enum";
 import { OrderItem } from "../types/order/types/OrderItem";
 import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
+import { SchemaTypes } from "../types/shared/types/SchemaTypes";
 
-export interface Order extends mongoose.Document {
+export interface Order extends Document {
   _id: Types.ObjectId;
   identifier: string;
   customerName: string;
@@ -30,79 +31,79 @@ export interface Order extends mongoose.Document {
   updatedAt: Date;
 }
 
-const OrderSchema = new mongoose.Schema(
+const OrderSchema = new Schema(
   {
     identifier: {
-      type: String,
+      type: SchemaTypes.String,
       required: [true, "The identifier is required."],
     },
     customerName: {
-      type: String,
+      type: SchemaTypes.String,
       required: [true, "The customer name is required."],
     },
     customerPhone: {
-      type: String,
+      type: SchemaTypes.String,
       required: false,
     },
     customerEmail: {
-      type: String,
+      type: SchemaTypes.String,
       required: false,
     },
     customerAddress: {
-      type: String,
+      type: SchemaTypes.String,
       required: false,
     },
     items: {
       type: [
         {
           productId: {
-            type: Types.ObjectId,
+            type: SchemaTypes.ObjectId,
             required: [true, "The productId is required."],
           },
           productName: {
-            type: String,
+            type: SchemaTypes.String,
             required: [true, "The product name is required."],
           },
           productMainImage: {
-            type: String,
+            type: SchemaTypes.String,
             required: false,
           },
           productGalleryImages: {
-            type: [String],
+            type: [SchemaTypes.String],
             required: false,
           },
           quantity: {
-            type: Number,
+            type: SchemaTypes.Number,
             required: [true, "The quantity is required."],
             min: [1, "Quantity must be at least 1."],
           },
           purchasePriceAtPurchase: {
-            type: Number,
+            type: SchemaTypes.Number,
             required: [true, "The purchase price at purchase is required."],
             min: [0, "Purchase price at purchase must be at least 0."],
           },
           salePriceAtPurchase: {
-            type: Number,
+            type: SchemaTypes.Number,
             required: [true, "The sale price at purchase is required."],
             min: [0, "Sale price at purchase must be at least 0."],
           },
           discountAtPurchase: {
             type: {
-              type: String,
+              type: SchemaTypes.String,
               enum: Object.values(ProductDiscountTypes),
             },
             value: {
-              type: Number,
+              type: SchemaTypes.Number,
               min: [0, "Discount value must be at least 0."],
             },
           },
           finalSalePriceAtPurchase: {
-            type: Number,
+            type: SchemaTypes.Number,
             required: true,
             min: [0, "Final sale price must be at least 0."],
           },
           totalProfitAtPurchase: {
-            type: Number,
+            type: SchemaTypes.Number,
             required: [true, "The total profit at purchase is required."],
           },
         },
@@ -110,43 +111,43 @@ const OrderSchema = new mongoose.Schema(
       required: [true, "The items is required."],
     },
     note: {
-      type: String,
+      type: SchemaTypes.String,
       required: false,
     },
     status: {
-      type: String,
+      type: SchemaTypes.String,
       required: [true, "The status is required."],
       enum: Object.values(OrderStatus),
       default: OrderStatus.PENDING,
     },
     totalAmount: {
-      type: Number,
+      type: SchemaTypes.Number,
       required: [true, "The total price at purchase is required."],
       min: [0, "Total price at purchase must be at least 0."],
     },
     totalProfit: {
-      type: Number,
+      type: SchemaTypes.Number,
       required: [true, "The total profit is required."],
     },
     isArchived: {
-      type: Boolean,
+      type: SchemaTypes.Boolean,
       default: false,
     },
     userId: {
-      type: Types.ObjectId,
+      type: SchemaTypes.ObjectId,
       required: [true, "The userId is required."],
       index: true,
     },
     lastDeliveredAt: {
-      type: Date,
+      type: SchemaTypes.Date,
       default: null,
     },
     lastCanceledAt: {
-      type: Date,
+      type: SchemaTypes.Date,
       default: null,
     },
     lastPendingAt: {
-      type: Date,
+      type: SchemaTypes.Date,
       default: Date.now,
     },
   },

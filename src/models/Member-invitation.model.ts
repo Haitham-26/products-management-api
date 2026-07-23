@@ -1,8 +1,9 @@
-import mongoose, { model, Types } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 import { InvitationStatus } from "../types/users-permissions/types/InvitationStatus.enum";
 import { User } from "./User.model";
+import { SchemaTypes } from "../types/shared/types/SchemaTypes";
 
-export interface MemberInvitation extends mongoose.Document {
+export interface MemberInvitation extends Document {
   _id: Types.ObjectId;
   inviter: Partial<User>;
   inviterId: Types.ObjectId;
@@ -13,27 +14,27 @@ export interface MemberInvitation extends mongoose.Document {
   updatedAt: Date;
 }
 
-const MemberInvitationSchema = new mongoose.Schema(
+const MemberInvitationSchema = new Schema(
   {
     inviterId: {
-      type: Types.ObjectId,
+      type: SchemaTypes.ObjectId,
       ref: "User",
       required: [true, "The inviter id is required."],
       index: true,
     },
     inviteeEmail: {
-      type: String,
+      type: SchemaTypes.String,
       required: [true, "The invitee email is required."],
       index: true,
     },
     status: {
-      type: String,
+      type: SchemaTypes.String,
       enum: Object.values(InvitationStatus),
       default: InvitationStatus.PENDING,
     },
     sentAt: {
-      type: Date,
-      default: Date.now(),
+      type: SchemaTypes.Date,
+      default: Date.now,
     },
   },
   {

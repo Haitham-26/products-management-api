@@ -1,7 +1,8 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
+import { SchemaTypes } from "../types/shared/types/SchemaTypes";
 
 export interface RefreshToken extends Document {
-  userId: Schema.Types.ObjectId;
+  userId: Types.ObjectId;
   hashedToken: string;
   expiresAt: Date;
   createdAt: Date;
@@ -11,17 +12,17 @@ export interface RefreshToken extends Document {
 const RefreshTokenSchema = new Schema<RefreshToken>(
   {
     userId: {
-      type: Schema.Types.ObjectId,
+      type: SchemaTypes.ObjectId,
       required: true,
       index: true,
     },
     hashedToken: {
-      type: String,
+      type: SchemaTypes.String,
       required: true,
       index: true,
     },
     expiresAt: {
-      type: Date,
+      type: SchemaTypes.Date,
       required: true,
     },
   },

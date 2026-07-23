@@ -2,6 +2,7 @@ import mongoose, { model, Types } from "mongoose";
 import { SignUpMethods } from "../types/auth/shared/SignUpMethods";
 import { UserRoles } from "../types/user/types/UserRoles.enum";
 import { UserPermissions } from "../types/user/types/UserPermissions";
+import { SchemaTypes } from "../types/shared/types/SchemaTypes";
 
 export interface User extends mongoose.Document {
   _id: Types.ObjectId;
@@ -32,68 +33,72 @@ export interface User extends mongoose.Document {
 const UserSchema = new mongoose.Schema(
   {
     name: {
-      type: String,
+      type: SchemaTypes.String,
       required: [true, "The name is required."],
       trim: true,
     },
     company: {
-      type: String,
+      type: SchemaTypes.String,
       trim: true,
     },
     email: {
-      type: String,
+      type: SchemaTypes.String,
       required: [true, "The email is required."],
       unique: true,
       index: true,
       trim: true,
     },
     avatar: {
-      type: String,
+      type: SchemaTypes.String,
     },
     avatarPublicId: {
-      type: String,
+      type: SchemaTypes.String,
     },
     password: {
-      type: String,
+      type: SchemaTypes.String,
     },
     emailVerified: {
-      type: Boolean,
+      type: SchemaTypes.Boolean,
       default: false,
     },
     signUpMethod: {
-      type: String,
+      type: SchemaTypes.String,
       enum: SignUpMethods,
     },
     optCode: {
       code: {
-        type: String,
+        type: SchemaTypes.String,
       },
       createdAt: {
-        type: Date,
+        type: SchemaTypes.Date,
       },
     },
     tokenVersion: {
-      type: Number,
+      type: SchemaTypes.Number,
       default: 0,
     },
     roles: {
-      type: [String],
+      type: [SchemaTypes.String],
       enum: UserRoles,
       default: [],
     },
     organizationId: {
-      type: Types.ObjectId,
+      type: SchemaTypes.ObjectId,
       index: true,
     },
     permissions: {
-      type: Object,
+      type: SchemaTypes.Map,
+      of: {
+        type: SchemaTypes.Map,
+        of: SchemaTypes.Boolean,
+      },
     },
     forgotPasswordCode: {
       code: {
-        type: String,
+        type: SchemaTypes.String,
       },
       createdAt: {
-        type: Date,
+        type: SchemaTypes.Date,
       },
     },
   },

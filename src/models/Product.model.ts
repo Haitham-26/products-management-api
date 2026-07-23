@@ -1,10 +1,11 @@
-import mongoose, { model, Types } from "mongoose";
+import { Document, model, Schema, Types } from "mongoose";
 import { ProductDiscount } from "../types/product/types/ProductDiscount";
 import { ProductDiscountTypes } from "../types/product/types/ProductDiscountTypes.enum";
 import { ProductStatus } from "../types/product/types/ProductStatus.enum";
 import { CloudinaryImage } from "../types/shared/types/CloudinaryImage";
+import { SchemaTypes } from "../types/shared/types/SchemaTypes";
 
-export interface Product extends mongoose.Document {
+export interface Product extends Document {
   _id: Types.ObjectId;
   identifier: string;
   userId: Types.ObjectId;
@@ -28,100 +29,100 @@ export interface Product extends mongoose.Document {
   updatedAt: string;
 }
 
-const ProductSchema = new mongoose.Schema(
+const ProductSchema = new Schema(
   {
     identifier: {
-      type: String,
+      type: SchemaTypes.String,
       required: [true, "The identifier is required."],
     },
     name: {
-      type: String,
+      type: SchemaTypes.String,
       required: [true, "The name is required."],
     },
     status: {
-      type: String,
+      type: SchemaTypes.String,
       enum: Object.values(ProductStatus),
       default: ProductStatus.PUBLISHED,
     },
     description: {
-      type: String,
+      type: SchemaTypes.String,
       required: false,
     },
     purchasePrice: {
-      type: Number,
+      type: SchemaTypes.Number,
       required: [true, "The purchase price is required."],
       min: [0, "Purchase price must be at least 0."],
     },
     salePrice: {
-      type: Number,
+      type: SchemaTypes.Number,
       required: [true, "The sale price is required."],
       min: [0, "Sale price must be at least 0."],
     },
     finalSalePrice: {
-      type: Number,
+      type: SchemaTypes.Number,
       required: [true, "The final sale price is required."],
       min: [0, "Final sale price must be at least 0."],
     },
     profit: {
-      type: Number,
+      type: SchemaTypes.Number,
       required: [true, "The profit is required."],
     },
     quantity: {
-      type: Number,
+      type: SchemaTypes.Number,
       required: [true, "The quantity is required."],
       min: [0, "Quantity must be at least 1."],
     },
     minStock: {
-      type: Number,
+      type: SchemaTypes.Number,
       default: 10,
       min: [1, "Minimum stock must be at least 1."],
     },
     discount: {
       type: {
-        type: String,
+        type: SchemaTypes.String,
         enum: Object.values(ProductDiscountTypes),
       },
       value: {
-        type: Number,
+        type: SchemaTypes.Number,
         min: [0, "Discount value must be at least 0."],
       },
     },
     userId: {
-      type: Types.ObjectId,
+      type: SchemaTypes.ObjectId,
       required: [true, "The userId is required."],
       index: true,
     },
     categoryId: {
-      type: Types.ObjectId,
+      type: SchemaTypes.ObjectId,
       ref: "Category",
     },
     tags: [
       {
-        type: Types.ObjectId,
+        type: SchemaTypes.ObjectId,
         ref: "Tag",
       },
     ],
     mainImage: {
       type: {
-        publicId: String,
-        secureUrl: String,
+        publicId: SchemaTypes.String,
+        secureUrl: SchemaTypes.String,
       },
     },
     galleryImages: [
       {
         type: {
-          publicId: String,
-          secureUrl: String,
+          publicId: SchemaTypes.String,
+          secureUrl: SchemaTypes.String,
         },
       },
     ],
     isDeleted: {
-      type: Boolean,
+      type: SchemaTypes.Boolean,
       default: false,
       index: true,
     },
     deletedAt: {
-      type: Date,
+      type: SchemaTypes.Date,
       default: null,
     },
   },

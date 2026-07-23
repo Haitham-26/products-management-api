@@ -22,16 +22,16 @@ export const UserPermissionsMiddleware = (
         return;
       }
 
-      if (!user.permissions) {
+      if (!user.permissions?.size) {
         throw new APIError({
           status: StatusCode.FORBIDDEN,
           message: APIErrorKeys.permissions.orgOnly,
         });
       }
 
-      const hasPermissions = permissions.every((permission) => {
-        return user.permissions?.[entity][permission] === true;
-      });
+      const hasPermissions = permissions.every(
+        (permission) => user.permissions?.get(entity)?.get(permission) === true,
+      );
 
       if (!hasPermissions) {
         throw new APIError({
