@@ -3,63 +3,52 @@ import { SwaggerTypes } from "../../types/SwaggerTypes";
 const GetDashboardStatsResponseSchema = {
   type: SwaggerTypes.OBJECT,
   properties: {
-    products: {
+    totalRevenue: {
+      type: SwaggerTypes.NUMBER,
+      example: 1000,
+    },
+    totalProfit: {
+      type: SwaggerTypes.NUMBER,
+      example: 200,
+    },
+    ordersCountByStatus: {
       type: SwaggerTypes.OBJECT,
       properties: {
-        totalCount: {
+        pending: {
           type: SwaggerTypes.INTEGER,
           example: 10,
         },
-        todayCount: {
-          type: SwaggerTypes.INTEGER,
-          example: 10,
-        },
-        lastWeekCount: {
-          type: SwaggerTypes.INTEGER,
-          example: 10,
-        },
-        lastMonthCount: {
-          type: SwaggerTypes.INTEGER,
-          example: 10,
-        },
+        delivered: { type: SwaggerTypes.INTEGER, example: 50 },
+        canceled: { type: SwaggerTypes.INTEGER, example: 5 },
       },
     },
-    orders: {
-      type: SwaggerTypes.OBJECT,
-      properties: {
-        totalCount: {
-          type: SwaggerTypes.INTEGER,
-          example: 10,
-        },
-        todayCount: {
-          type: SwaggerTypes.INTEGER,
-          example: 10,
-        },
-        lastWeekCount: {
-          type: SwaggerTypes.INTEGER,
-          example: 10,
-        },
-        lastMonthCount: {
-          type: SwaggerTypes.INTEGER,
-          example: 10,
-        },
+    productsCountByStatus: {
+      outOfStock: {
+        type: SwaggerTypes.INTEGER,
+        example: 5,
+      },
+      lowStock: {
+        type: SwaggerTypes.INTEGER,
+        example: 15,
       },
     },
-    lowStockProducts: {
-      type: SwaggerTypes.OBJECT,
-      properties: {
-        totalCount: {
-          type: SwaggerTypes.INTEGER,
-          example: 10,
-        },
-      },
-    },
-    outOfStockProducts: {
-      type: SwaggerTypes.OBJECT,
-      properties: {
-        totalCount: {
-          type: SwaggerTypes.INTEGER,
-          example: 10,
+    profitAndRevenue: {
+      type: SwaggerTypes.ARRAY,
+      items: {
+        type: SwaggerTypes.OBJECT,
+        properties: {
+          date: {
+            type: SwaggerTypes.STRING,
+            example: "2026-7-23",
+          },
+          profit: {
+            type: SwaggerTypes.NUMBER,
+            example: 250,
+          },
+          revenue: {
+            type: SwaggerTypes.NUMBER,
+            example: 1500,
+          },
         },
       },
     },
