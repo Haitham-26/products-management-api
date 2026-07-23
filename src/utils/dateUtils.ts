@@ -13,14 +13,14 @@ export const getDatePeriodMatch = (
   const nowInUserTz = dayjs().tz(userTimezone);
 
   switch (datePeriod) {
-    case DatePeriodFilters.LAST_WEEK: {
+    case DatePeriodFilters.LAST_7_DAYS: {
       const start = nowInUserTz.subtract(6, "day").startOf("day").toDate();
       const end = nowInUserTz.endOf("day").toDate();
 
       return { $gte: start, $lte: end };
     }
 
-    case DatePeriodFilters.LAST_MONTH: {
+    case DatePeriodFilters.LAST_30_DAYS: {
       const start = nowInUserTz.subtract(29, "day").startOf("day").toDate();
       const end = nowInUserTz.endOf("day").toDate();
 
