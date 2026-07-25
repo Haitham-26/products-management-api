@@ -142,7 +142,7 @@ const createOrder: RequestHandler = async (req, res) => {
             items: orderItems,
             note,
             status: OrderStatus.PENDING,
-            totalAmount: orderItems.reduce(
+            totalRevenue: orderItems.reduce(
               (total, item) =>
                 total + item.finalSalePriceAtPurchase * item.quantity,
               0,
@@ -172,8 +172,8 @@ const getOrders: RequestHandler = async (req, res) => {
     const {
       keyword,
       meta,
-      minTotalAmount,
-      maxTotalAmount,
+      minTotalRevenue,
+      maxTotalRevenue,
       minTotalProfit,
       maxTotalProfit,
       status,
@@ -213,7 +213,7 @@ const getOrders: RequestHandler = async (req, res) => {
     }
 
     const rangeFilters = {
-      totalAmount: [minTotalAmount, maxTotalAmount],
+      totalRevenue: [minTotalRevenue, maxTotalRevenue],
       totalProfit: [minTotalProfit, maxTotalProfit],
     };
 

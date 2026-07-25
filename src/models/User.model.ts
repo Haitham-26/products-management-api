@@ -30,7 +30,7 @@ export interface User extends mongoose.Document {
   updatedAt: string;
 }
 
-const UserSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema<User>(
   {
     name: {
       type: SchemaTypes.String,

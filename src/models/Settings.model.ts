@@ -16,7 +16,7 @@ export interface Settings extends mongoose.Document {
   updatedAt: string;
 }
 
-const SettingsSchema = new mongoose.Schema(
+const SettingsSchema = new mongoose.Schema<Settings>(
   {
     userId: {
       type: SchemaTypes.ObjectId,

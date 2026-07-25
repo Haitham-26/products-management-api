@@ -111,7 +111,7 @@ const GetOrdersResponseSchema = {
             enum: Object.values(OrderStatus),
             example: OrderStatus.PENDING,
           },
-          totalAmount: {
+          totalRevenue: {
             type: SwaggerTypes.NUMBER,
             example: 900,
           },

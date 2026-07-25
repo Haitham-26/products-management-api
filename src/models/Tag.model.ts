@@ -13,7 +13,7 @@ export interface Tag extends mongoose.Document {
   updatedAt: string;
 }
 
-const TagSchema = new mongoose.Schema(
+const TagSchema = new mongoose.Schema<Tag>(
   {
     name: {
       type: SchemaTypes.String,

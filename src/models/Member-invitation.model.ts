@@ -14,7 +14,7 @@ export interface MemberInvitation extends Document {
   updatedAt: Date;
 }
 
-const MemberInvitationSchema = new Schema(
+const MemberInvitationSchema = new Schema<MemberInvitation>(
   {
     inviterId: {
       type: SchemaTypes.ObjectId,

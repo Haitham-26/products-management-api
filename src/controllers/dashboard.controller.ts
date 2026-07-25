@@ -45,7 +45,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: "$totalAmount" },
+          totalRevenue: { $sum: "$totalRevenue" },
           totalProfit: { $sum: "$totalProfit" },
         },
       },
@@ -108,7 +108,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
       profitAndRevenuePipeline.push({
         $group: {
           _id: null,
-          revenue: { $sum: "$totalAmount" },
+          revenue: { $sum: "$totalRevenue" },
           profit: { $sum: "$totalProfit" },
         },
       });
@@ -123,7 +123,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
                 timezone: timeZone,
               },
             },
-            revenue: { $sum: "$totalAmount" },
+            revenue: { $sum: "$totalRevenue" },
             profit: { $sum: "$totalProfit" },
           },
         },
