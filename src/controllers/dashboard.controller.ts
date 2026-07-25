@@ -213,6 +213,13 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
     const canceledOrdersCount =
       orderCountsByStatusResult.find((o) => o._id === OrderStatus.CANCELED)
         ?.count || 0;
+    const returnedOrdersCount =
+      orderCountsByStatusResult.find((o) => o._id === OrderStatus.RETURNED)
+        ?.count || 0;
+    const partiallyReturnedOrdersCount =
+      orderCountsByStatusResult.find(
+        (o) => o._id === OrderStatus.PARTIALLY_RETURNED,
+      )?.count || 0;
 
     res.status(StatusCode.OK).json({
       totalRevenue,
@@ -221,6 +228,8 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
         pending: pendingOrdersCount,
         delivered: deliveredOrdersCount,
         canceled: canceledOrdersCount,
+        returned: returnedOrdersCount,
+        partiallyReturned: partiallyReturnedOrdersCount,
       },
       productsCountByStatus: {
         outOfStock: outOfStockProductsCount,
