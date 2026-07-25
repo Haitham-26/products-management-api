@@ -239,7 +239,7 @@ const getProducts: RequestHandler = async (req, res) => {
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
     const currentPage = Math.max(1, Number(page) || 1);
-    const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
+    const pageSize = Math.min(100, Math.max(1, Number(limit) ?? 0));
     const skip = (currentPage - 1) * pageSize;
 
     const query: QueryOptions = {
