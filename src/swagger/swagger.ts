@@ -51,6 +51,7 @@ import BulkDeleteProductsRequestSchema from "./schemas/product/BulkDeleteProduct
 import UserPermissionsSchema from "./schemas/shared/UserPermissionsSchema";
 import GetReturnsResponseSchema from "./schemas/return/GetReturnsResponseSchema";
 import CreateReturnRequestSchema from "./schemas/return/CreateReturnRequestSchema";
+import UpdateReturnRequestSchema from "./schemas/return/UpdateReturnRequestSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -127,6 +128,7 @@ const options: swaggerJsdoc.Options = {
         //
         GetReturnsResponseSchema,
         CreateReturnRequestSchema,
+        UpdateReturnRequestSchema,
       },
     },
   },

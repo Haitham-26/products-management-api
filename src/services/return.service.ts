@@ -4,8 +4,13 @@ import { UserPermissionsMiddleware } from "../middlewares/UserPermissionsMiddlew
 import { PermissionEntities } from "../types/user/types/PermissionEntities.enum";
 import { CRUDPermissions } from "../types/user/types/CRUDPermissions.enum";
 import { OrgScopeMiddleware } from "../middlewares/OrgScopeMiddleware";
-import { createReturn, getReturns } from "../controllers/return.controller";
+import {
+  createReturn,
+  getReturns,
+  updateReturn,
+} from "../controllers/return.controller";
 import { CreateReturnValidator } from "../validators/return/create-return.validator";
+import { UpdateReturnValidator } from "../validators/return/update-return.validator";
 
 const returnRouter = express.Router();
 
@@ -95,6 +100,36 @@ returnRouter.post(
   OrgScopeMiddleware,
   CreateReturnValidator,
   createReturn,
+);
+
+/**
+ * @openapi
+ * /returns/update:
+ *   patch:
+ *     summary: Updates a return
+ *     description: Updates a return.
+ *     tags:
+ *       - Returns
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateReturnRequestSchema'
+ *     responses:
+ *       200:
+ *         description: Return updated successfully.
+ */
+returnRouter.patch(
+  "/update",
+  AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.returns, [
+    CRUDPermissions.UPDATE,
+    CRUDPermissions.READ,
+  ]),
+  OrgScopeMiddleware,
+  UpdateReturnValidator,
+  updateReturn,
 );
 
 export default returnRouter;

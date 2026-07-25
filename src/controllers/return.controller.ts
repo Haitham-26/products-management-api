@@ -201,4 +201,21 @@ const createReturn: RequestHandler = async (req, res) => {
   }
 };
 
-export { getReturns, createReturn };
+const updateReturn: RequestHandler = async (req, res) => {
+  try {
+    const { scopeId } = RequestContext<{ scopeId: string }>(req);
+
+    const { returnId, returnReason } = req.body;
+
+    await ReturnModel.updateOne(
+      { _id: returnId, userId: scopeId },
+      { $set: { returnReason } },
+    );
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    errorHandler(e, res);
+  }
+};
+
+export { getReturns, createReturn, updateReturn };

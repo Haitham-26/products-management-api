@@ -55,6 +55,17 @@ const APIErrorKeySchema = {
       },
       alreadyHasReturn: LEAF,
     },
+    update: {
+      return: {
+        invalidId: LEAF,
+        notFound: LEAF,
+      },
+      returnReason: {
+        invalid: LEAF,
+        long: LEAF,
+        required: LEAF,
+      },
+    },
   },
   organization: {
     inviteMembers: {
