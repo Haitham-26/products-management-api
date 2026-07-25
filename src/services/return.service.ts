@@ -30,7 +30,7 @@ const returnRouter = express.Router();
  *           enum: [COMPLETED, VOIDED]
  *           example: COMPLETED
  *       - in: query
- *         name: creationDate
+ *         name: sortBy
  *         schema:
  *           type: string
  *           enum: [NEWEST, OLDEST]

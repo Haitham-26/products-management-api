@@ -25,7 +25,7 @@ const getReturns: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { keyword, meta, status, creationDate, datePeriod } = req.query;
+    const { keyword, meta, status, sortBy, datePeriod } = req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
@@ -43,7 +43,10 @@ const getReturns: RequestHandler = async (req, res) => {
       query.orderIdentifier = { $regex: escapedKeyword || "", $options: "i" };
     }
 
-    if (status && Object.values(OrderStatus).includes(status as OrderStatus)) {
+    if (
+      status &&
+      Object.values(ReturnStatus).includes(status as ReturnStatus)
+    ) {
       query.status = status;
     }
 
@@ -57,7 +60,7 @@ const getReturns: RequestHandler = async (req, res) => {
     const [data, total] = await Promise.all([
       ReturnModel.find(query)
         .sort({
-          returnedAt: getCreatedAtSort(creationDate as CreationDateFilters),
+          returnedAt: getCreatedAtSort(sortBy as CreationDateFilters),
         })
         .skip(skip)
         .limit(pageSize),
