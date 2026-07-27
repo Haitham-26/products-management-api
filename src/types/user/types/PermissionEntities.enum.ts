@@ -3,4 +3,5 @@ export enum PermissionEntities {
   orders = "orders",
   tags = "tags",
   categories = "categories",
+  returns = "returns",
 }

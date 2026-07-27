@@ -18,7 +18,7 @@ export interface Order extends Document {
   /**
    * @description Total amount paid by the customer (final sale price).
    */
-  totalAmount: number;
+  totalRevenue: number;
   /**
    * @description Total profit generated from the items.
    */
@@ -102,6 +102,10 @@ const OrderSchema = new Schema(
             required: true,
             min: [0, "Final sale price must be at least 0."],
           },
+          profitAtPurchase: {
+            type: SchemaTypes.Number,
+            required: [true, "The profit at purchase is required."],
+          },
           totalProfitAtPurchase: {
             type: SchemaTypes.Number,
             required: [true, "The total profit at purchase is required."],
@@ -120,10 +124,10 @@ const OrderSchema = new Schema(
       enum: Object.values(OrderStatus),
       default: OrderStatus.PENDING,
     },
-    totalAmount: {
+    totalRevenue: {
       type: SchemaTypes.Number,
-      required: [true, "The total price at purchase is required."],
-      min: [0, "Total price at purchase must be at least 0."],
+      required: [true, "The total revenue is required."],
+      min: [0, "Total revenue must be at least 0."],
     },
     totalProfit: {
       type: SchemaTypes.Number,

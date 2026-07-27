@@ -26,6 +26,62 @@ const APIErrorKeySchema = {
   rateLimit: {
     global: LEAF,
   },
+  returns: {
+    create: {
+      order: {
+        invalidId: LEAF,
+        notFound: LEAF,
+      },
+      items: {
+        invalidProductId: LEAF,
+        returnedQuantity: {
+          invalid: LEAF,
+          min: LEAF,
+        },
+        restockedQuantity: {
+          invalid: LEAF,
+          min: LEAF,
+        },
+        minLength: LEAF,
+        someNotFound: LEAF,
+        duplicateItems: LEAF,
+        someExceededQuantity: LEAF,
+        someExceededRestockedQuantity: LEAF,
+      },
+      returnReason: {
+        invalid: LEAF,
+        required: LEAF,
+        long: LEAF,
+      },
+      alreadyHasReturn: LEAF,
+    },
+    update: {
+      return: {
+        invalidId: LEAF,
+        notFound: LEAF,
+      },
+      returnReason: {
+        invalid: LEAF,
+        long: LEAF,
+        required: LEAF,
+      },
+    },
+    cancel: {
+      return: {
+        invalidId: LEAF,
+        notFound: LEAF,
+        alreadyCanceled: LEAF,
+      },
+    },
+    activate: {
+      return: {
+        invalidId: LEAF,
+        notFound: LEAF,
+        alreadyActive: LEAF,
+      },
+      parentOrderNotFound: LEAF,
+    },
+  },
   organization: {
     inviteMembers: {
       emails: {
@@ -213,7 +269,7 @@ const APIErrorKeySchema = {
       invalidOrderId: LEAF,
       invalidStatus: LEAF,
       notFound: LEAF,
-      cannotChangeDelivered: LEAF,
+      cannotChangeStatus: LEAF,
       sameStatus: LEAF,
       canceledToDelivered: LEAF,
       items: {

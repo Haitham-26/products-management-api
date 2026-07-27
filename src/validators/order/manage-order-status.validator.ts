@@ -52,10 +52,16 @@ export const ManageOrderStatusValidator: RequestHandler = async (
       });
     }
 
-    if (order.status === OrderStatus.DELIVERED) {
+    if (
+      [
+        OrderStatus.DELIVERED,
+        OrderStatus.RETURNED,
+        OrderStatus.PARTIALLY_RETURNED,
+      ].includes(order.status)
+    ) {
       throw new APIError({
         status: StatusCode.BAD_REQUEST,
-        message: TRANSLATION_KEY_PREFIX.cannotChangeDelivered,
+        message: TRANSLATION_KEY_PREFIX.cannotChangeStatus,
       });
     }
 

@@ -29,7 +29,7 @@ export interface Product extends Document {
   updatedAt: string;
 }
 
-const ProductSchema = new Schema(
+const ProductSchema = new Schema<Product>(
   {
     identifier: {
       type: SchemaTypes.String,

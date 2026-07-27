@@ -49,6 +49,11 @@ import BulkManageProductsStatusRequestSchema from "./schemas/product/BulkManageP
 import ManageProductStockRequestSchema from "./schemas/product/ManageProductStockRequestSchema";
 import BulkDeleteProductsRequestSchema from "./schemas/product/BulkDeleteProductsRequestSchema";
 import UserPermissionsSchema from "./schemas/shared/UserPermissionsSchema";
+import GetReturnsResponseSchema from "./schemas/return/GetReturnsResponseSchema";
+import CreateReturnRequestSchema from "./schemas/return/CreateReturnRequestSchema";
+import UpdateReturnRequestSchema from "./schemas/return/UpdateReturnRequestSchema";
+import CancelReturnRequestSchema from "./schemas/return/CancelReturnRequestSchema";
+import ActivateReturnRequestSchema from "./schemas/return/ActivateReturnRequestSchema";
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -122,6 +127,12 @@ const options: swaggerJsdoc.Options = {
         UpdateProductRequestSchema,
         BulkManageProductsStatusRequestSchema,
         ManageProductStockRequestSchema,
+        //
+        GetReturnsResponseSchema,
+        CreateReturnRequestSchema,
+        UpdateReturnRequestSchema,
+        CancelReturnRequestSchema,
+        ActivateReturnRequestSchema,
       },
     },
   },

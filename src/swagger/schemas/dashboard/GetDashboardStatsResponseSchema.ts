@@ -20,6 +20,8 @@ const GetDashboardStatsResponseSchema = {
         },
         delivered: { type: SwaggerTypes.INTEGER, example: 50 },
         canceled: { type: SwaggerTypes.INTEGER, example: 5 },
+        returned: { type: SwaggerTypes.INTEGER, example: 4 },
+        partiallyReturned: { type: SwaggerTypes.INTEGER, example: 2 },
       },
     },
     productsCountByStatus: {

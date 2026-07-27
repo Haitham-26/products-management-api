@@ -45,7 +45,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalRevenue: { $sum: "$totalAmount" },
+          totalRevenue: { $sum: "$totalRevenue" },
           totalProfit: { $sum: "$totalProfit" },
         },
       },
@@ -108,7 +108,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
       profitAndRevenuePipeline.push({
         $group: {
           _id: null,
-          revenue: { $sum: "$totalAmount" },
+          revenue: { $sum: "$totalRevenue" },
           profit: { $sum: "$totalProfit" },
         },
       });
@@ -123,7 +123,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
                 timezone: timeZone,
               },
             },
-            revenue: { $sum: "$totalAmount" },
+            revenue: { $sum: "$totalRevenue" },
             profit: { $sum: "$totalProfit" },
           },
         },
@@ -213,6 +213,13 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
     const canceledOrdersCount =
       orderCountsByStatusResult.find((o) => o._id === OrderStatus.CANCELED)
         ?.count || 0;
+    const returnedOrdersCount =
+      orderCountsByStatusResult.find((o) => o._id === OrderStatus.RETURNED)
+        ?.count || 0;
+    const partiallyReturnedOrdersCount =
+      orderCountsByStatusResult.find(
+        (o) => o._id === OrderStatus.PARTIALLY_RETURNED,
+      )?.count || 0;
 
     res.status(StatusCode.OK).json({
       totalRevenue,
@@ -221,6 +228,8 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
         pending: pendingOrdersCount,
         delivered: deliveredOrdersCount,
         canceled: canceledOrdersCount,
+        returned: returnedOrdersCount,
+        partiallyReturned: partiallyReturnedOrdersCount,
       },
       productsCountByStatus: {
         outOfStock: outOfStockProductsCount,

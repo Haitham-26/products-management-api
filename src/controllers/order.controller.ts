@@ -106,6 +106,7 @@ const createOrder: RequestHandler = async (req, res) => {
           purchasePriceAtPurchase: product.purchasePrice,
           salePriceAtPurchase: product.salePrice,
           finalSalePriceAtPurchase: product.finalSalePrice,
+          profitAtPurchase: product.profit,
           totalProfitAtPurchase: product.profit * item.quantity,
           discountAtPurchase: product?.discount,
         };
@@ -141,7 +142,7 @@ const createOrder: RequestHandler = async (req, res) => {
             items: orderItems,
             note,
             status: OrderStatus.PENDING,
-            totalAmount: orderItems.reduce(
+            totalRevenue: orderItems.reduce(
               (total, item) =>
                 total + item.finalSalePriceAtPurchase * item.quantity,
               0,
@@ -171,8 +172,8 @@ const getOrders: RequestHandler = async (req, res) => {
     const {
       keyword,
       meta,
-      minTotalAmount,
-      maxTotalAmount,
+      minTotalRevenue,
+      maxTotalRevenue,
       minTotalProfit,
       maxTotalProfit,
       status,
@@ -183,7 +184,7 @@ const getOrders: RequestHandler = async (req, res) => {
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
     const currentPage = Math.max(1, Number(page) || 1);
-    const pageSize = Math.min(100, Math.max(1, Number(limit) || 10));
+    const pageSize = Math.min(100, Math.max(1, Number(limit) ?? 0));
     const skip = (currentPage - 1) * pageSize;
 
     const query: QueryOptions = {
@@ -212,7 +213,7 @@ const getOrders: RequestHandler = async (req, res) => {
     }
 
     const rangeFilters = {
-      totalAmount: [minTotalAmount, maxTotalAmount],
+      totalRevenue: [minTotalRevenue, maxTotalRevenue],
       totalProfit: [minTotalProfit, maxTotalProfit],
     };
 

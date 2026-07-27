@@ -13,7 +13,7 @@ export interface Category extends Document {
   updatedAt: string;
 }
 
-const CategorySchema = new Schema(
+const CategorySchema = new Schema<Category>(
   {
     name: {
       type: SchemaTypes.String,

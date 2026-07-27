@@ -15,6 +15,7 @@ import { startCronJobs } from "./src/cron";
 import { multerErrorHandler } from "./src/utils/multerErrorHandler";
 import { setupSwagger } from "./src/swagger/swagger";
 import cookieParser from "cookie-parser";
+import returnRouter from "./src/services/return.service";
 
 require("dotenv").config();
 
@@ -44,6 +45,7 @@ app.use("/api/products", productRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/tags", tagRouter);
 app.use("/api/orders", orderRouter);
+app.use("/api/returns", returnRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/organization", organizationRouter);
 
