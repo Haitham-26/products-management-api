@@ -239,7 +239,7 @@ const cancelReturn: RequestHandler = async (req, res) => {
     await withTransaction(async (session) => {
       await ReturnModel.updateOne(
         { _id: _return._id, userId: scopeId },
-        { $set: { status: ReturnStatus.CANCELED } },
+        { $set: { status: ReturnStatus.CANCELED, canceledAt: new Date() } },
         { session },
       );
 
@@ -288,7 +288,7 @@ const activateReturn: RequestHandler = async (req, res) => {
     await withTransaction(async (session) => {
       await ReturnModel.updateOne(
         { _id: _return._id, userId: scopeId },
-        { $set: { status: ReturnStatus.ACTIVE } },
+        { $set: { status: ReturnStatus.ACTIVE, canceledAt: null } },
         { session },
       );
 
