@@ -7,10 +7,14 @@ import { OrgScopeMiddleware } from "../middlewares/OrgScopeMiddleware";
 import {
   createReturn,
   getReturns,
+  activateReturn,
   updateReturn,
+  cancelReturn,
 } from "../controllers/return.controller";
 import { CreateReturnValidator } from "../validators/return/create-return.validator";
 import { UpdateReturnValidator } from "../validators/return/update-return.validator";
+import { CancelReturnValidator } from "../validators/return/cancel-return.validator";
+import { ActivateReturnValidator } from "../validators/return/activate-return.validator";
 
 const returnRouter = express.Router();
 
@@ -32,8 +36,8 @@ const returnRouter = express.Router();
  *         name: status
  *         schema:
  *           type: string
- *           enum: [COMPLETED, VOIDED]
- *           example: COMPLETED
+ *           enum: [ACTIVE, CANCELED]
+ *           example: ACTIVE
  *       - in: query
  *         name: sortBy
  *         schema:
@@ -130,6 +134,66 @@ returnRouter.patch(
   OrgScopeMiddleware,
   UpdateReturnValidator,
   updateReturn,
+);
+
+/**
+ * @openapi
+ * /returns/cancel:
+ *   patch:
+ *     summary: Cancels a return
+ *     description: Cancels a return, updates the related order status, and rolls back product inventory changes.
+ *     tags:
+ *       - Returns
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CancelReturnRequestSchema'
+ *     responses:
+ *       200:
+ *         description: Return canceled successfully.
+ */
+returnRouter.patch(
+  "/cancel",
+  AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.returns, [
+    CRUDPermissions.UPDATE,
+    CRUDPermissions.READ,
+  ]),
+  OrgScopeMiddleware,
+  CancelReturnValidator,
+  cancelReturn,
+);
+
+/**
+ * @openapi
+ * /returns/activate:
+ *   patch:
+ *     summary: Reactivates a return
+ *     description: Reactivates a canceled return, updates the related order status (sets it to "DELIVERED"), and reapplies product inventory changes.
+ *     tags:
+ *       - Returns
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ActivateReturnRequestSchema'
+ *     responses:
+ *       200:
+ *         description: Return reactivated successfully.
+ */
+returnRouter.patch(
+  "/activate",
+  AuthMiddleware,
+  UserPermissionsMiddleware(PermissionEntities.returns, [
+    CRUDPermissions.UPDATE,
+    CRUDPermissions.READ,
+  ]),
+  OrgScopeMiddleware,
+  ActivateReturnValidator,
+  activateReturn,
 );
 
 export default returnRouter;

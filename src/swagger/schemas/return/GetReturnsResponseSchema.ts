@@ -71,7 +71,7 @@ const GetReturnsResponseSchema = {
           status: {
             type: SwaggerTypes.STRING,
             enum: Object.values(ReturnStatus),
-            example: ReturnStatus.COMPLETED,
+            example: ReturnStatus.ACTIVE,
           },
           returnReason: {
             type: SwaggerTypes.STRING,
@@ -81,7 +81,7 @@ const GetReturnsResponseSchema = {
             type: SwaggerTypes.STRING,
             format: "date-time",
           },
-          voidedAt: {
+          canceledAt: {
             type: SwaggerTypes.STRING,
             format: "date-time",
           },

@@ -66,6 +66,21 @@ const APIErrorKeySchema = {
         required: LEAF,
       },
     },
+    cancel: {
+      return: {
+        invalidId: LEAF,
+        notFound: LEAF,
+        alreadyCanceled: LEAF,
+      },
+    },
+    activate: {
+      return: {
+        invalidId: LEAF,
+        notFound: LEAF,
+        alreadyActive: LEAF,
+      },
+      parentOrderNotFound: LEAF,
+    },
   },
   organization: {
     inviteMembers: {

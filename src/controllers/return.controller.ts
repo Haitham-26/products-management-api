@@ -4,7 +4,7 @@ import { RequestContext } from "../utils/RequestContext";
 import { escapeSpecialChars } from "../utils/String";
 import isString from "lodash/isString";
 import { QueryOptions } from "mongoose";
-import ReturnModel from "../models/Return.model";
+import ReturnModel, { Return } from "../models/Return.model";
 import { getCreatedAtSort } from "../utils/getCreatedAtSort";
 import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
@@ -20,6 +20,30 @@ import { APIErrorKeys } from "../errors/APIError-keys";
 import { ReturnStatus } from "../types/return/types/ReturnStatus.enum";
 import { ReturnItem } from "../types/return/types/ReturnItem";
 import ProductModel from "../models/Product.model";
+
+class ReturnService {
+  contructor() {}
+
+  static getAreAllOrderItemsReturned(
+    orderItems: OrderItem[],
+    returnItems: ReturnItem[] | CreateReturnDto["items"],
+  ) {
+    return orderItems.every((orderItem: OrderItem) => {
+      const returnItem = returnItems.find((returnItem) => {
+        return orderItem.productId.equals(returnItem.productId);
+      });
+
+      if (!returnItem) {
+        return false;
+      }
+
+      const areAllOrderItemsReturned =
+        returnItem.returnedQuantity === orderItem.quantity;
+
+      return areAllOrderItemsReturned;
+    });
+  }
+}
 
 const getReturns: RequestHandler = async (req, res) => {
   try {
@@ -89,23 +113,6 @@ const createReturn: RequestHandler = async (req, res) => {
 
     const { orderId, returnReason, items } = req.body as CreateReturnDto;
 
-    const getAreAllOrderItemsReturned = () => {
-      return order.items.every((orderItem: OrderItem) => {
-        const returnItem = items.find((returnItem) =>
-          orderItem.productId.equals(returnItem.productId),
-        );
-
-        if (!returnItem) {
-          return false;
-        }
-
-        const areAllOrderItemsReturned =
-          returnItem.returnedQuantity === orderItem.quantity;
-
-        return areAllOrderItemsReturned;
-      });
-    };
-
     await withTransaction(async (session) => {
       const itemsTotalProfitAndRevenue = items.map((item) => {
         const orderItem = order.items.find((orderItem) =>
@@ -159,18 +166,21 @@ const createReturn: RequestHandler = async (req, res) => {
               (acc, item) => acc + item.totalReturnProfit,
               0,
             ),
-            status: ReturnStatus.COMPLETED,
+            status: ReturnStatus.ACTIVE,
             returnedAt: new Date(),
           },
         ],
         { session },
       );
 
+      const areAllOrderItemsReturned =
+        ReturnService.getAreAllOrderItemsReturned(order.items, items);
+
       await OrderModel.updateOne(
         { _id: orderId },
         {
           $set: {
-            status: getAreAllOrderItemsReturned()
+            status: areAllOrderItemsReturned
               ? OrderStatus.RETURNED
               : OrderStatus.PARTIALLY_RETURNED,
           },
@@ -219,4 +229,106 @@ const updateReturn: RequestHandler = async (req, res) => {
   }
 };
 
-export { getReturns, createReturn, updateReturn };
+const cancelReturn: RequestHandler = async (req, res) => {
+  try {
+    const { scopeId, _return } = RequestContext<{
+      scopeId: string;
+      _return: Return;
+    }>(req);
+
+    await withTransaction(async (session) => {
+      await ReturnModel.updateOne(
+        { _id: _return._id, userId: scopeId },
+        { $set: { status: ReturnStatus.CANCELED } },
+        { session },
+      );
+
+      await OrderModel.updateOne(
+        { _id: _return.orderId },
+        {
+          $set: {
+            status: OrderStatus.DELIVERED,
+          },
+        },
+        { session },
+      );
+
+      const productBulkWrites = _return.items.map((item) => ({
+        updateOne: {
+          filter: {
+            _id: item.productId,
+            userId: scopeId,
+            isDeleted: { $ne: true },
+          },
+          update: {
+            $inc: {
+              quantity: -item.restockedQuantity,
+            },
+          },
+        },
+      }));
+
+      await ProductModel.bulkWrite(productBulkWrites, { session });
+    });
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    errorHandler(e, res);
+  }
+};
+
+const activateReturn: RequestHandler = async (req, res) => {
+  try {
+    const { scopeId, _return, order } = RequestContext<{
+      scopeId: string;
+      _return: Return;
+      order: Order;
+    }>(req);
+
+    await withTransaction(async (session) => {
+      await ReturnModel.updateOne(
+        { _id: _return._id, userId: scopeId },
+        { $set: { status: ReturnStatus.ACTIVE } },
+        { session },
+      );
+
+      const areAllOrderItemsReturned =
+        ReturnService.getAreAllOrderItemsReturned(order.items, _return.items);
+
+      await OrderModel.updateOne(
+        { _id: _return.orderId },
+        {
+          $set: {
+            status: areAllOrderItemsReturned
+              ? OrderStatus.RETURNED
+              : OrderStatus.PARTIALLY_RETURNED,
+          },
+        },
+        { session },
+      );
+
+      const productBulkWrites = _return.items.map((item) => ({
+        updateOne: {
+          filter: {
+            _id: item.productId,
+            userId: scopeId,
+            isDeleted: { $ne: true },
+          },
+          update: {
+            $inc: {
+              quantity: item.restockedQuantity,
+            },
+          },
+        },
+      }));
+
+      await ProductModel.bulkWrite(productBulkWrites, { session });
+    });
+
+    res.status(StatusCode.OK).send();
+  } catch (e) {
+    errorHandler(e, res);
+  }
+};
+
+export { getReturns, createReturn, updateReturn, cancelReturn, activateReturn };

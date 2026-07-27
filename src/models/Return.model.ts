@@ -14,7 +14,7 @@ export interface Return extends Document {
   status: ReturnStatus;
   returnReason: string;
   returnedAt: Date;
-  voidedAt?: Date | null;
+  canceledAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -87,13 +87,13 @@ const ReturnSchema = new Schema<Return>(
     status: {
       type: SchemaTypes.String,
       enum: Object.values(ReturnStatus),
-      default: ReturnStatus.COMPLETED,
+      default: ReturnStatus.ACTIVE,
     },
     returnedAt: {
       type: SchemaTypes.Date,
       default: Date.now,
     },
-    voidedAt: {
+    canceledAt: {
       type: SchemaTypes.Date,
       default: null,
     },

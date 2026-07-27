@@ -1,4 +1,4 @@
 export enum ReturnStatus {
-  COMPLETED = "COMPLETED",
-  VOIDED = "VOIDED",
+  ACTIVE = "ACTIVE",
+  CANCELED = "CANCELED",
 }
