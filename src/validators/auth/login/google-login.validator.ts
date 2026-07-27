@@ -11,6 +11,7 @@ import { APIErrorKeys } from "../../../errors/APIError-keys";
 
 const googleLoginSchema = z.object({
   idToken: z.string(APIErrorKeys.internal),
+  lang: z.string().optional(),
 });
 
 export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
