@@ -183,6 +183,7 @@ const createReturn: RequestHandler = async (req, res) => {
           filter: {
             _id: item.productId,
             userId: scopeId,
+            isDeleted: { $ne: true },
           },
           update: {
             $inc: {
