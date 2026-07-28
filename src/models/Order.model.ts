@@ -40,7 +40,7 @@ export interface Order extends Document {
   returnedItems: {
     productId: Types.ObjectId;
     returnedQuantity: number;
-  };
+  }[];
 
   isArchived: boolean;
   lastDeliveredAt?: Date;
@@ -199,6 +199,8 @@ const OrderSchema = new Schema(
   },
   { timestamps: true },
 );
+
+OrderSchema.index({ userId: 1, isArchived: 1, status: 1, lastDeliveredAt: 1 });
 
 const OrderModel = model("Order", OrderSchema);
 
