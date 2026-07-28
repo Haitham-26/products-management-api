@@ -23,6 +23,25 @@ export interface Order extends Document {
    * @description Total profit generated from the items.
    */
   totalProfit: number;
+
+  /**
+   * @description The net profit computed after activating/cancelling a return for an order
+   */
+  netProfit: number;
+
+  /**
+   * @description The net revenue computed after activating/cancelling a return for an order
+   */
+  netRevenue: number;
+
+  /**
+   * @description These are set/removed when activating/cancelling a return
+   */
+  returnedItems: {
+    productId: Types.ObjectId;
+    returnedQuantity: number;
+  };
+
   isArchived: boolean;
   lastDeliveredAt?: Date;
   lastCanceledAt?: Date;
@@ -142,6 +161,29 @@ const OrderSchema = new Schema(
       required: [true, "The userId is required."],
       index: true,
     },
+
+    netProfit: {
+      type: SchemaTypes.Number,
+      default: function (this: Order) {
+        return this.totalProfit;
+      },
+    },
+    netRevenue: {
+      type: SchemaTypes.Number,
+      default: function (this: Order) {
+        return this.totalRevenue;
+      },
+    },
+    returnedItems: {
+      type: [
+        {
+          productId: { type: SchemaTypes.ObjectId, required: true },
+          returnedQuantity: { type: SchemaTypes.Number, required: true },
+        },
+      ],
+      default: [],
+    },
+
     lastDeliveredAt: {
       type: SchemaTypes.Date,
       default: null,

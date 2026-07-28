@@ -113,26 +113,40 @@ const createReturn: RequestHandler = async (req, res) => {
 
     const { orderId, returnReason, items } = req.body as CreateReturnDto;
 
+    const returnItems: ReturnItem[] = items.map((returnItem) => {
+      const orderItem = order.items.find((oi) =>
+        oi.productId.equals(returnItem.productId),
+      );
+
+      if (!orderItem) {
+        throw new APIError({
+          status: StatusCode.NOT_FOUND,
+          message: APIErrorKeys.internal,
+        });
+      }
+
+      return {
+        productId: orderItem.productId,
+        productName: orderItem.productName,
+        productMainImage: orderItem.productMainImage,
+        restockedQuantity: returnItem.restockedQuantity,
+        returnedQuantity: returnItem.returnedQuantity,
+        totalProfit: returnItem.returnedQuantity * orderItem.profitAtPurchase,
+        totalRevenue:
+          returnItem.returnedQuantity * orderItem.finalSalePriceAtPurchase,
+      };
+    });
+
+    const totalReturnRevenue = returnItems.reduce(
+      (s, i) => s + i.totalRevenue,
+      0,
+    );
+    const totalReturnProfit = returnItems.reduce(
+      (s, i) => s + i.totalProfit,
+      0,
+    );
+
     await withTransaction(async (session) => {
-      const itemsTotalProfitAndRevenue = items.map((item) => {
-        const orderItem = order.items.find((orderItem) =>
-          orderItem.productId.equals(item.productId),
-        );
-
-        if (!orderItem) {
-          throw new APIError({
-            status: StatusCode.NOT_FOUND,
-            message: APIErrorKeys.internal,
-          });
-        }
-
-        return {
-          totalReturnRevenue:
-            item.returnedQuantity * orderItem.finalSalePriceAtPurchase,
-          totalReturnProfit: item.returnedQuantity * orderItem.profitAtPurchase,
-        };
-      });
-
       await ReturnModel.create(
         [
           {
@@ -140,32 +154,9 @@ const createReturn: RequestHandler = async (req, res) => {
             orderId,
             orderIdentifier: order.identifier,
             returnReason,
-            items: items.map((returnItem: CreateReturnDto["items"][number]) => {
-              const orderItem = order.items.find((orderItem) =>
-                orderItem.productId.equals(returnItem.productId),
-              )!;
-
-              return {
-                productId: orderItem.productId,
-                productName: orderItem.productName,
-                productMainImage: orderItem.productMainImage,
-                restockedQuantity: returnItem.restockedQuantity,
-                returnedQuantity: returnItem.returnedQuantity,
-                totalProfit:
-                  returnItem.returnedQuantity * orderItem.profitAtPurchase,
-                totalRevenue:
-                  returnItem.returnedQuantity *
-                  orderItem.finalSalePriceAtPurchase,
-              };
-            }) as ReturnItem[],
-            totalReturnRevenue: itemsTotalProfitAndRevenue.reduce(
-              (acc, item) => acc + item.totalReturnRevenue,
-              0,
-            ),
-            totalReturnProfit: itemsTotalProfitAndRevenue.reduce(
-              (acc, item) => acc + item.totalReturnProfit,
-              0,
-            ),
+            items: returnItems,
+            totalReturnRevenue,
+            totalReturnProfit,
             status: ReturnStatus.ACTIVE,
             returnedAt: new Date(),
           },
@@ -183,6 +174,12 @@ const createReturn: RequestHandler = async (req, res) => {
             status: areAllOrderItemsReturned
               ? OrderStatus.RETURNED
               : OrderStatus.PARTIALLY_RETURNED,
+            netProfit: order.totalProfit - totalReturnProfit,
+            netRevenue: order.totalRevenue - totalReturnRevenue,
+            returnedItems: items.map((item) => ({
+              productId: item.productId,
+              returnedQuantity: item.returnedQuantity,
+            })),
           },
         },
         { session },
@@ -244,12 +241,17 @@ const cancelReturn: RequestHandler = async (req, res) => {
       );
 
       await OrderModel.updateOne(
-        { _id: _return.orderId },
-        {
-          $set: {
-            status: OrderStatus.DELIVERED,
+        { _id: _return.orderId, userId: scopeId },
+        [
+          {
+            $set: {
+              status: OrderStatus.DELIVERED,
+              netProfit: "$totalProfit",
+              netRevenue: "$totalRevenue",
+            },
           },
-        },
+          { $unset: "returnedItems" },
+        ],
         { session },
       );
 
@@ -296,12 +298,18 @@ const activateReturn: RequestHandler = async (req, res) => {
         ReturnService.getAreAllOrderItemsReturned(order.items, _return.items);
 
       await OrderModel.updateOne(
-        { _id: _return.orderId },
+        { _id: _return.orderId, userId: scopeId },
         {
           $set: {
             status: areAllOrderItemsReturned
               ? OrderStatus.RETURNED
               : OrderStatus.PARTIALLY_RETURNED,
+            netProfit: order.totalProfit - _return.totalReturnProfit,
+            netRevenue: order.totalRevenue - _return.totalReturnRevenue,
+            returnedItems: _return.items.map((item) => ({
+              productId: item.productId,
+              returnedQuantity: item.returnedQuantity,
+            })),
           },
         },
         { session },
