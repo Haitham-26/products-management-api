@@ -3,19 +3,28 @@ import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import { RequestHandler } from "express";
 import { RequestContext } from "../utils/RequestContext";
 import { errorHandler } from "../errors/errorHandler";
-import { DatePeriodFilters } from "../types/shared/types/DatePeriodFilters.enum";
 import { OrderStatus } from "../types/order/types/OrderStatus.enum";
-import { getDatePeriodMatch } from "../utils/dateUtils";
+import { isValidDate } from "../utils/dateUtils";
 import ProductModel from "../models/Product.model";
 import SettingsModel from "../models/Settings.model";
 import { PipelineStage } from "mongoose";
+import dayjs from "dayjs";
 
 export const getDashboardStats: RequestHandler = async (req, res) => {
   try {
-    const { datePeriod: _datePeriod } = req.query as {
-      datePeriod: DatePeriodFilters;
-    };
-    const isToday = _datePeriod === DatePeriodFilters.TODAY;
+    const { startDate, endDate } = req.query;
+
+    const _startDate = isValidDate(startDate)
+      ? dayjs(startDate as string)
+          .startOf("day")
+          .toDate()
+      : dayjs().startOf("day").toDate();
+
+    const _endDate = isValidDate(endDate)
+      ? dayjs(endDate as string)
+          .endOf("day")
+          .toDate()
+      : dayjs().endOf("day").toDate();
 
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
@@ -23,7 +32,10 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
 
     const minStockDefault = settings?.inventory?.defaultMinStock || 10;
     const timeZone = settings?.timeZone || "UTC";
-    const datePeriod = getDatePeriodMatch(_datePeriod, timeZone);
+    const datePeriod = {
+      $gte: dayjs(_startDate).tz(timeZone).toDate(),
+      $lte: dayjs(_endDate).tz(timeZone).toDate(),
+    };
 
     const orderBaseMatch = { userId: scopeId, isArchived: { $ne: true } };
     const productBaseMatch = { userId: scopeId, isDeleted: { $ne: true } };
@@ -33,34 +45,23 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
       lastDeliveredAt: datePeriod,
     };
 
-    const profitAndRevenueGroupStage: PipelineStage.FacetPipelineStage[] =
-      isToday
-        ? [
-            {
-              $group: {
-                _id: null,
-                revenue: { $sum: "$netRevenue" },
-                profit: { $sum: "$netProfit" },
-              },
+    const profitAndRevenueGroupStage: PipelineStage.FacetPipelineStage[] = [
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$lastDeliveredAt",
+              timezone: timeZone,
             },
-          ]
-        : [
-            {
-              $group: {
-                _id: {
-                  $dateToString: {
-                    format: "%Y-%m-%d",
-                    date: "$lastDeliveredAt",
-                    timezone: timeZone,
-                  },
-                },
-                revenue: { $sum: "$netRevenue" },
-                profit: { $sum: "$netProfit" },
-              },
-            },
-            { $sort: { _id: 1 } },
-            { $project: { _id: 0, date: "$_id", revenue: 1, profit: 1 } },
-          ];
+          },
+          revenue: { $sum: "$netRevenue" },
+          profit: { $sum: "$netProfit" },
+        },
+      },
+      { $sort: { _id: 1 } },
+      { $project: { _id: 0, date: "$_id", revenue: 1, profit: 1 } },
+    ];
 
     const orderCountsQuery = OrderModel.aggregate([
       { $match: orderBaseMatch },
