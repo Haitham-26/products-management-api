@@ -25,7 +25,8 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
     const timeZone = settings?.timeZone || "UTC";
     const datePeriod = getDatePeriodMatch(_datePeriod, timeZone);
 
-    const baseMatch = { userId: scopeId, isDeleted: { $ne: true } };
+    const orderBaseMatch = { userId: scopeId, isArchived: { $ne: true } };
+    const productBaseMatch = { userId: scopeId, isDeleted: { $ne: true } };
 
     const revenueEligibleMatch = {
       status: { $in: [OrderStatus.DELIVERED, OrderStatus.PARTIALLY_RETURNED] },
@@ -61,50 +62,52 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
             { $project: { _id: 0, date: "$_id", revenue: 1, profit: 1 } },
           ];
 
-    const dashboardQuery = OrderModel.aggregate([
-      { $match: baseMatch },
+    const orderCountsQuery = OrderModel.aggregate([
+      { $match: orderBaseMatch },
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]).exec();
+
+    const revenueQuery = OrderModel.aggregate([
+      { $match: { ...orderBaseMatch, ...revenueEligibleMatch } },
       {
         $facet: {
-          orderCountsByStatus: [
-            { $group: { _id: "$status", count: { $sum: 1 } } },
-          ],
-          profitAndRevenue: [
-            { $match: revenueEligibleMatch },
-            ...profitAndRevenueGroupStage,
-          ],
+          profitAndRevenue: profitAndRevenueGroupStage,
           mostSoldProducts: [
-            { $match: revenueEligibleMatch },
             { $project: { items: 1, returnedItems: 1 } },
-            { $unwind: "$items" },
             {
               $addFields: {
-                returnedQuantityForItem: {
-                  $ifNull: [
-                    {
-                      $first: {
-                        $map: {
-                          input: {
-                            $filter: {
-                              input: { $ifNull: ["$returnedItems", []] },
-                              cond: {
-                                $eq: ["$$this.productId", "$items.productId"],
-                              },
-                            },
-                          },
-                          as: "r",
-                          in: "$$r.returnedQuantity",
-                        },
+                returnedMap: {
+                  $arrayToObject: {
+                    $map: {
+                      input: { $ifNull: ["$returnedItems", []] },
+                      as: "r",
+                      in: {
+                        k: { $toString: "$$r.productId" },
+                        v: "$$r.returnedQuantity",
                       },
                     },
-                    0,
-                  ],
+                  },
                 },
               },
             },
+            { $unwind: "$items" },
             {
               $addFields: {
                 netQuantity: {
-                  $subtract: ["$items.quantity", "$returnedQuantityForItem"],
+                  $subtract: [
+                    "$items.quantity",
+                    {
+                      $ifNull: [
+                        {
+                          $getField: {
+                            field: { $toString: "$items.productId" },
+                            input: "$returnedMap",
+                          },
+                        },
+                        0,
+                      ],
+                    },
+                  ],
                 },
               },
             },
@@ -144,7 +147,7 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
     ]).exec();
 
     const stockCountsQuery = ProductModel.aggregate([
-      { $match: baseMatch },
+      { $match: productBaseMatch },
       {
         $project: {
           isOutOfStock: { $cond: [{ $eq: ["$quantity", 0] }, 1, 0] },
@@ -176,13 +179,10 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
       },
     ]).exec();
 
-    const [[dashboardResult], stockCounts] = await Promise.all([
-      dashboardQuery,
-      stockCountsQuery,
-    ]);
+    const [orderCountsByStatus, [revenueResult], stockCounts] =
+      await Promise.all([orderCountsQuery, revenueQuery, stockCountsQuery]);
 
-    const { orderCountsByStatus, profitAndRevenue, mostSoldProducts } =
-      dashboardResult;
+    const { profitAndRevenue, mostSoldProducts } = revenueResult;
 
     const totalRevenue = profitAndRevenue.reduce(
       (sum: number, r: { revenue: number }) => sum + r.revenue,
