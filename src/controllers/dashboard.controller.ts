@@ -14,27 +14,24 @@ export const getDashboardStats: RequestHandler = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    const _startDate = isValidDate(startDate)
-      ? dayjs(startDate as string)
-          .startOf("day")
-          .toDate()
-      : dayjs().startOf("day").toDate();
-
-    const _endDate = isValidDate(endDate)
-      ? dayjs(endDate as string)
-          .endOf("day")
-          .toDate()
-      : dayjs().endOf("day").toDate();
-
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
     const settings = await SettingsModel.findOne({ userId: scopeId });
 
     const minStockDefault = settings?.inventory?.defaultMinStock || 10;
     const timeZone = settings?.timeZone || "UTC";
+
+    const start = isValidDate(startDate)
+      ? dayjs.tz(startDate as string, timeZone)
+      : dayjs().tz(timeZone);
+
+    const end = isValidDate(endDate)
+      ? dayjs.tz(endDate as string, timeZone)
+      : dayjs().tz(timeZone);
+
     const datePeriod = {
-      $gte: dayjs(_startDate).tz(timeZone).toDate(),
-      $lte: dayjs(_endDate).tz(timeZone).toDate(),
+      $gte: start.startOf("day").toDate(),
+      $lte: end.endOf("day").toDate(),
     };
 
     const orderBaseMatch = { userId: scopeId, isArchived: { $ne: true } };
