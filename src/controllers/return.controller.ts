@@ -5,8 +5,8 @@ import { escapeSpecialChars } from "../utils/String";
 import isString from "lodash/isString";
 import { QueryOptions } from "mongoose";
 import ReturnModel, { Return } from "../models/Return.model";
-import { getCreatedAtSort } from "../utils/getCreatedAtSort";
-import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
+import { getSortByDate } from "../utils/getSortByDate";
+import { SortKind } from "../types/shared/types/SortKind.enum";
 import { StatusCode } from "../types/shared/dto/StatusCode.enum";
 import { OrderStatus } from "../types/order/types/OrderStatus.enum";
 import { DatePeriodFilters } from "../types/shared/types/DatePeriodFilters.enum";
@@ -20,6 +20,7 @@ import { APIErrorKeys } from "../errors/APIError-keys";
 import { ReturnStatus } from "../types/return/types/ReturnStatus.enum";
 import { ReturnItem } from "../types/return/types/ReturnItem";
 import ProductModel from "../models/Product.model";
+import SettingsModel from "../models/Settings.model";
 
 class ReturnService {
   contructor() {}
@@ -57,6 +58,10 @@ const getReturns: RequestHandler = async (req, res) => {
     const pageSize = Math.min(100, Math.max(1, Number(limit ?? 0)));
     const skip = (currentPage - 1) * pageSize;
 
+    const settings = await SettingsModel.findOne({ userId: scopeId }).select(
+      "timeZone",
+    );
+
     const query: QueryOptions = {
       userId: scopeId,
     };
@@ -78,13 +83,16 @@ const getReturns: RequestHandler = async (req, res) => {
       datePeriod &&
       Object.values(DatePeriodFilters).includes(datePeriod as DatePeriodFilters)
     ) {
-      query.returnedAt = getDatePeriodMatch(datePeriod as DatePeriodFilters);
+      query.returnedAt = getDatePeriodMatch(
+        datePeriod as DatePeriodFilters,
+        settings?.timeZone,
+      );
     }
 
     const [data, total] = await Promise.all([
       ReturnModel.find(query)
         .sort({
-          returnedAt: getCreatedAtSort(sortBy as CreationDateFilters),
+          returnedAt: getSortByDate(sortBy as SortKind),
         })
         .skip(skip)
         .limit(pageSize),

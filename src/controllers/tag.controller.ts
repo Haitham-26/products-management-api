@@ -5,12 +5,15 @@ import isString from "lodash/isString";
 import TagModel, { Tag } from "../models/Tag.model";
 import { QueryOptions } from "mongoose";
 import isNil from "lodash/isNil";
-import { getCreatedAtSort } from "../utils/getCreatedAtSort";
-import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
+import { getSortByDate } from "../utils/getSortByDate";
+import { SortKind } from "../types/shared/types/SortKind.enum";
 import { escapeSpecialChars } from "../utils/String";
 import { errorHandler } from "../errors/errorHandler";
 import { APIError } from "../errors/APIError";
 import { APIErrorKeys } from "../errors/APIError-keys";
+import SettingsModel from "../models/Settings.model";
+import { DatePeriodFilters } from "../types/shared/types/DatePeriodFilters.enum";
+import { getDatePeriodMatch } from "../utils/dateUtils";
 
 const createTag: RequestHandler = async (req, res) => {
   try {
@@ -34,7 +37,7 @@ const getTags: RequestHandler = async (req, res) => {
   try {
     const { scopeId } = RequestContext<{ scopeId: string }>(req);
 
-    const { keyword, meta, minUsageCount, maxUsageCount, creationDate } =
+    const { keyword, meta, minUsageCount, maxUsageCount, sortBy, datePeriod } =
       req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
@@ -47,6 +50,20 @@ const getTags: RequestHandler = async (req, res) => {
       isDeleted: { $ne: true },
       userId: scopeId,
     };
+
+    const settings = await SettingsModel.findOne({ userId: scopeId }).select(
+      "timeZone",
+    );
+
+    if (
+      datePeriod &&
+      Object.values(DatePeriodFilters).includes(datePeriod as DatePeriodFilters)
+    ) {
+      query.createdAt = getDatePeriodMatch(
+        datePeriod as DatePeriodFilters,
+        settings?.timeZone,
+      );
+    }
 
     if (isString(keyword)) {
       const escapedKeyword = escapeSpecialChars(keyword);
@@ -77,7 +94,7 @@ const getTags: RequestHandler = async (req, res) => {
         usageCount: 1,
       })
         .sort({
-          createdAt: getCreatedAtSort(creationDate as CreationDateFilters),
+          createdAt: getSortByDate(sortBy as SortKind),
         })
         .skip(skip)
         .limit(pageSize),

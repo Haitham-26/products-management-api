@@ -66,11 +66,17 @@ const orderRouter = express.Router();
  *           enum: [PENDING, DELIVERED, CANCELED]
  *           example: PENDING
  *       - in: query
- *         name: creationDate
+ *         name: sortBy
  *         schema:
  *           type: string
  *           enum: [NEWEST, OLDEST]
  *           example: NEWEST
+ *       - in: query
+ *         name: datePeriod
+ *         schema:
+ *           type: string
+ *           enum: [TODAY, THIS_WEEK, THIS_MONTH]
+ *           example: THIS_MONTH
  *       - in: query
  *         name: meta[page]
  *         schema:

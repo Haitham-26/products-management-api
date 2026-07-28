@@ -43,11 +43,17 @@ const tagRouter = express.Router();
  *           type: integer
  *           example: 12
  *       - in: query
- *         name: creationDate
+ *         name: sortBy
  *         schema:
  *           type: string
  *           enum: [NEWEST, OLDEST]
  *           example: NEWEST
+ *       - in: query
+ *         name: datePeriod
+ *         schema:
+ *           type: string
+ *           enum: [TODAY, THIS_WEEK, THIS_MONTH]
+ *           example: THIS_MONTH
  *       - in: query
  *         name: meta[page]
  *         schema:

@@ -37,6 +37,12 @@ const productRouter = express.Router();
  *           type: string
  *           example: "Iphone 13"
  *       - in: query
+ *         name: datePeriod
+ *         schema:
+ *           type: string
+ *           enum: [TODAY, THIS_WEEK, THIS_MONTH]
+ *           example: THIS_MONTH
+ *       - in: query
  *         name: minPurchasePrice
  *         schema:
  *           type: integer
@@ -120,7 +126,7 @@ const productRouter = express.Router();
  *             type: string
  *             example: "6a9d..."
  *       - in: query
- *         name: creationDate
+ *         name: sortBy
  *         schema:
  *           type: string
  *           enum: [NEWEST, OLDEST]
