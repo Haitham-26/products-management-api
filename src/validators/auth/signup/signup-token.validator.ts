@@ -15,6 +15,7 @@ const signUpTokenSchema = z.object({
     .min(6, TRANSLATION_KEY_PREFIX.token.length)
     .max(6, TRANSLATION_KEY_PREFIX.token.length),
   email: z.email(TRANSLATION_KEY_PREFIX.email.invalid),
+  lang: z.string().optional(),
 });
 
 export const SignUpTokenValidator: RequestHandler = async (req, res, next) => {

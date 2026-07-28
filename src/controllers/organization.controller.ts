@@ -237,7 +237,7 @@ const acceptInvitation: RequestHandler = async (req, res) => {
           $set: {
             organizationId: invitation.inviterId,
             permissions: Object.fromEntries(
-              ["products", "tags", "categories", "orders"].map((entity) => [
+              Object.values(PermissionEntities).map((entity) => [
                 entity,
                 {
                   [CRUDPermissions.CREATE]: false,

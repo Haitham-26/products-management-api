@@ -16,7 +16,7 @@ export interface User extends mongoose.Document {
   avatarPublicId?: string;
   optCode?: {
     code: string;
-    createdAt: string;
+    createdAt: Date;
   };
   roles: UserRoles[];
   organizationId?: Types.ObjectId;
@@ -24,10 +24,10 @@ export interface User extends mongoose.Document {
   tokenVersion: number;
   forgotPasswordCode?: {
     code: string;
-    createdAt: string;
+    createdAt: Date;
   };
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const UserSchema = new mongoose.Schema<User>(

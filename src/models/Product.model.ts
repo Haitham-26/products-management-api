@@ -139,6 +139,8 @@ ProductSchema.virtual("category", {
   justOne: true,
 });
 
+ProductSchema.index({ userId: 1, isDeleted: 1 });
+
 const ProductModel = model("Product", ProductSchema);
 
 export default ProductModel;

@@ -15,11 +15,17 @@ const dashboardRouter = express.Router();
  *       - Dashboard
  *     parameters:
  *       - in: query
- *         name: datePeriod
+ *         name: startDate
  *         schema:
  *           type: string
- *           enum: [TODAY, LAST_7_DAYS, LAST_30_DAYS]
- *           example: "TODAY"
+ *           format: date
+ *           example: "2025-01-01"
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-01-25"
  *     responses:
  *       200:
  *         description: Dashboard stats fetched successfully.

@@ -70,6 +70,8 @@ const signUpToken: RequestHandler = async (req, res) => {
     // This comes from SignUpTokenValidator
     const { user } = RequestContext<{ user: User }>(req);
 
+    const { lang } = req.body;
+
     let _user = user;
 
     await withTransaction(async (session) => {
@@ -87,10 +89,15 @@ const signUpToken: RequestHandler = async (req, res) => {
         { session, new: true },
       )) as User;
 
+      const langToStore = Object.values(AppLangs).includes(lang as AppLangs)
+        ? (lang as AppLangs)
+        : AppLangs.EN;
+
       await SettingsModel.create(
         [
           {
             userId: user._id,
+            lang: langToStore,
           },
         ],
         { session },
@@ -173,6 +180,8 @@ const googleLogin: RequestHandler = async (req, res) => {
       email: string;
     }>(req);
 
+    const { lang } = req.body;
+
     let _user = user;
 
     if (!user) {
@@ -193,7 +202,14 @@ const googleLogin: RequestHandler = async (req, res) => {
 
         _user = newUser as unknown as User;
 
-        await SettingsModel.create([{ userId: _user!._id }], { session });
+        const langToStore = Object.values(AppLangs).includes(lang as AppLangs)
+          ? (lang as AppLangs)
+          : AppLangs.EN;
+
+        await SettingsModel.create(
+          [{ userId: _user!._id, lang: langToStore }],
+          { session },
+        );
       });
     }
 

@@ -62,11 +62,12 @@ const ReturnSchema = new Schema<Return>(
     orderId: {
       type: SchemaTypes.ObjectId,
       required: [true, "The orderId is required."],
-      index: true,
+      unique: true,
     },
     orderIdentifier: {
       type: SchemaTypes.String,
       required: [true, "The order identifier is required."],
+      unique: true,
     },
     items: {
       type: [ReturnItemSchema],
