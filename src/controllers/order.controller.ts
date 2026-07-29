@@ -179,6 +179,10 @@ const getOrders: RequestHandler = async (req, res) => {
       maxTotalRevenue,
       minTotalProfit,
       maxTotalProfit,
+      minNetRevenue,
+      maxNetRevenue,
+      minNetProfit,
+      maxNetProfit,
       status,
       showArchived,
       sortBy,
@@ -233,6 +237,8 @@ const getOrders: RequestHandler = async (req, res) => {
     const rangeFilters = {
       totalRevenue: [minTotalRevenue, maxTotalRevenue],
       totalProfit: [minTotalProfit, maxTotalProfit],
+      netRevenue: [minNetRevenue, maxNetRevenue],
+      netProfit: [minNetProfit, maxNetProfit],
     };
 
     Object.entries(rangeFilters).forEach(([key, [min, max]]) => {

@@ -60,6 +60,26 @@ const orderRouter = express.Router();
  *           type: integer
  *           example: 1000
  *       - in: query
+ *         name: minNetRevenue
+ *         schema:
+ *           type: integer
+ *           example: 500
+ *       - in: query
+ *         name: maxNetRevenue
+ *         schema:
+ *           type: integer
+ *           example: 2000
+ *       - in: query
+ *         name: minNetProfit
+ *         schema:
+ *           type: integer
+ *           example: 200
+ *       - in: query
+ *         name: maxNetProfit
+ *         schema:
+ *           type: integer
+ *           example: 1000
+ *       - in: query
  *         name: status
  *         schema:
  *           type: string
