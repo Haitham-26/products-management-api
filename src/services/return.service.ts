@@ -48,7 +48,7 @@ const returnRouter = express.Router();
  *         name: datePeriod
  *         schema:
  *           type: string
- *           enum: [TODAY, THIS_WEEK, THIS_MONTH]
+ *           enum: [TODAY, LAST_7_DAYS, LAST_30_DAYS]
  *           example: TODAY
  *       - in: query
  *         name: meta[page]
