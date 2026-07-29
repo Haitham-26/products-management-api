@@ -1,4 +1,4 @@
-export enum CreationDateFilters {
+export enum SortKind {
   NEWEST = "NEWEST",
   OLDEST = "OLDEST",
 }

@@ -14,12 +14,15 @@ import { OrderItem } from "../types/order/types/OrderItem";
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import isBoolean from "lodash/isBoolean";
 import { generateIdentifier } from "./counter.controller";
-import { getCreatedAtSort } from "../utils/getCreatedAtSort";
-import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
+import { getSortByDate } from "../utils/getSortByDate";
+import { SortKind } from "../types/shared/types/SortKind.enum";
 import { escapeSpecialChars } from "../utils/String";
 import { OrderVisibility } from "../types/order/types/OrderVisibility.enum";
 import { errorHandler } from "../errors/errorHandler";
 import { isNaN } from "lodash";
+import { DatePeriodFilters } from "../types/shared/types/DatePeriodFilters.enum";
+import { getDatePeriodMatch } from "../utils/dateUtils";
+import SettingsModel from "../models/Settings.model";
 
 export class OrderService {
   constructor() {}
@@ -176,9 +179,15 @@ const getOrders: RequestHandler = async (req, res) => {
       maxTotalRevenue,
       minTotalProfit,
       maxTotalProfit,
+      minNetRevenue,
+      maxNetRevenue,
+      minNetProfit,
+      maxNetProfit,
       status,
       showArchived,
-      creationDate,
+      sortBy,
+      createdDatePeriod,
+      deliveredDatePeriod,
     } = req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
@@ -190,6 +199,27 @@ const getOrders: RequestHandler = async (req, res) => {
     const query: QueryOptions = {
       userId: scopeId,
     };
+
+    const settings = await SettingsModel.findOne({ userId: scopeId }).select(
+      "timeZone",
+    );
+
+    const datePeriodFilters = {
+      createdAt: createdDatePeriod,
+      lastDeliveredAt: deliveredDatePeriod,
+    };
+
+    Object.entries(datePeriodFilters).forEach(([key, value]) => {
+      if (
+        value &&
+        Object.values(DatePeriodFilters).includes(value as DatePeriodFilters)
+      ) {
+        query[key] = getDatePeriodMatch(
+          value as DatePeriodFilters,
+          settings?.timeZone,
+        );
+      }
+    });
 
     if (isString(keyword)) {
       const escapedKeyword = escapeSpecialChars(keyword);
@@ -215,6 +245,8 @@ const getOrders: RequestHandler = async (req, res) => {
     const rangeFilters = {
       totalRevenue: [minTotalRevenue, maxTotalRevenue],
       totalProfit: [minTotalProfit, maxTotalProfit],
+      netRevenue: [minNetRevenue, maxNetRevenue],
+      netProfit: [minNetProfit, maxNetProfit],
     };
 
     Object.entries(rangeFilters).forEach(([key, [min, max]]) => {
@@ -234,7 +266,7 @@ const getOrders: RequestHandler = async (req, res) => {
     const [data, total] = await Promise.all([
       OrderModel.find(query)
         .sort({
-          createdAt: getCreatedAtSort(creationDate as CreationDateFilters),
+          createdAt: getSortByDate(sortBy as SortKind),
         })
         .skip(skip)
         .limit(pageSize),

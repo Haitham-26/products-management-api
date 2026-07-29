@@ -60,17 +60,49 @@ const orderRouter = express.Router();
  *           type: integer
  *           example: 1000
  *       - in: query
+ *         name: minNetRevenue
+ *         schema:
+ *           type: integer
+ *           example: 500
+ *       - in: query
+ *         name: maxNetRevenue
+ *         schema:
+ *           type: integer
+ *           example: 2000
+ *       - in: query
+ *         name: minNetProfit
+ *         schema:
+ *           type: integer
+ *           example: 200
+ *       - in: query
+ *         name: maxNetProfit
+ *         schema:
+ *           type: integer
+ *           example: 1000
+ *       - in: query
  *         name: status
  *         schema:
  *           type: string
  *           enum: [PENDING, DELIVERED, CANCELED]
  *           example: PENDING
  *       - in: query
- *         name: creationDate
+ *         name: sortBy
  *         schema:
  *           type: string
  *           enum: [NEWEST, OLDEST]
  *           example: NEWEST
+ *       - in: query
+ *         name: createdDatePeriod
+ *         schema:
+ *           type: string
+ *           enum: [TODAY, LAST_7_DAYS, LAST_30_DAYS]
+ *           example: LAST_30_DAYS
+ *       - in: query
+ *         name: deliveredDatePeriod
+ *         schema:
+ *           type: string
+ *           enum: [TODAY, LAST_7_DAYS, LAST_30_DAYS]
+ *           example: LAST_30_DAYS
  *       - in: query
  *         name: meta[page]
  *         schema:

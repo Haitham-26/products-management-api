@@ -43,11 +43,17 @@ const categoryRouter = express.Router();
  *           type: integer
  *           example: 12
  *       - in: query
- *         name: creationDate
+ *         name: sortBy
  *         schema:
  *           type: string
  *           enum: [NEWEST, OLDEST]
  *           example: NEWEST
+ *       - in: query
+ *         name: datePeriod
+ *         schema:
+ *           type: string
+ *           enum: [TODAY, LAST_7_DAYS, LAST_30_DAYS]
+ *           example: LAST_30_DAYS
  *       - in: query
  *         name: meta[page]
  *         schema:

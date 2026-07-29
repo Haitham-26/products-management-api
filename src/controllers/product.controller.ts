@@ -14,8 +14,8 @@ import { ProductDiscountTypes } from "../types/product/types/ProductDiscountType
 import { CounterKeys } from "../types/counter/types/CounterKeys.enum";
 import { generateIdentifier } from "./counter.controller";
 import { ProductStockStatus } from "../types/product/types/ProductStockStatus.enum";
-import { getCreatedAtSort } from "../utils/getCreatedAtSort";
-import { CreationDateFilters } from "../types/shared/types/CreationDateFilters.enum";
+import { getSortByDate } from "../utils/getSortByDate";
+import { SortKind } from "../types/shared/types/SortKind.enum";
 import { escapeSpecialChars } from "../utils/String";
 import { ProductStatus } from "../types/product/types/ProductStatus.enum";
 import isNull from "lodash/isNull";
@@ -27,6 +27,9 @@ import isArray from "lodash/isArray";
 import { errorHandler } from "../errors/errorHandler";
 import { APIError } from "../errors/APIError";
 import { APIErrorKeys } from "../errors/APIError-keys";
+import { DatePeriodFilters } from "../types/shared/types/DatePeriodFilters.enum";
+import { getDatePeriodMatch } from "../utils/dateUtils";
+import SettingsModel from "../models/Settings.model";
 
 export class ProductService {
   constructor() {}
@@ -220,7 +223,8 @@ const getProducts: RequestHandler = async (req, res) => {
       tagIds,
       keyword,
       showDraft,
-      creationDate,
+      sortBy,
+      datePeriod,
       minPurchasePrice,
       maxPurchasePrice,
       minSalePrice,
@@ -246,6 +250,20 @@ const getProducts: RequestHandler = async (req, res) => {
       userId: scopeId,
       isDeleted: { $ne: true },
     };
+
+    const settings = await SettingsModel.findOne({ userId: scopeId }).select(
+      "timeZone",
+    );
+
+    if (
+      datePeriod &&
+      Object.values(DatePeriodFilters).includes(datePeriod as DatePeriodFilters)
+    ) {
+      query.createdAt = getDatePeriodMatch(
+        datePeriod as DatePeriodFilters,
+        settings?.timeZone,
+      );
+    }
 
     if (showDraft !== "true") {
       query.status = { $ne: ProductStatus.DRAFT };
@@ -297,7 +315,12 @@ const getProducts: RequestHandler = async (req, res) => {
       }
     });
 
-    if (stockStatus) {
+    if (
+      stockStatus &&
+      Object.values(ProductStockStatus).includes(
+        stockStatus as ProductStockStatus,
+      )
+    ) {
       if (stockStatus === ProductStockStatus.OUT_OF_STOCK) {
         query.quantity = 0;
       } else if (stockStatus === ProductStockStatus.LOW_STOCK) {
@@ -309,14 +332,19 @@ const getProducts: RequestHandler = async (req, res) => {
             },
           ],
         };
-      } else if (stockStatus === ProductStockStatus.IN_STOCK) {
+      } else {
         query.$expr = {
           $gt: ["$quantity", { $ifNull: ["$minStock", 10] }],
         };
       }
     }
 
-    if (discountType) {
+    if (
+      discountType &&
+      Object.values(ProductDiscountTypes).includes(
+        discountType as ProductDiscountTypes,
+      )
+    ) {
       query["discount.type"] = discountType;
     }
 
@@ -334,7 +362,7 @@ const getProducts: RequestHandler = async (req, res) => {
           match: { isDeleted: { $ne: true } },
         })
         .sort({
-          createdAt: getCreatedAtSort(creationDate as CreationDateFilters),
+          createdAt: getSortByDate(sortBy as SortKind),
         })
         .skip(skip)
         .limit(pageSize)
