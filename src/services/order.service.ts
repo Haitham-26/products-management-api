@@ -92,7 +92,13 @@ const orderRouter = express.Router();
  *           enum: [NEWEST, OLDEST]
  *           example: NEWEST
  *       - in: query
- *         name: datePeriod
+ *         name: createdDatePeriod
+ *         schema:
+ *           type: string
+ *           enum: [TODAY, THIS_WEEK, THIS_MONTH]
+ *           example: THIS_MONTH
+ *       - in: query
+ *         name: deliveredDatePeriod
  *         schema:
  *           type: string
  *           enum: [TODAY, THIS_WEEK, THIS_MONTH]

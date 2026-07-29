@@ -186,7 +186,8 @@ const getOrders: RequestHandler = async (req, res) => {
       status,
       showArchived,
       sortBy,
-      datePeriod,
+      createdDatePeriod,
+      deliveredDatePeriod,
     } = req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
@@ -203,15 +204,22 @@ const getOrders: RequestHandler = async (req, res) => {
       "timeZone",
     );
 
-    if (
-      datePeriod &&
-      Object.values(DatePeriodFilters).includes(datePeriod as DatePeriodFilters)
-    ) {
-      query.createdAt = getDatePeriodMatch(
-        datePeriod as DatePeriodFilters,
-        settings?.timeZone,
-      );
-    }
+    const datePeriodFilters = {
+      createdAt: createdDatePeriod,
+      lastDeliveredAt: deliveredDatePeriod,
+    };
+
+    Object.entries(datePeriodFilters).forEach(([key, value]) => {
+      if (
+        value &&
+        Object.values(DatePeriodFilters).includes(value as DatePeriodFilters)
+      ) {
+        query[key] = getDatePeriodMatch(
+          value as DatePeriodFilters,
+          settings?.timeZone,
+        );
+      }
+    });
 
     if (isString(keyword)) {
       const escapedKeyword = escapeSpecialChars(keyword);
