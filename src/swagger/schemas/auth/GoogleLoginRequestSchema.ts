@@ -1,4 +1,4 @@
-import { GoogleRedirectURLs } from "../../../types/auth/google-login/GoogleRedirectURLs.enum";
+import { GoogleRedirectPaths } from "../../../types/auth/google-login/GoogleRedirectPaths.enum";
 import { AppLangs } from "../../../types/settings/types/AppLangs.enum";
 import { SwaggerTypes } from "../../types/SwaggerTypes";
 
@@ -14,10 +14,10 @@ const GoogleLoginRequestSchema = {
       enum: Object.values(AppLangs),
       example: AppLangs.EN,
     },
-    redirectUrl: {
+    redirectPath: {
       type: SwaggerTypes.STRING,
-      enum: Object.values(GoogleRedirectURLs),
-      example: GoogleRedirectURLs.LOGIN,
+      enum: Object.values(GoogleRedirectPaths),
+      example: GoogleRedirectPaths.LOGIN,
     },
   },
 };

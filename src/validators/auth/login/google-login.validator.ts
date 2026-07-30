@@ -8,11 +8,14 @@ import UserModel from "../../../models/User.model";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
 import { RequestContext } from "../../../utils/RequestContext";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
-import { GoogleRedirectURLs } from "../../../types/auth/google-login/GoogleRedirectURLs.enum";
+import { GoogleRedirectPaths } from "../../../types/auth/google-login/GoogleRedirectPaths.enum";
 
 const googleLoginSchema = z.object({
   code: z.string(APIErrorKeys.internal),
-  redirectUrl: z.enum(Object.values(GoogleRedirectURLs), APIErrorKeys.internal),
+  redirectPath: z.enum(
+    Object.values(GoogleRedirectPaths),
+    APIErrorKeys.internal,
+  ),
   lang: z.string().optional(),
 });
 
@@ -21,12 +24,12 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
     const body = googleLoginSchema.parse(req.body);
     req.body = body;
 
-    const { code, redirectUrl } = req.body;
+    const { code, redirectPath } = req.body;
 
     const client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `${process.env.CLIENT_URL}${redirectUrl}`,
+      `${process.env.CLIENT_URL}${redirectPath}`,
     );
 
     const { tokens } = await client.getToken(code);

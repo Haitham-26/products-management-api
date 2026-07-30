@@ -1,4 +1,4 @@
-export enum GoogleRedirectURLs {
+export enum GoogleRedirectPaths {
   LOGIN = "/login",
   SIGNUP = "/signup",
 }
