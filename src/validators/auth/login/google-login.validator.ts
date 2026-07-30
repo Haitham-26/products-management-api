@@ -26,7 +26,7 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
     const client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `https://i-inventix.vercel.app${redirectUrl}`,
+      `${process.env.CLIENT_URL}${redirectUrl}`,
     );
 
     const { tokens } = await client.getToken(code);
