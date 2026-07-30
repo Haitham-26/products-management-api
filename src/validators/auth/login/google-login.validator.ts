@@ -30,7 +30,6 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
     );
 
     const { tokens } = await client.getToken(code);
-    console.log(tokens);
 
     if (!tokens.id_token) {
       throw new APIError({
