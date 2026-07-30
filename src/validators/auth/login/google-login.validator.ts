@@ -8,9 +8,11 @@ import UserModel from "../../../models/User.model";
 import { SignUpMethods } from "../../../types/auth/shared/SignUpMethods";
 import { RequestContext } from "../../../utils/RequestContext";
 import { APIErrorKeys } from "../../../errors/APIError-keys";
+import { GoogleRedirectURLs } from "../../../types/auth/google-login/GoogleRedirectURLs.enum";
 
 const googleLoginSchema = z.object({
-  idToken: z.string(APIErrorKeys.internal),
+  code: z.string(APIErrorKeys.internal),
+  reidrectUrl: z.enum(Object.values(GoogleRedirectURLs), APIErrorKeys.internal),
   lang: z.string().optional(),
 });
 
@@ -19,13 +21,26 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
     const body = googleLoginSchema.parse(req.body);
     req.body = body;
 
+    const { code, reidrectUrl } = req.body;
+
     const client = new OAuth2Client(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
+      `${process.env.CLIENT_URL}${reidrectUrl}`,
     );
 
+    const { tokens } = await client.getToken(code);
+    console.log(tokens);
+
+    if (!tokens.id_token) {
+      throw new APIError({
+        message: APIErrorKeys.internal,
+        status: StatusCode.BAD_REQUEST,
+      });
+    }
+
     const ticket = await client.verifyIdToken({
-      idToken: req.body.idToken,
+      idToken: tokens.id_token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 
@@ -33,7 +48,7 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
 
     if (!payload) {
       throw new APIError({
-        message: "serverErrors.internal",
+        message: APIErrorKeys.internal,
         status: StatusCode.BAD_REQUEST,
       });
     }
@@ -47,18 +62,23 @@ export const GoogleLoginValidator: RequestHandler = async (req, res, next) => {
       });
     }
 
-    let user = await UserModel.findOne({ email }).select(
+    const user = await UserModel.findOne({ email }).select(
       "-password -optCode -forgotPasswordCode",
     );
 
-    if (user && user?.signUpMethod !== SignUpMethods.GOOGLE) {
+    if (user && user.signUpMethod !== SignUpMethods.GOOGLE) {
       throw new APIError({
         message: APIErrorKeys["google-login"].differentMethod,
         status: StatusCode.BAD_REQUEST,
       });
     }
 
-    RequestContext(req, { user, name, picture, email });
+    RequestContext(req, {
+      user,
+      name,
+      picture,
+      email,
+    });
 
     next();
   } catch (e) {
