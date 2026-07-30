@@ -31,7 +31,7 @@ app.use(express.static("public"));
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: ["http://localhost:5173", "https://i-inventix.vercel.app"],
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE"],
   }),
