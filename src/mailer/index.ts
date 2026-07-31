@@ -1,23 +1,11 @@
-import nodemailer from "nodemailer";
 import path from "path";
 import fs from "fs/promises";
 import { AppLangs } from "../types/settings/types/AppLangs.enum";
+import { Resend } from "resend";
 
 require("dotenv").config();
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASSWORD,
-  },
-  pool: true,
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const generateTokenTemplate = async (
   title: string,
@@ -113,14 +101,18 @@ const generateLinkTemplate = async (
 
 const sendEmail = async (to: string, subject: string, html: string) => {
   try {
-    await transporter.sendMail({
-      from: `"Inventix" <${process.env.MAIL_USER}>`,
+    const { error } = await resend.emails.send({
+      from: process.env.MAIL_FROM!,
       to,
       subject,
       html,
     });
+
+    if (error) {
+      console.error("Email error:", error);
+    }
   } catch (e) {
-    console.log("Email error:", e);
+    console.error("Email error:", e);
   }
 };
 
