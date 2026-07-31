@@ -59,7 +59,7 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Products Management API",
+      title: "Inventix API",
       version: "1.0.0",
       description: "API documentation",
     },
