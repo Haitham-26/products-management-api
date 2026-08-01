@@ -141,7 +141,8 @@ https://inventix-syng.onrender.com/api-docs
 ```
 src/
 ├── controllers/    # Request handlers / business logic, per feature
-├── services/        # Express routers + route-level Swagger docs, per feature
+├── routes/        # Express routers + route-level Swagger docs, per feature
+├── services/       # Reusable services (currently Cloudinary uploads)
 ├── validators/       # Zod request validation schemas, per feature
 ├── models/            # Mongoose schemas/models
 ├── middlewares/        # Auth, org scoping, permissions, uploads, rate limiting
