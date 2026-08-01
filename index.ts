@@ -1,21 +1,21 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import userRouter from "./src/services/user.service";
-import authRouter from "./src/services/auth.service";
+import userRouter from "./src/routes/user.routes";
+import authRouter from "./src/routes/auth.routes";
 import { globalLimiter } from "./src/middlewares/rateLimiter";
-import productRouter from "./src/services/product.service";
-import categoryRouter from "./src/services/category.service";
-import tagRouter from "./src/services/tag.service";
-import orderRouter from "./src/services/order.service";
-import settingsRouter from "./src/services/settings.service";
-import dashboardRouter from "./src/services/dashboard.service";
-import organizationRouter from "./src/services/organization.service";
+import productRouter from "./src/routes/product.routes";
+import categoryRouter from "./src/routes/category.routes";
+import tagRouter from "./src/routes/tag.routes";
+import orderRouter from "./src/routes/order.routes";
+import settingsRouter from "./src/routes/settings.routes";
+import dashboardRouter from "./src/routes/dashboard.routes";
+import organizationRouter from "./src/routes/organization.routes";
 import { startCronJobs } from "./src/cron";
 import { multerErrorHandler } from "./src/utils/multerErrorHandler";
 import { setupSwagger } from "./src/swagger/swagger";
 import cookieParser from "cookie-parser";
-import returnRouter from "./src/services/return.service";
+import returnRouter from "./src/routes/return.routes";
 
 require("dotenv").config();
 
