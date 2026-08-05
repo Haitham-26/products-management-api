@@ -30,7 +30,7 @@ const generateTokenTemplate = async (
     [AppLangs.AR]: {
       info: "صلاحية رمز التحقق 5 دقائق.",
       warning: "إذا كنت تظن أن هذا البريد أرسل لك عن طريق الخطأ يمكنك تجاهله.",
-      rights: `© ${year} Inventix. ججميع الحقوق محفوظة.`,
+      rights: `© ${year} Inventix. جميع الحقوق محفوظة.`,
       dontReply: "هذا بريد تلقائي. يرجى عدم الرد عليه.",
     },
   };
