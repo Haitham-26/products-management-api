@@ -445,6 +445,7 @@ const APIErrorKeySchema = {
       samePassword: LEAF,
     },
   },
+  hugeRequest: LEAF,
 } as const;
 
 export const APIErrorKeys = buildKeys(

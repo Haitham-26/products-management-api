@@ -14,6 +14,8 @@ import { errorHandler } from "../errors/errorHandler";
 import SettingsModel from "../models/Settings.model";
 import { DatePeriodFilters } from "../types/shared/types/DatePeriodFilters.enum";
 import { getDatePeriodMatch } from "../utils/dateUtils";
+import { APIError } from "../errors/APIError";
+import { APIErrorKeys } from "../errors/APIError-keys";
 
 const createCategory: RequestHandler = async (req, res) => {
   try {
@@ -41,6 +43,13 @@ const getCategories: RequestHandler = async (req, res) => {
       req.query;
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
+
+    if (limit > 100) {
+      throw new APIError({
+        message: APIErrorKeys.hugeRequest,
+        status: StatusCode.BAD_REQUEST,
+      });
+    }
 
     const currentPage = Math.max(1, Number(page) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(limit) ?? 0));

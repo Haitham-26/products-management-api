@@ -42,6 +42,13 @@ const getTags: RequestHandler = async (req, res) => {
 
     const { page, limit } = JSON.parse(JSON.stringify(meta) || "{}");
 
+    if (limit > 100) {
+      throw new APIError({
+        message: APIErrorKeys.hugeRequest,
+        status: StatusCode.BAD_REQUEST,
+      });
+    }
+
     const currentPage = Math.max(1, Number(page) || 1);
     const pageSize = Math.min(100, Math.max(1, Number(limit) ?? 0));
     const skip = (currentPage - 1) * pageSize;
